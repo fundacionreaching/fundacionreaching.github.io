@@ -1,0 +1,61 @@
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Corregimientos de Ibagué</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([4.4381, -75.2329], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const corregimientos = [
+      { nombre: "Dantas", coords: [4.414, -75.295] },
+      { nombre: "Laureles", coords: [4.389, -75.244] },
+      { nombre: "Coello - Cocora", coords: [4.36, -75.20] },
+      { nombre: "Gamboa", coords: [4.43, -75.28] },
+      { nombre: "Tapias", coords: [4.51, -75.30] },
+      { nombre: "Toche", coords: [4.53, -75.50] },
+      { nombre: "Juntas", coords: [4.467, -75.305] },
+      { nombre: "Villa Restrepo", coords: [4.478, -75.275] },
+      { nombre: "Cay", coords: [4.44, -75.18] },
+      { nombre: "Calambeo", coords: [4.475, -75.215] },
+      { nombre: "San Juan de la China", coords: [4.89, -75.28] },
+      { nombre: "San Bernardo", coords: [4.52, -75.33] },
+      { nombre: "El Salado", coords: [4.48, -75.21] },
+      { nombre: "Buenos Aires", coords: [4.46, -75.22] },
+      { nombre: "Carmen de Bulira", coords: [4.41, -75.25] },
+      { nombre: "El Totumo", coords: [4.435, -75.265] },
+      { nombre: "La Florida", coords: [4.445, -75.25] }
+    ];
+
+    corregimientos.forEach(c => {
+      L.circleMarker(c.coords, {
+        radius: 6,
+        fillColor: '#3388ff',
+        color: '#000',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+      }).bindPopup(`<strong>${c.nombre}</strong>`).addTo(map);
+    });
+  </script>
+</body>
+</html>
+
+
+
+
