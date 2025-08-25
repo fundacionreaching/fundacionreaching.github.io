@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Comunas de Ibagué</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([4.4381, -75.2329], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const comunas = [
+      { nombre: "Comuna 1 – Centro", poblacion: 31009, superficie: 2.50, coords: [4.441, -75.236] },
+      { nombre: "Comuna 2 – Calambeo", poblacion: 41219, superficie: 2.14, coords: [4.453, -75.236] },
+      { nombre: "Comuna 3 – San Simón", poblacion: 24603, superficie: 2.44, coords: [4.443, -75.222] },
+      { nombre: "Comuna 4 – Piedrapintada", poblacion: 44077, superficie: 2.11, coords: [4.447, -75.249] },
+      { nombre: "Comuna 5 – Jordán", poblacion: 30549, superficie: 1.81, coords: [4.442, -75.252] },
+      { nombre: "Comuna 6 – Vergel", poblacion: 50477, superficie: 4.23, coords: [4.455, -75.258] },
+      { nombre: "Comuna 7 – Salado", poblacion: 44219, superficie: 5.25, coords: [4.463, -75.265] },
+      { nombre: "Comuna 8 – Simón Bolívar", poblacion: 77421, superficie: 4.36, coords: [4.429, -75.265] },
+      { nombre: "Comuna 9 – Picaleña / Mirolindo", poblacion: 64235, superficie: 10.69, coords: [4.400, -75.249] },
+      { nombre: "Comuna 10 – Estadio", poblacion: 45149, superficie: 2.50, coords: [4.430, -75.240] },
+      { nombre: "Comuna 11 – Ferias", poblacion: 31383, superficie: 1.62, coords: [4.450, -75.226] },
+      { nombre: "Comuna 12 – Ricaurte", poblacion: 43130, superficie: 2.10, coords: [4.434, -75.258] },
+      { nombre: "Comuna 13 – Boquerón", poblacion: 16086, superficie: 2.85, coords: [4.397, -75.273] }
+    ];
+
+    comunas.forEach(c => {
+      L.circleMarker(c.coords, {
+        radius: 8,
+        fillColor: '#e63946',
+        color: '#000',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+      }).bindPopup(`<strong>${c.nombre}</strong><br>Población: ${c.poblacion.toLocaleString()}<br>Superficie: ${c.superficie} km²`)
+        .addTo(map);
+    });
+  </script>
+</body>
+</html>
