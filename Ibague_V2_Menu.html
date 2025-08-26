@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menú – Ibagué v2 (Enlaces & Iframes)</title>
+  <meta name="description" content="Generador de enlaces e iframes para ibague_v2.html con vistas, tamaño de letra y transparencia. Incluye vista previa." />
+  <style>
+    :root{
+      --bg:#0b1223; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --border:#1f2937; --hover:#122138;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial; background:radial-gradient(1200px 600px at 20% 0%, #0b1225 0%, var(--bg) 50%, #0a0f1e 100%); color:var(--text)}
+    header{display:flex; gap:12px; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border); background:rgba(15,23,42,.85); position:sticky; top:0; z-index:10}
+    h1{margin:0; font-size:clamp(18px,2.4vw,26px)}
+    .wrap{max-width:1200px; margin:0 auto; padding:18px}
+    .layout{display:grid; grid-template-columns:1.1fr .9fr; gap:16px}
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} }
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00)); border:1px solid var(--border); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.25); overflow:hidden}
+    .card h2{margin:0; font-size:16px; padding:10px 12px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.03)}
+    .body{padding:12px}
+    .controls{display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px}
+    @media (max-width:720px){ .controls{grid-template-columns:1fr} }
+    .field{display:flex; flex-direction:column; gap:4px}
+    label{font-size:12px; color:var(--muted)}
+    select,input[type="range"],input[type="text"],button{background:#0b1223; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px 10px}
+    button{cursor:pointer}
+    .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .chip{border:1px solid var(--border); background:#0b1223; color:var(--text); padding:6px 10px; border-radius:999px; cursor:pointer}
+    .chip:hover{background:var(--hover)}
+    .primary{background:var(--accent); color:#062411; border-color:#16a34a; font-weight:800}
+    .code{background:rgba(2,6,23,.55); color:#cbd5e1; border:1px dashed var(--border); border-radius:12px; padding:10px; font-size:12px; white-space:pre-wrap; word-break:break-all}
+    iframe{width:100%; height:60vh; border:0; display:block; background:#0a1220}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Menú – Ibagué v2 (Enlaces & Iframes)</h1>
+    <span style="font-size:12px; color:#a7b0c2">Generador para <code>https://fundacionreaching.github.io/ibague_v2.html</code></span>
+  </header>
+
+  <main class="wrap layout">
+    <!-- Panel de configuración -->
+    <section class="card" aria-label="Generador de enlaces">
+      <h2>Configurar enlace</h2>
+      <div class="body">
+        <div class="controls">
+          <div class="field"><label for="view">Vista</label>
+            <select id="view">
+              <option value="general">General</option>
+              <option value="corregimientos" selected>Corregimientos</option>
+              <option value="comunas">Comunas</option>
+            </select>
+          </div>
+          <div class="field"><label for="font">Tamaño letra (<span id="fontVal">28</span>px)</label>
+            <input id="font" type="range" min="16" max="48" step="1" value="28" />
+          </div>
+          <div class="field"><label for="alpha">Transparencia punto (<span id="alphaVal">0.45</span>)</label>
+            <input id="alpha" type="range" min="0.15" max="1" step="0.05" value="0.45" />
+          </div>
+          <div class="field"><label for="base">Base (solo lectura)</label>
+            <input id="base" type="text" value="https://fundacionreaching.github.io/ibague_v2.html" readonly />
+          </div>
+        </div>
+
+        <div class="row" style="margin:12px 0">
+          <span class="chip" data-preset="v:general">General</span>
+          <span class="chip" data-preset="v:corregimientos">Corregimientos</span>
+          <span class="chip" data-preset="v:comunas">Comunas</span>
+          <span class="chip" data-preset="f:24">Letra 24</span>
+          <span class="chip" data-preset="f:28">Letra 28</span>
+          <span class="chip" data-preset="f:32">Letra 32</span>
+          <span class="chip" data-preset="a:0.40">Alpha 0.40</span>
+          <span class="chip" data-preset="a:0.55">Alpha 0.55</span>
+          <span class="chip" data-preset="a:0.70">Alpha 0.70</span>
+          <button id="btnApply" class="primary">Aplicar</button>
+        </div>
+
+        <div class="field"><label>URL generada</label>
+          <div class="code" id="urlOut"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="copyUrl">Copiar URL</button>
+          <a id="openUrl" class="primary" href="#" target="_blank" rel="noopener">Abrir en pestaña</a>
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--border); margin:16px 0">
+
+        <div class="field"><label>Iframe generado</label>
+          <div class="code" id="iframeOut"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="copyIframe">Copiar iframe</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vista previa -->
+    <section class="card" aria-label="Vista previa">
+      <h2>Vista previa</h2>
+      <div class="body">
+        <iframe id="pv" title="Vista previa Ibagué v2" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (s,el=document)=> el.querySelector(s);
+    const view = $('#view');
+    const font = $('#font');
+    const alpha = $('#alpha');
+    const fontVal = $('#fontVal');
+    const alphaVal = $('#alphaVal');
+    const base = $('#base');
+    const urlOut = $('#urlOut');
+    const iframeOut = $('#iframeOut');
+    const pv = $('#pv');
+
+    function build(){
+      const u = new URL(base.value);
+      u.searchParams.set('view', view.value);
+      u.searchParams.set('font', String(parseInt(font.value,10)));
+      u.searchParams.set('alpha', String(parseFloat(alpha.value)));
+      return u.toString();
+    }
+
+    function render(){
+      fontVal.textContent = font.value;
+      alphaVal.textContent = parseFloat(alpha.value).toFixed(2);
+      const url = build();
+      urlOut.textContent = url;
+      iframeOut.textContent = `<iframe\n  src="${url}"\n  width="100%" height="640" style="border:none"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allow="fullscreen">\n</iframe>`;
+      pv.src = url;
+      $('#openUrl').href = url;
+    }
+
+    // Eventos
+    [view, font, alpha].forEach(el=> el.addEventListener('input', render));
+    $('#btnApply').addEventListener('click', render);
+    $('#copyUrl').addEventListener('click', ()=> navigator.clipboard.writeText(urlOut.textContent||'') );
+    $('#copyIframe').addEventListener('click', ()=> navigator.clipboard.writeText(iframeOut.textContent||'') );
+
+    // Presets
+    document.querySelectorAll('[data-preset]').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const [k,v] = chip.dataset.preset.split(':');
+        if(k==='v'){ view.value = v; }
+        if(k==='f'){ font.value = v; }
+        if(k==='a'){ alpha.value = v; }
+        render();
+      });
+    });
+
+    // Inicializar
+    render();
+  </script>
+</body>
+</html>
