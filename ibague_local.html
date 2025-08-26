@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ibagué — Mapas (Leaflet local)</title>
+  <meta name="description" content="Mapa de Ibagué con vistas General, Corregimientos y Comunas. Etiquetas grandes y puntos semitransparentes. Dependencias Leaflet cargadas localmente, sin CDN." />
+  <!-- === Leaflet local (sin CDN) ===
+       Coloque estos archivos en: assets/leaflet/
+       - leaflet.css
+       - leaflet.js
+       - images/ (carpeta completa que trae Leaflet: marker-icon.png, marker-shadow.png, layers.png, etc.)
+       La hoja de estilos usa rutas relativas a ./images, por eso es importante conservar la estructura.
+  -->
+  <link rel="stylesheet" href="assets/leaflet/leaflet.css" />
+  <style>
+    :root{ --bg:#0b1223; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --border:#1f2937; --green:#22c55e; --blue:#3b82f6; --amber:#f59e0b; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial; background:#0b1223; color:var(--text)}
+    header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; border-bottom:1px solid var(--border); background:rgba(15,23,42,.85)}
+    h1{font-size:clamp(18px,2.4vw,26px); margin:0}
+    .tabs{display:flex; flex-wrap:wrap; gap:8px}
+    .tabs button{border:1px solid var(--border); background:#0b1223; color:var(--text); padding:8px 12px; border-radius:10px; cursor:pointer}
+    .tabs button.active{background:var(--accent); color:#0b1223; font-weight:700}
+    .tools{display:flex; gap:8px; align-items:center}
+    .tools label{font-size:12px; color:var(--muted)}
+    .tools select,.tools input,.tools button{border:1px solid var(--border); background:#0b1223; color:var(--text); padding:8px 10px; border-radius:10px}
+    #map{height:calc(100vh - 70px); width:100%}
+    .leaflet-container{background:#0a1220}
+    /* Etiquetas grandes y legibles */
+    .label-lg{font-size:24px; font-weight:800; letter-spacing:.3px; color:#fff; text-shadow: 0 1px 0 #000, 0 0 6px rgba(0,0,0,.75);} 
+    @media (max-width:760px){ .label-lg{font-size:20px} }
+    /* Tarjeta informativa */
+    .legend{position:absolute; right:12px; bottom:12px; background:rgba(2,6,23,.8); color:var(--muted); border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:12px}
+    .legend .dot{display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ibagué — Mapas (Local)</h1>
+    <div class="tabs" role="tablist" aria-label="Vistas del mapa">
+      <button class="active" data-view="general" role="tab" aria-selected="true">General</button>
+      <button data-view="corregimientos" role="tab">Corregimientos</button>
+      <button data-view="comunas" role="tab">Comunas</button>
+    </div>
+    <div class="tools">
+      <label>Tamaño letra
+        <select id="fontCtl" title="Tamaño de etiqueta">
+          <option value="20">20</option>
+          <option value="24" selected>24</option>
+          <option value="28">28</option>
+          <option value="32">32</option>
+          <option value="36">36</option>
+        </select>
+      </label>
+      <label>Transparencia
+        <input id="alphaCtl" type="range" min="0.2" max="0.9" step="0.05" value="0.45" title="Transparencia de los puntos"/>
+      </label>
+      <button id="fitBtn" title="Ajustar a datos">Enfocar</button>
+    </div>
+  </header>
+
+  <div id="map" role="region" aria-label="Mapa interactivo de Ibagué"></div>
+  <div class="legend" id="legend">
+    <div><span class="dot" style="background:var(--green)"></span> General</div>
+    <div><span class="dot" style="background:var(--blue)"></span> Corregimientos</div>
+    <div><span class="dot" style="background:var(--amber)"></span> Comunas</div>
+  </div>
+
+  <script src="assets/leaflet/leaflet.js"></script>
+  <script>
+    // ========== Parámetros por URL ===========
+    const params = new URLSearchParams(location.search);
+    const qsView  = params.get('view');
+    const qsFont  = parseInt(params.get('font')||0,10);
+    const qsAlpha = parseFloat(params.get('alpha')||0);
+
+    // ========== Inicializar mapa ===========
+    const CENTER = [4.4389, -75.2322];
+    const map = L.map('map', { zoomControl:true }).setView(CENTER, 12);
+
+    // Capa base OSM (puede ajustar a otra si su red bloquea este dominio)
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' });
+    osm.addTo(map);
+    // Fallback de tiles si el servidor da error
+    const fallbackTiles = [
+      'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+      'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png'
+    ];
+    let fb = 0;
+    osm.on('tileerror', function(){
+      if(fb < fallbackTiles.length){
+        try{ osm.setUrl(fallbackTiles[fb++]); }catch(e){}
+      }
+    });
+
+    // ========== Controles UI ===========
+    const fontCtl = document.getElementById('fontCtl');
+    const alphaCtl = document.getElementById('alphaCtl');
+    if(qsFont){ fontCtl.value = String(qsFont); }
+    if(qsAlpha){ alphaCtl.value = String(qsAlpha); }
+
+    // Helpers de presentación
+    function labelIcon(text){
+      const size = parseInt(fontCtl.value,10);
+      return L.divIcon({
+        className: 'label-lg',
+        html: `<span style="font-size:${size}px">${text}</span>`,
+        iconSize: [size*4, size*1.6],
+        iconAnchor: [size*2, size*0.2]
+      });
+    }
+    function pin(lat, lng, options={}){
+      const alpha = parseFloat(alphaCtl.value);
+      const color = options.color || '#22c55e';
+      const radius = options.radius || 20;
+      const weight = options.weight || 2;
+      return L.circleMarker([lat, lng], { color, fillColor: color, fillOpacity: alpha, radius, weight });
+    }
+    function groupFrom(data, style){
+      const g = L.featureGroup();
+      data.forEach(d => {
+        const marker = pin(d.lat, d.lng, { color: style.color, radius: style.radius||20 });
+        marker.addTo(g);
+        const lbl = L.marker([d.lat, d.lng], { icon: labelIcon(d.nombre) });
+        lbl.addTo(g);
+        if(d.popup){ marker.bindPopup(d.popup); lbl.bindPopup(d.popup); }
+      });
+      return g;
+    }
+
+    // ========== Datos (plantilla, reemplace con su lista completa) ===========
+    const DATA_GENERAL = [
+      { nombre:'Ibagué Centro', lat:4.4389, lng:-75.2322, popup:'Ciudad de Ibagué' },
+      { nombre:'Terminal', lat:4.4256, lng:-75.2079 },
+      { nombre:'Aeropuerto Perales', lat:4.4219, lng:-75.1336 }
+    ];
+    const DATA_CORREGIMIENTOS = [
+      { nombre:'Buenos Aires', lat:4.500, lng:-75.280 },
+      { nombre:'Cay', lat:4.480, lng:-75.200 },
+      { nombre:'Tapias', lat:4.600, lng:-75.350 },
+      // … completar el resto
+    ];
+    const DATA_COMUNAS = [
+      { nombre:'Comuna 1', lat:4.443, lng:-75.232 },
+      { nombre:'Comuna 2', lat:4.444, lng:-75.220 },
+      { nombre:'Comuna 3', lat:4.433, lng:-75.228 },
+      // … completar el resto
+    ];
+
+    // ========== Capas ===========
+    const green = getComputedStyle(document.documentElement).getPropertyValue('--green').trim();
+    const blue  = getComputedStyle(document.documentElement).getPropertyValue('--blue').trim();
+    const amber = getComputedStyle(document.documentElement).getPropertyValue('--amber').trim();
+
+    const LYR_GENERAL = groupFrom(DATA_GENERAL, { color: green });
+    const LYR_CORREG  = groupFrom(DATA_CORREGIMIENTOS, { color: blue,  radius:22 });
+    const LYR_COMUNAS = groupFrom(DATA_COMUNAS, { color: amber, radius:18 });
+
+    const layers = { general: LYR_GENERAL, corregimientos: LYR_CORREG, comunas: LYR_COMUNAS };
+    let current = 'general';
+
+    function activate(view){
+      Object.values(layers).forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); });
+      map.addLayer(layers[view]);
+      current = view;
+      document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+      document.querySelector(`.tabs button[data-view="${view}"]`).classList.add('active');
+      try{ map.fitBounds(layers[view].getBounds().pad(0.2)); }catch(e){ map.setView(CENTER, 12); }
+    }
+
+    const initial = ['general','corregimientos','comunas'].includes(qsView) ? qsView : 'general';
+    activate(initial);
+
+    // Eventos UI
+    document.querySelectorAll('.tabs button').forEach(b=> b.addEventListener('click', (ev)=> activate(ev.currentTarget.dataset.view)) );
+    fontCtl.addEventListener('change', ()=>{ const v = current; activate('general'); activate(v); });
+    alphaCtl.addEventListener('input', ()=>{ const a = parseFloat(alphaCtl.value); layers[current].eachLayer(l=>{ if(l.setStyle){ l.setStyle({ fillOpacity:a }); } }); });
+    document.getElementById('fitBtn').addEventListener('click', ()=>{ try{ map.fitBounds(layers[current].getBounds().pad(0.2)); }catch(e){ map.setView(CENTER, 12); } });
+  </script>
+</body>
+</html>
