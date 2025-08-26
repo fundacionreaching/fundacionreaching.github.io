@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+// Reemplace/complete con su lista oficial. He incluido algunos puntos de referencia
+// para que pruebe estilo y transparencia.
+
+
+const DATA_GENERAL = [
+{ nombre:'Ibagué Centro', lat:4.4389, lng:-75.2322, popup:'Ciudad de Ibagué' },
+{ nombre:'Terminal', lat:4.4256, lng:-75.2079 },
+{ nombre:'Aeropuerto Perales', lat:4.4219, lng:-75.1336 }
+];
+
+
+// Corregimientos (ejemplo, agregue todos con sus coordenadas aproximadas)
+const DATA_CORREGIMIENTOS = [
+{ nombre:'Buenos Aires', lat:4.500, lng:-75.280 },
+{ nombre:'Cay', lat:4.480, lng:-75.200 },
+{ nombre:'Tapias', lat:4.600, lng:-75.350 },
+// ... añada aquí el resto
+];
+
+
+// Comunas (ejemplo, use un punto representativo de cada comuna)
+const DATA_COMUNAS = [
+{ nombre:'Comuna 1', lat:4.443, lng:-75.232 },
+{ nombre:'Comuna 2', lat:4.444, lng:-75.220 },
+{ nombre:'Comuna 3', lat:4.433, lng:-75.228 },
+// ... continúe con las demás comunas
+];
+
+
+// ====== CAPAS ======
+const LYR_GENERAL = groupFrom(DATA_GENERAL, { color: getComputedStyle(document.documentElement).getPropertyValue('--green').trim() });
+const LYR_CORREG = groupFrom(DATA_CORREGIMIENTOS, { color: getComputedStyle(document.documentElement).getPropertyValue('--blue').trim(), radius:22 });
+const LYR_COMUNAS = groupFrom(DATA_COMUNAS, { color: getComputedStyle(document.documentElement).getPropertyValue('--amber').trim(), radius:18 });
+
+
+const layers = { general: LYR_GENERAL, corregimientos: LYR_CORREG, comunas: LYR_COMUNAS };
+let current = 'general';
+layers[current].addTo(map);
+map.fitBounds(layers[current].getBounds().pad(0.2));
+
+
+function switchView(view){
+if(view === current) return;
+if(layers[current]) map.removeLayer(layers[current]);
+layers[view].addTo(map);
+current = view;
+try{ map.fitBounds(layers[current].getBounds().pad(0.2)); }catch(e){ map.setView(CENTER, 12); }
+// Actualizar pestañas activas
+document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+document.querySelector(`.tabs button[data-view="${view}"]`).classList.add('active');
+}
+
+
+// ====== EVENTOS UI ======
+tabs.forEach(b=> b.addEventListener('click', (ev)=> switchView(ev.currentTarget.dataset.view)) );
+fontCtl.addEventListener('change', ()=>{
+// Forzar redibujo cambiando de capa rápida
+switchView(current);
+});
+alphaCtl.addEventListener('input', ()=>{
+// Reaplicar estilo de opacidad a los círculos
+const alpha = parseFloat(alphaCtl.value);
+layers[current].eachLayer(l=>{
+if(l.setStyle){ l.setStyle({ fillOpacity: alpha }); }
+});
+});
+fitBtn.addEventListener('click', ()=>{
+try{ map.fitBounds(layers[current].getBounds().pad(0.2)); }catch(e){ map.setView(CENTER, 12); }
+});
+
+
+// ====== OPCIONAL: Cargar datos externos (CSV/JSON) ======
+// Si prefiere mantener los datos aparte, puede cargar un JSON con fetch y reemplazar los arrays
+// fetch('comunas.json').then(r=>r.json()).then(data=>{ /* DATA_COMUNAS = data; ... */ })
+</script>
+</body>
+</html>
