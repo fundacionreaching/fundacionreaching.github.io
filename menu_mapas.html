@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Fundación Reaching — Menú de Mapas Interactivos</title>
+  <meta name="description" content="Listado y vista previa de los mapas interactivos de la Fundación Reaching. Permite copiar el iframe de inserción."/>
+  <style>
+    :root{
+      --bg:#0b1223; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --border:#1f2937; --hover:#0d1a33;
+      --blue:#3b82f6; --amber:#f59e0b; --rose:#f43f5e; --green:#22c55e;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial; background:radial-gradient(1200px 600px at 20% 0%, #0b1225 0%, var(--bg) 50%, #0a0f1e 100%); color:var(--text)}
+    header{display:flex; gap:16px; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); background:rgba(15,23,42,.8); position:sticky; top:0; z-index:20}
+    h1{margin:0; font-size:clamp(18px,2.4vw,28px)}
+    .wrap{max-width:1200px; margin:0 auto; padding:18px}
+    .layout{display:grid; grid-template-columns: 1.1fr .9fr; gap:16px}
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} }
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00)); border:1px solid var(--border); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.25); overflow:hidden}
+    .card h2{margin:0; font-size:18px}
+    .controls{display:flex; flex-wrap:wrap; gap:8px; padding:12px; align-items:center; background:rgba(17,24,39,.6); border-bottom:1px solid var(--border)}
+    .controls input,.controls select,.controls button{background:#0b1223; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:14px}
+    .controls input[type="search"]{flex:1 1 220px}
+    .list{display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; padding:12px}
+    @media (max-width:720px){ .list{grid-template-columns:1fr} }
+    .item{display:flex; gap:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:rgba(2,6,23,.55)}
+    .item:hover{background:var(--hover)}
+    .item .meta{flex:1}
+    .item .title{font-weight:700; margin:0 0 4px; font-size:15px}
+    .item .desc{color:var(--muted); font-size:12px; margin:0 0 8px}
+    .tags{display:flex; gap:6px; flex-wrap:wrap}
+    .tag{font-size:11px; color:#cbd5e1; border:1px solid var(--border); padding:4px 8px; border-radius:999px}
+    .actions{display:flex; gap:8px; align-items:center}
+    .actions button, .actions a{cursor:pointer; text-decoration:none}
+    .actions .primary{background:var(--accent); color:#0b1223; border-color:#16a34a; font-weight:800}
+    .actions .ghost{background:transparent}
+    /* Panel de vista previa */
+    .preview{display:flex; flex-direction:column; gap:0}
+    .preview .head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); background:rgba(17,24,39,.7)}
+    .preview .head h3{margin:0; font-size:16px}
+    iframe{width:100%; height:60vh; border:0; display:block; background:#0a1220}
+    .subtools{display:flex; flex-wrap:wrap; gap:8px; padding:10px 12px; border-top:1px solid var(--border); background:rgba(2,6,23,.55); align-items:center}
+    .subtools label{font-size:12px; color:var(--muted)}
+    .code{padding:10px 12px; border-top:1px dashed var(--border); background:rgba(2,6,23,.55)}
+    .code pre{margin:0; white-space:pre-wrap; word-break:break-all; font-size:12px; color:#cbd5e1}
+    .badge{font-size:11px; color:#9ca3af; border:1px solid var(--border); padding:4px 8px; border-radius:999px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Menú de Mapas Interactivos — Fundación Reaching</h1>
+    <span class="badge">Versión inicial</span>
+  </header>
+
+  <main class="wrap layout">
+    <!-- LISTA -->
+    <section class="card" aria-label="Listado de mapas disponibles">
+      <div class="controls">
+        <input type="search" id="q" placeholder="Buscar: Ibagué, comunas, Tolima…"/>
+        <select id="filter">
+          <option value="">Todas las categorías</option>
+          <option value="Departamento">Departamento</option>
+          <option value="Ciudad">Ciudad</option>
+          <option value="Comunas">Comunas</option>
+          <option value="Corregimientos">Corregimientos</option>
+        </select>
+        <button id="clear">Limpiar</button>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+
+    <!-- PREVIEW -->
+    <section class="card preview" aria-label="Vista previa del mapa seleccionado">
+      <div class="head">
+        <h3 id="pv-title">Seleccione un mapa</h3>
+        <div class="actions">
+          <a id="openTab" class="primary" href="#" target="_blank" rel="noopener">Abrir en pestaña</a>
+          <button id="copyIframe">Copiar iframe</button>
+        </div>
+      </div>
+      <iframe id="pv-frame" title="Vista previa mapa" src="about:blank" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="fullscreen"></iframe>
+      <div class="subtools" id="paramTools" hidden>
+        <label>Vista
+          <select id="viewCtl">
+            <option value="general">General</option>
+            <option value="corregimientos">Corregimientos</option>
+            <option value="comunas">Comunas</option>
+          </select>
+        </label>
+        <label>Letra <select id="fontCtl">
+          <option>20</option><option>24</option><option selected>28</option><option>32</option><option>36</option>
+        </select></label>
+        <label>Transparencia <input id="alphaCtl" type="range" min="0.2" max="0.9" step="0.05" value="0.45"/></label>
+        <button id="applyParams">Aplicar</button>
+      </div>
+      <div class="code"><pre id="code">&lt;!-- Seleccione un mapa para obtener el iframe --&gt;</pre></div>
+    </section>
+  </main>
+
+  <script>
+    // ====== Catálogo de mapas ======
+    const MAPS = [
+      {
+        id:'tolima',
+        title:'Tolima — Mapa liviano',
+        desc:'Vista liviana del departamento del Tolima desde GitHub Pages.',
+        url:'https://fundacionreaching.github.io/departamento_liviano.html',
+        tags:['Departamento','Tolima'],
+        supportsParams:false
+      },
+      {
+        id:'ibague-general',
+        title:'Ibagué — General',
+        desc:'Vista general de la ciudad con etiquetas grandes y puntos semitransparentes.',
+        base:'https://fundacionreaching.github.io/ibague.html',
+        params:{view:'general', font:28, alpha:0.45},
+        tags:['Ciudad','Ibagué'],
+        supportsParams:true
+      },
+      {
+        id:'ibague-correg',
+        title:'Ibagué — Corregimientos',
+        desc:'División rural por corregimientos de Ibagué.',
+        base:'https://fundacionreaching.github.io/ibague.html',
+        params:{view:'corregimientos', font:28, alpha:0.45},
+        tags:['Corregimientos','Ibagué'],
+        supportsParams:true
+      },
+      {
+        id:'ibague-comunas',
+        title:'Ibagué — Comunas',
+        desc:'División urbana por comunas de Ibagué.',
+        base:'https://fundacionreaching.github.io/ibague.html',
+        params:{view:'comunas', font:28, alpha:0.45},
+        tags:['Comunas','Ibagué'],
+        supportsParams:true
+      }
+    ];
+
+    // ====== Utilidades ======
+    const $ = (s,el=document)=> el.querySelector(s);
+    const $$ = (s,el=document)=> Array.from(el.querySelectorAll(s));
+
+    function buildUrl(item){
+      if(item.supportsParams){
+        const u = new URL(item.base);
+        const p = item.params || { view:'general', font:28, alpha:0.45 };
+        u.searchParams.set('view', p.view);
+        u.searchParams.set('font', String(p.font));
+        u.searchParams.set('alpha', String(p.alpha));
+        return u.toString();
+      }
+      return item.url;
+    }
+
+    function iframeCode(url){
+      return `<iframe src="${url}" width="100%" height="640" style="border:none;" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="fullscreen"></iframe>`;
+    }
+
+    // ====== Render listado ======
+    const listEl = $('#list');
+    const qEl = $('#q');
+    const filterEl = $('#filter');
+    const clearBtn = $('#clear');
+
+    function renderList(){
+      const q = qEl.value.trim().toLowerCase();
+      const cat = filterEl.value;
+      listEl.innerHTML = '';
+      MAPS.filter(m => {
+        const text = (m.title + ' ' + (m.desc||'') + ' ' + m.tags.join(' ')).toLowerCase();
+        const okQ = !q || text.includes(q);
+        const okC = !cat || m.tags.includes(cat);
+        return okQ && okC;
+      }).forEach(m => listEl.appendChild(renderItem(m)));
+    }
+
+    function renderItem(m){
+      const el = document.createElement('article');
+      el.className = 'item';
+      const url = buildUrl(m);
+      el.innerHTML = `
+        <div class="meta">
+          <h3 class="title">${m.title}</h3>
+          <p class="desc">${m.desc||''}</p>
+          <div class="tags">${m.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        </div>
+        <div class="actions">
+          <a class="primary" href="${url}" target="_blank" rel="noopener">Abrir</a>
+          <button class="ghost" data-id="${m.id}">Vista previa</button>
+          <button class="ghost" data-copy="${m.id}">Copiar iframe</button>
+        </div>`;
+      // Eventos
+      el.querySelector('[data-id]')?.addEventListener('click', ()=> selectMap(m));
+      el.querySelector('[data-copy]')?.addEventListener('click', ()=> copyCode(iframeCode(url)));
+      return el;
+    }
+
+    // ====== Preview ======
+    const pvTitle = $('#pv-title');
+    const pvFrame = $('#pv-frame');
+    const openTab = $('#openTab');
+    const codeEl = $('#code');
+    const copyBtn = $('#copyIframe');
+    const paramTools = $('#paramTools');
+    const viewCtl = $('#viewCtl');
+    const fontCtl = $('#fontCtl');
+    const alphaCtl = $('#alphaCtl');
+    const applyParams = $('#applyParams');
+
+    let current = null;
+
+    function selectMap(m){
+      current = JSON.parse(JSON.stringify(m)); // clone shallow
+      pvTitle.textContent = m.title;
+      if(m.supportsParams){
+        // mostrar controles
+        paramTools.hidden = false;
+        viewCtl.value = m.params.view;
+        fontCtl.value = String(m.params.font);
+        alphaCtl.value = String(m.params.alpha);
+      }else{
+        paramTools.hidden = true;
+      }
+      const url = buildUrl(current);
+      pvFrame.src = url;
+      openTab.href = url;
+      codeEl.textContent = iframeCode(url);
+    }
+
+    function applyParamChanges(){
+      if(!current) return;
+      if(current.supportsParams){
+        current.params.view = viewCtl.value;
+        current.params.font = parseInt(fontCtl.value,10);
+        current.params.alpha = parseFloat(alphaCtl.value);
+      }
+      const url = buildUrl(current);
+      pvFrame.src = url;
+      openTab.href = url;
+      codeEl.textContent = iframeCode(url);
+    }
+
+    function copyCode(text){
+      navigator.clipboard.writeText(text).then(()=>{
+        copyBtn.textContent = '¡Copiado!';
+        setTimeout(()=> copyBtn.textContent = 'Copiar iframe', 1200);
+      }).catch(()=>{
+        alert('No se pudo copiar automáticamente. Seleccione y copie manualmente.');
+      });
+    }
+
+    // Eventos globales
+    qEl.addEventListener('input', renderList);
+    filterEl.addEventListener('change', renderList);
+    clearBtn.addEventListener('click', ()=>{ qEl.value=''; filterEl.value=''; renderList(); });
+    copyBtn.addEventListener('click', ()=>{ if(codeEl.textContent.includes('<iframe')) copyCode(codeEl.textContent); });
+    applyParams.addEventListener('click', applyParamChanges);
+
+    // Inicio
+    renderList();
+  </script>
+</body>
+</html>
