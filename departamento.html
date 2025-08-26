@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapa del Departamento del Tolima</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([4.4381, -75.2], 8);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+  
+     const municipios = [
+  { name: "Ibagué", poblacion: 544132, centro: [4.4381, -75.2329] },
+  { name: "El Espinal", poblacion: 75257, centro: [4.1746, -74.8843] },
+  { name: "Chaparral", poblacion: 51388, centro: [3.7218, -75.4841] },
+  { name: "Honda", poblacion: 26822, centro: [5.2075, -74.7361] },
+  { name: "Mariquita", poblacion: 38618, centro: [5.2012, -74.8915] },
+  { name: "Melgar", poblacion: 34819, centro: [4.2044, -74.6406] },
+  { name: "Purificación", poblacion: 28424, centro: [3.8592, -74.9332] },
+  { name: "Guamo", poblacion: 31978, centro: [4.0286, -74.9745] },
+  { name: "Carmen de Apicalá", poblacion: 12761, centro: [4.1336, -74.7203] },
+  { name: "Natagaima", poblacion: 23368, centro: [3.613, -75.036] },
+  { name: "Coyaima", poblacion: 26138, centro: [3.746, -75.181] },
+  { name: "Rovira", poblacion: 18345, centro: [4.2319, -75.2921] },
+  { name: "Flandes", poblacion: 28435, centro: [4.2892, -74.8089] },
+  { name: "Líbano", poblacion: 38632, centro: [4.9222, -75.0621] },
+  { name: "Cajamarca", poblacion: 22574, centro: [4.4371, -75.4335] },
+  { name: "Venadillo", poblacion: 20279, centro: [4.6141, -74.9236] },
+  { name: "Lérida", poblacion: 20290, centro: [4.7938, -74.9084] },
+  { name: "Alvarado", poblacion: 8285, centro: [4.5984, -75.0445] },
+  { name: "Piedras", poblacion: 6173, centro: [4.4954, -74.9783] },
+  { name: "Anzoátegui", poblacion: 6310, centro: [4.6301, -75.2095] },
+  { name: "Ambalema", poblacion: 6562, centro: [4.7851, -74.7585] },
+  { name: "Armero", poblacion: 12231, centro: [5.0004, -74.9025] },
+  { name: "Ataco", poblacion: 13000, centro: [3.5939, -75.3864] },
+  { name: "Casabianca", poblacion: 4178, centro: [5.0806, -75.1584] },
+  { name: "Coello", poblacion: 10023, centro: [4.3088, -74.8485] },
+  { name: "Cunday", poblacion: 11352, centro: [4.0509, -74.6893] },
+  { name: "Dolores", poblacion: 5555, centro: [3.5275, -74.9964] },
+  { name: "Espinalito", poblacion: 1800, centro: [4.1762, -74.8851] },
+  { name: "Fresno", poblacion: 28041, centro: [5.1521, -75.0362] },
+  { name: "Herveo", poblacion: 5402, centro: [5.0847, -75.2331] },
+  { name: "Icononzo", poblacion: 10300, centro: [4.1766, -74.5332] },
+  { name: "Murillo", poblacion: 4958, centro: [4.8754, -75.1667] },
+  { name: "Palocabildo", poblacion: 7716, centro: [5.1092, -75.0169] },
+  { name: "Planadas", poblacion: 25123, centro: [3.1922, -75.6453] },
+  { name: "Prado", poblacion: 7513, centro: [3.7923, -74.9342] },
+  { name: "Rioblanco", poblacion: 18052, centro: [3.5396, -75.6932] },
+  { name: "Saldaña", poblacion: 16028, centro: [3.9333, -75.0242] },
+  { name: "San Antonio", poblacion: 12315, centro: [3.8931, -75.4895] },
+  { name: "San Luis", poblacion: 11790, centro: [4.1004, -75.0953] },
+  { name: "Santa Isabel", poblacion: 5523, centro: [4.7146, -75.0948] },
+  { name: "Suárez", poblacion: 6453, centro: [4.0588, -74.9631] },
+  { name: "Valle de San Juan", poblacion: 5892, centro: [4.3487, -75.1228] },
+  { name: "Villahermosa", poblacion: 11140, centro: [5.0118, -75.2162] },
+  { name: "Villarrica", poblacion: 5633, centro: [3.9187, -74.4994] },
+  { name: "Alpujarra", poblacion: 3871, centro: [3.3818, -74.9354] },
+  { name: "Algeciras", poblacion: 23901, centro: [2.525, -75.317] },
+  { name: "Ortega", poblacion: 33628, centro: [3.9462, -75.2294] }
+];
+    municipios.forEach(m => {
+      L.circleMarker(m.centro, {
+        radius: 6,
+        fillColor: '#d62828',
+        color: '#000',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+      }).bindPopup(`<strong>${m.name}</strong><br>Población: ${m.poblacion.toLocaleString()}`).addTo(map);
+    });
+  </script>
+</body>
+</html>
