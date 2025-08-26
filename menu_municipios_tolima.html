@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Municipios del Tolima — Menú y Generador</title>
+  <meta name="description" content="Listado de los 47 municipios del Tolima con generador de Google Maps (embed), vista previa e iframes listos para copiar. Incluye filtro, zoom y opción Satélite." />
+  <style>
+    :root{ --bg:#0b1223; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --border:#1f2937; --hover:#13223a }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;background:#0b1223;color:var(--text)}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(15,23,42,.92);position:sticky;top:0;z-index:20}
+    h1{margin:0;font-size:clamp(18px,2.5vw,26px)}
+    a.btn{color:#e5e7eb;text-decoration:none;border:1px solid var(--border);background:#0b1223;padding:6px 10px;border-radius:999px}
+    a.btn:hover{background:var(--hover)}
+    .wrap{max-width:1260px;margin:0 auto;padding:18px}
+    .grid{display:grid;grid-template-columns: 420px 1fr; gap:16px}
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} }
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00));border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden}
+    .card h2{margin:0;font-size:16px;padding:10px 12px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)}
+    .body{padding:12px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .field{display:flex;flex-direction:column;gap:4px}
+    label{font-size:12px;color:var(--muted)}
+    input[type="text"],select,input[type="number"],button{background:#0b1223;color:#e5e7eb;border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+    button{cursor:pointer}
+    .pill{border:1px solid var(--border);background:#0b1223;color:#e5e7eb;padding:6px 10px;border-radius:999px}
+    .list{max-height:65vh;overflow:auto;border:1px solid var(--border);border-radius:12px}
+    .item{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #101a2f}
+    .item:last-child{border-bottom:0}
+    .item:hover{background:#0e1931}
+    .name{font-weight:700}
+    iframe{width:100%;height:60vh;border:0;background:#0a1220;border-radius:12px}
+    .code{background:rgba(2,6,23,.55);color:#cbd5e1;border:1px dashed var(--border);border-radius:12px;padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-all}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Municipios del Tolima — Menú y Generador</h1>
+    <div class="row">
+      <a class="btn" href="./menu_mapas.html">⟵ Volver al Menú</a>
+      <a class="btn" href="./mapa_tolima.html?auto=1&fmin=16&fmax=34&alpha=0.55&intensity=1.35&radius=12" target="_blank">Abrir Tolima Interactivo</a>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <!-- Panel izquierdo: Filtros y lista -->
+    <section class="card">
+      <h2>Listado (47 municipios)</h2>
+      <div class="body">
+        <div class="row" style="margin-bottom:10px">
+          <div class="field" style="flex:1 1 auto">
+            <label for="filtro">Filtrar</label>
+            <input id="filtro" type="text" placeholder="Escriba para filtrar… (ej.: Ibagué, Espinal, Melgar)" />
+          </div>
+          <div class="field" style="width:110px">
+            <label for="zoom">Zoom</label>
+            <select id="zoom">
+              <option value="9">9 (Depto)</option>
+              <option value="10">10</option>
+              <option value="11" selected>11</option>
+              <option value="12">12</option>
+              <option value="13">13 (Urbano)</option>
+            </select>
+          </div>
+          <div class="field" style="width:140px">
+            <label for="tipo">Tipo</label>
+            <select id="tipo">
+              <option value="">Mapa</option>
+              <option value="k" selected>Satélite</option>
+            </select>
+          </div>
+          <div class="field" style="width:140px">
+            <label for="idioma">Idioma</label>
+            <select id="idioma">
+              <option value="es" selected>Español</option>
+              <option value="en">English</option>
+              <option value="pt">Português</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="list" id="lista"></div>
+      </div>
+    </section>
+
+    <!-- Panel derecho: Vista previa y iframe -->
+    <section class="card">
+      <h2>Vista previa + Iframe</h2>
+      <div class="body">
+        <iframe id="pv" title="Vista previa" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <div class="row" style="margin-top:10px">
+          <button id="copiarIframe">Copiar iframe</button>
+          <a id="abrirGoogle" class="btn" target="_blank" rel="noopener">Abrir en pestaña</a>
+        </div>
+        <div id="salida" class="code" style="margin-top:10px"></div>
+        <p class="pill" id="estado">Seleccione un municipio…</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const MUNICIPIOS = [
+      'Ibagué','Alpujarra','Alvarado','Ambalema','Anzoátegui','Armero (Guayabal)','Ataco','Cajamarca','Carmen de Apicalá','Casabianca','Chaparral','Coello','Coyaima','Cunday','Dolores','Espinal','Falan','Flandes','Fresno','Guamo','Herveo','Honda','Icononzo','Lérida','Líbano','Mariquita','Melgar','Murillo','Natagaima','Ortega','Palocabildo','Piedras','Planadas','Prado','Purificación','Rioblanco','Roncesvalles','Rovira','Saldaña','San Antonio','San Luis','Santa Isabel','Suárez','Valle de San Juan','Venadillo','Villahermosa','Villarrica'
+    ];
+
+    const $ = (s,el=document)=> el.querySelector(s);
+    const lista = $('#lista');
+    const filtro = $('#filtro');
+    const zoom = $('#zoom');
+    const tipo = $('#tipo');
+    const idioma = $('#idioma');
+    const pv = $('#pv');
+    const salida = $('#salida');
+    const abrirGoogle = $('#abrirGoogle');
+    const estado = $('#estado');
+
+    function buildURL(nombre){
+      const base = 'https://www.google.com/maps';
+      const p = new URLSearchParams();
+      p.set('q', `${nombre}, Tolima, Colombia`);
+      p.set('z', zoom.value);
+      if(tipo.value) p.set('t', tipo.value);
+      p.set('hl', idioma.value);
+      p.set('output', 'embed');
+      return `${base}?${p.toString()}`;
+    }
+
+    function buildIframe(url){
+      return `<iframe\n  src="${url}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allowfullscreen>\n</iframe>`;
+    }
+
+    function renderList(){
+      lista.innerHTML = '';
+      const term = (filtro.value||'').toLowerCase();
+      const data = MUNICIPIOS.filter(n => n.toLowerCase().includes(term));
+      data.forEach(nombre => {
+        const row = document.createElement('div');
+        row.className = 'item';
+        const left = document.createElement('div');
+        left.className = 'name';
+        left.textContent = nombre;
+        const right = document.createElement('div');
+        right.className = 'row';
+        const btnPrev = document.createElement('button'); btnPrev.textContent = 'Previsualizar';
+        const btnCopiar = document.createElement('button'); btnCopiar.textContent = 'Copiar iframe';
+        const btnAbrir = document.createElement('button'); btnAbrir.textContent = 'Abrir Google';
+        btnPrev.addEventListener('click', ()=> selectMunicipio(nombre));
+        btnCopiar.addEventListener('click', ()=> { const url = buildURL(nombre); navigator.clipboard.writeText(buildIframe(url)); estado.textContent = `Iframe copiado: ${nombre}`; });
+        btnAbrir.addEventListener('click', ()=> { const url = buildURL(nombre).replace('output=embed',''); window.open(url, '_blank'); });
+        right.append(btnPrev, btnCopiar, btnAbrir);
+        row.append(left,right);
+        lista.append(row);
+      });
+    }
+
+    function selectMunicipio(nombre){
+      const url = buildURL(nombre);
+      pv.src = url;
+      salida.textContent = buildIframe(url);
+      abrirGoogle.href = url.replace('output=embed','');
+      estado.textContent = `Seleccionado: ${nombre}`;
+    }
+
+    filtro.addEventListener('input', renderList);
+    [zoom, tipo, idioma].forEach(el => el.addEventListener('change', ()=>{
+      renderList();
+      // refrescar vista previa si hay algo seleccionado actualmente
+      const txt = estado.textContent||''; const m = txt.replace('Seleccionado:','').trim();
+      if(MUNICIPIOS.includes(m)) selectMunicipio(m);
+    }));
+    $('#copiarIframe').addEventListener('click', ()=> navigator.clipboard.writeText(salida.textContent||'') );
+
+    // Inicial
+    renderList();
+  </script>
+</body>
+</html>
