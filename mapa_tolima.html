@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ibagué – v2 (Comunas y Corregimientos completos)</title>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root{ --label-font-size: 24px; --badge-alpha: .55 }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; background:#0b1020; color:#e8eef7; }
+    #app { display:flex; flex-direction:column; height:100%; }
+    header { padding: 10px 12px; background: #121a33; border-bottom: 1px solid #1f2a4d; display:flex; gap:12px; align-items:center; flex-wrap: wrap; position:sticky; top:0; z-index:10 }
+    header h1 { font-size: 18px; margin:0; font-weight:700; letter-spacing:.2px; }
+    header .pill { background: #0f1730; border:1px solid #27335f; padding:8px 10px; border-radius: 14px; display:flex; gap:8px; align-items:center; }
+    label { font-size: 13px; color:#b6c3e4; }
+    select, input[type="range"], input[type="text"]{ background:#0a1228; color:#e8eef7; border:1px solid #283562; border-radius:10px; padding:6px 8px; }
+    #map { flex:1; width:100%; }
+    .leaflet-container { background: #081022; }
+
+    /* Etiquetas grandes y legibles */
+    .marker-label { font-size: var(--label-font-size); font-weight: 800; letter-spacing: .3px; color: #fff; text-shadow: 0 0 4px rgba(0,0,0,.7), 0 1px 8px rgba(0,0,0,.9); pointer-events: none; white-space: nowrap; }
+    .marker-badge { backdrop-filter: blur(2px); background: rgba(2,10,25,var(--badge-alpha)); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 6px; font-weight:700; display:inline-block; margin-left: 6px; }
+    .legend { position:absolute; z-index:1000; bottom:14px; left:14px; background:#0f1730; border:1px solid #27335f; border-radius:12px; padding:10px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.35); font-size:13px; color:#c9d6f3; }
+    .legend .row{ display:flex; align-items:center; gap:8px; margin:6px 0; }
+    .dot{ width:12px; height:12px; border-radius:50%; display:inline-block; border:1px solid rgba(255,255,255,.4); }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🗺️ Ibagué – Comunas y Corregimientos (completo)</h1>
+    <div class="pill"><label for="viewSel">Capa:</label>
+      <select id="viewSel">
+        <option value="general">General</option>
+        <option value="corregimientos">Corregimientos (17)</option>
+        <option value="comunas" selected>Comunas (13)</option>
+      </select>
+    </div>
+    <div class="pill"><label for="fontSel">Tamaño letra:</label>
+      <input id="fontSel" type="range" min="16" max="48" step="1" value="24" />
+    </div>
+    <div class="pill"><label for="alphaSel">Transparencia punto:</label>
+      <input id="alphaSel" type="range" min="0.15" max="1" step="0.05" value="0.55" />
+    </div>
+    <div class="pill" style="flex:1 1 220px;">
+      <label for="searchBox">Buscar nombre…</label>
+      <input id="searchBox" type="text" placeholder="Centro, Jordán, Juntas…" style="width: 100%;" />
+    </div>
+  </header>
+  <div id="map"></div>
+</div>
+
+<script>
+  // Soporta parámetros: ?view=(general|comunas|corregimientos)&font=28&alpha=0.45&q=Juntas
+  const params = new URLSearchParams(location.search);
+  const initialView = params.get('view') || 'comunas';
+  const initialFont = parseFloat(params.get('font')) || 24;
+  const initialAlpha = Math.min(1, Math.max(0.15, parseFloat(params.get('alpha')) || 0.55));
+  const initialQuery = params.get('q') || '';
+
+  // Datos – General (hitos de referencia)
+  const general = [
+    { nombre:'Ibagué Centro', lat:4.4389, lng:-75.2322, popup:'Ciudad de Ibagué' },
+    { nombre:'Terminal', lat:4.4256, lng:-75.2079 },
+    { nombre:'Aeropuerto Perales', lat:4.4219, lng:-75.1336 }
+  ];
+
+  // Datos – Comunas (13)
+  const comunas = [
+    { id: 1, nombre: 'Centro',               lat: 4.44341,  lng: -75.24116, pob: 31009 },
+    { id: 2, nombre: 'Calambeo',             lat: 4.45072,  lng: -75.24134, pob: 41219 },
+    { id: 3, nombre: 'San Simón',            lat: 4.44513,  lng: -75.22398, pob: 24603 },
+    { id: 4, nombre: 'Piedrapintada',        lat: 4.44132,  lng: -75.21016, pob: 44077 },
+    { id: 5, nombre: 'Jordán',               lat: 4.43874,  lng: -75.19411, pob: 30549 },
+    { id: 6, nombre: 'Vergel',               lat: 4.44914,  lng: -75.19169, pob: 50477 },
+    { id: 7, nombre: 'Salado',               lat: 4.44977,  lng: -75.14573, pob: 44219 },
+    { id: 8, nombre: 'Simón Bolívar',        lat: 4.43495,  lng: -75.17689, pob: 77421 },
+    { id: 9, nombre: 'Picaleña - Mirolindo', lat: 4.42996,  lng: -75.19297, pob: 64235 },
+    { id:10, nombre: 'Estadio',              lat: 4.42950,  lng: -75.21830, pob: 45149 },
+    { id:11, nombre: 'Ferias',               lat: 4.42776,  lng: -75.22658, pob: 31383 },
+    { id:12, nombre: 'Ricaurte',             lat: 4.43098,  lng: -75.24165, pob: 43130 },
+    { id:13, nombre: 'Boquerón',             lat: 4.40778,  lng: -75.26500, pob: 16086 }
+  ];
+
+  // Datos – Corregimientos (17)
+  const corregimientos = [
+    { id: 1,  nombre: 'Dantas',               lat: 4.34861,  lng: -75.39110 },
+    { id: 2,  nombre: 'Laureles',             lat: 4.37026,  lng: -75.36415 },
+    { id: 3,  nombre: 'Coello - Cocora',      lat: 4.40053,  lng: -75.29048 },
+    { id: 4,  nombre: 'Gamboa',               lat: 4.41106,  lng: -75.33662 },
+    { id: 5,  nombre: 'Tapias',               lat: 4.45583,  lng: -75.35830 },
+    { id: 6,  nombre: 'Toche',                lat: 4.53332,  lng: -75.41668 },
+    { id: 7,  nombre: 'Juntas',               lat: 4.55526,  lng: -75.32215 },
+    { id: 8,  nombre: 'Villa Restrepo',       lat: 4.52434,  lng: -75.31086 },
+    { id: 9,  nombre: 'Cay',                  lat: 4.47358,  lng: -75.25473 },
+    { id: 10, nombre: 'Calambeo (rural)',     lat: 4.46050,  lng: -75.25200 },
+    { id: 11, nombre: 'San Juan de la China', lat: 4.53333,  lng: -75.20000 },
+    { id: 12, nombre: 'San Bernardo',         lat: 4.49626,  lng: -75.07548 },
+    { id: 13, nombre: 'El Salado (rural)',    lat: 4.43100,  lng: -75.12000 },
+    { id: 14, nombre: 'Buenos Aires',         lat: 4.33035,  lng: -75.08216 },
+    { id: 15, nombre: 'Carmen de Bulira',     lat: 4.30500,  lng: -75.40250 },
+    { id: 16, nombre: 'El Totumo',            lat: 4.37805,  lng: -75.18305 },
+    { id: 17, nombre: 'La Florida (rural)',   lat: 4.44150,  lng: -75.19500 }
+  ];
+
+  // Inicializar mapa
+  const map = L.map('map', { zoomControl: true, minZoom: 10, maxZoom: 18 });
+  const ibagueCenter = [4.4447, -75.2432];
+  map.setView(ibagueCenter, 12);
+
+  // Base tiles con fallback
+  const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
+  const fb = ['https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png','https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png'];
+  let idx = 0; tiles.on('tileerror', ()=>{ if(idx<fb.length){ try{ tiles.setUrl(fb[idx++]); }catch(e){} } });
+
+  // Estilos
+  let alpha = initialAlpha;
+  let labelFont = initialFont;
+  document.documentElement.style.setProperty('--label-font-size', labelFont + 'px');
+  document.documentElement.style.setProperty('--badge-alpha', alpha);
+  const colorComuna = '#ffd166';
+  const colorCorreg = '#06d6a0';
+  const colorGeneral = '#60a5fa';
+
+  function makeCircle(lat, lng, color){
+    return L.circleMarker([lat,lng], { radius: 9, color:'rgba(255,255,255,.35)', weight:1, fillColor:color, fillOpacity:alpha });
+  }
+  function addLabel(marker, html){ marker.bindTooltip(html,{ permanent:true, direction:'top', className:'marker-label', offset:[0,-6] }); }
+  function comunaHTML(c){ const pob=c.pob?`<span class="marker-badge">Pobl: ${Number(c.pob).toLocaleString('es-CO')}</span>`:''; return `<span>${c.id}. ${c.nombre}</span> ${pob}`; }
+  function corregHTML(c){ return `<span>${c.id}. ${c.nombre}</span>`; }
+
+  // Capas
+  const capaComunas = L.layerGroup();
+  comunas.forEach(c => { const m = makeCircle(c.lat, c.lng, colorComuna).addTo(capaComunas); addLabel(m, comunaHTML(c)); m.bindPopup(`<b>Comuna ${c.id}: ${c.nombre}</b>${c.pob?`<br/>Población ref.: ${Number(c.pob).toLocaleString('es-CO')}`:''}`); });
+
+  const capaCorregs = L.layerGroup();
+  corregimientos.forEach(c => { const m = makeCircle(c.lat, c.lng, colorCorreg).addTo(capaCorregs); addLabel(m, corregHTML(c)); m.bindPopup(`<b>Corregimiento ${c.id}: ${c.nombre}</b>`); });
+
+  const capaGeneral = L.layerGroup();
+  general.forEach(g => { const m = makeCircle(g.lat, g.lng, colorGeneral).addTo(capaGeneral); addLabel(m, `<span>${g.nombre}</span>`); if(g.popup){ m.bindPopup(`<b>${g.nombre}</b><br/>${g.popup}`); } });
+
+  function showLayer(which){
+    map.eachLayer(l=>{ if(l!==tiles) map.removeLayer(l); });
+    if(which==='corregimientos') capaCorregs.addTo(map);
+    else if(which==='general') capaGeneral.addTo(map);
+    else capaComunas.addTo(map);
+    try{
+      const g = which==='corregimientos'?capaCorregs : which==='general'?capaGeneral : capaComunas;
+      map.fitBounds(g.getBounds().pad(0.2));
+    }catch(e){ map.setView(ibagueCenter, 12); }
+  }
+
+  // Controles UI
+  const viewSel = document.getElementById('viewSel');
+  const fontSel = document.getElementById('fontSel');
+  const alphaSel = document.getElementById('alphaSel');
+  const searchBox = document.getElementById('searchBox');
+
+  viewSel.value = initialView;
+  fontSel.value = labelFont;
+  alphaSel.value = alpha.toFixed(2);
+
+  showLayer(initialView);
+
+  viewSel.addEventListener('change', e => {
+    const v = e.target.value; showLayer(v);
+    const url = new URL(location); url.searchParams.set('view', v); history.replaceState({}, '', url);
+  });
+  fontSel.addEventListener('input', e => {
+    labelFont = parseInt(e.target.value, 10);
+    document.documentElement.style.setProperty('--label-font-size', labelFont + 'px');
+    const url = new URL(location); url.searchParams.set('font', labelFont); history.replaceState({}, '', url);
+  });
+  alphaSel.addEventListener('input', e => {
+    alpha = parseFloat(e.target.value); document.documentElement.style.setProperty('--badge-alpha', alpha);
+    [capaComunas, capaCorregs, capaGeneral].forEach(g=> g.eachLayer(l=> l.setStyle && l.setStyle({ fillOpacity: alpha })) );
+    const url = new URL(location); url.searchParams.set('alpha', alpha.toFixed(2)); history.replaceState({}, '', url);
+  });
+  searchBox.addEventListener('keydown', e => {
+    if(e.key !== 'Enter') return;
+    const q = e.target.value.trim().toLowerCase(); if(!q) return;
+    const ds = viewSel.value==='corregimientos' ? corregimientos : (viewSel.value==='general'? general : comunas);
+    const hit = ds.find(x => (`${x.id?x.id+'. ':''}${x.nombre}`.toLowerCase()).includes(q));
+    if(hit && typeof hit.lat==='number'){ map.flyTo([hit.lat, hit.lng], 14, { duration: .8 }); }
+  });
+
+  // Añadir leyenda
+  const legend = L.control({position:'bottomleft'});
+  legend.onAdd = function(){
+    const div = L.DomUtil.create('div','legend');
+    div.innerHTML = `
+      <div class="row"><span class="dot" style="background:${'#ffd166'}"></span> Comunas</div>
+      <div class="row"><span class="dot" style="background:${'#06d6a0'}"></span> Corregimientos</div>
+      <div class="row"><span class="dot" style="background:${'#60a5fa'}"></span> General</div>
+      <div class="row"><span class="dot" style="background:rgba(2,10,25,var(--badge-alpha)); width:18px; height:10px; border-radius:4px"></span> Fondo etiqueta (transparente)</div>
+    `;
+    return div;
+  };
+  legend.addTo(map);
+
+  // Si llega ?q=Nombre, aplicar búsqueda automática
+  if(initialQuery){
+    searchBox.value = initialQuery;
+    const ev = new KeyboardEvent('keydown', { key:'Enter' });
+    searchBox.dispatchEvent(ev);
+  }
+</script>
+</body>
+</html>
