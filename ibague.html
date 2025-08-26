@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapa de Ibagué</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([4.4381, -75.2329], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const zonas = [
+      { name: "Comuna 1", tipo: "Comuna", centro: [4.4490, -75.2475] },
+      { name: "Comuna 2", tipo: "Comuna", centro: [4.4395, -75.2401] },
+      { name: "Comuna 3", tipo: "Comuna", centro: [4.4271, -75.2380] },
+      { name: "Comuna 4", tipo: "Comuna", centro: [4.4187, -75.2443] },
+      { name: "Comuna 5", tipo: "Comuna", centro: [4.4362, -75.2570] },
+      { name: "Comuna 6", tipo: "Comuna", centro: [4.4447, -75.2322] },
+      { name: "Comuna 7", tipo: "Comuna", centro: [4.4521, -75.2199] },
+      { name: "Comuna 8", tipo: "Comuna", centro: [4.4333, -75.2145] },
+      { name: "Comuna 9", tipo: "Comuna", centro: [4.4238, -75.2224] },
+      { name: "Comuna 10", tipo: "Comuna", centro: [4.4142, -75.2300] },
+      { name: "Comuna 11", tipo: "Comuna", centro: [4.4310, -75.2705] },
+      { name: "Comuna 12", tipo: "Comuna", centro: [4.4086, -75.2412] },
+      { name: "Comuna 13", tipo: "Comuna", centro: [4.3967, -75.2533] },
+      { name: "Comuna 14", tipo: "Comuna", centro: [4.3861, -75.2650] },
+      { name: "San Bernardo", tipo: "Corregimiento", centro: [4.3325, -75.1039] },
+      { name: "Totumo", tipo: "Corregimiento", centro: [4.3042, -75.0572] },
+      { name: "Tapias", tipo: "Corregimiento", centro: [4.4965, -75.3370] },
+      { name: "Coello Cocora", tipo: "Corregimiento", centro: [4.3198, -75.0791] },
+      { name: "Villa Restrepo", tipo: "Corregimiento", centro: [4.5228, -75.2715] }
+    ];
+
+    zonas.forEach(z => {
+      L.circleMarker(z.centro, {
+        radius: 5,
+        fillColor: z.tipo === "Comuna" ? '#1d3557' : '#e63946',
+        color: '#000',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.9
+      }).bindPopup(`<strong>${z.name}</strong><br>Tipo: ${z.tipo}`).addTo(map);
+    });
+  </script>
+</body>
+</html>
