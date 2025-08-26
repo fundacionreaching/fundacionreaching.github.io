@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+const p=providers[i]; if(tiles){ map.removeLayer(tiles); }
+tiles=L.tileLayer(p.url,Object.assign({pane:'tiles'},p.opts)).addTo(map);
+document.getElementById('provider').textContent=p.name;
+document.getElementById('stTiles').className='dot2 ok';
+document.getElementById('txtTiles').textContent='Tiles OK';
+tiles.on('tileerror',()=>{
+if(providerIdx<providers.length-1){
+providerIdx++; document.getElementById('stTiles').className='dot2 warn'; document.getElementById('txtTiles').textContent='Cambiando tiles…'; setProvider(providerIdx);
+}else{
+document.getElementById('stTiles').className='dot2 err'; document.getElementById('txtTiles').textContent='Tiles FALLARON';
+}
+});
+}
+setProvider(providerIdx);
+
+
+// ===== Datos (Municipios + Hitos) =====
+const MUNICIPIOS=[
+{nombre:'Ibagué',lat:4.4389,lng:-75.2322},{nombre:'Espinal',lat:4.1498,lng:-74.8847},{nombre:'Melgar',lat:4.2047,lng:-74.6400},{nombre:'Honda',lat:5.2086,lng:-74.7350},{nombre:'Líbano',lat:4.9219,lng:-75.0625},{nombre:'Mariquita',lat:5.1982,lng:-74.8923},{nombre:'Chaparral',lat:3.7236,lng:-75.4836},{nombre:'Guamo',lat:4.03,lng:-74.97},{nombre:'Cajamarca',lat:4.445,lng:-75.428},{nombre:'Rovira',lat:4.232,lng:-75.245},{nombre:'Fresno',lat:5.1525,lng:-75.0364},{nombre:'Planadas',lat:3.196,lng:-75.645},{nombre:'Natagaima',lat:3.627,lng:-75.096},{nombre:'Purificación',lat:3.8596,lng:-74.9322},{nombre:'Saldaña',lat:3.93,lng:-75.02},{nombre:'Ortega',lat:3.936,lng:-75.22},{nombre:'San Antonio',lat:3.912,lng:-75.487},{nombre:'Coyaima',lat:3.8,lng:-75.19},{nombre:'Ataco',lat:3.593,lng:-75.38},{nombre:'Ambalema',lat:4.783,lng:-74.765},{nombre:'Piedras',lat:4.54,lng:-74.88},{nombre:'Flandes',lat:4.244,lng:-74.817},{nombre:'Alvarado',lat:4.5665,lng:-74.9589},{nombre:'Venadillo',lat:4.7193,lng:-74.9251},{nombre:'Villahermosa',lat:5.025,lng:-75.12},{nombre:'Roncesvalles',lat:4.013,lng:-75.607},{nombre:'Anzoátegui',lat:4.66,lng:-75.1},{nombre:'Palocabildo',lat:5.119,lng:-75.014},{nombre:'Casabianca',lat:5.079,lng:-75.139},{nombre:'Prado',lat:3.744,lng:-74.916},{nombre:'Rioblanco',lat:3.533,lng:-75.68},{nombre:'Dolores',lat:3.552,lng:-74.9},{nombre:'Carmen de Apicalá',lat:4.15,lng:-74.72},{nombre:'Coello',lat:4.408,lng:-74.895},{nombre:'Valle de San Juan',lat:4.2,lng:-75.11},{nombre:'Santa Isabel',lat:4.802,lng:-75.092},{nombre:'Villarrica',lat:3.936,lng:-74.611},{nombre:'Icononzo',lat:4.181,lng:-74.532},{nombre:'Murillo',lat:4.868,lng:-75.171},{nombre:'Herveo',lat:5.081,lng:-75.17},{nombre:'Armero (Guayabal)',lat:5.001,lng:-74.889},{nombre:'Lérida',lat:4.862,lng:-74.911}
+];
+const HITOS=[{nombre:'Nevado del Tolima',lat:4.658,lng:-75.332},{nombre:'Embalse de Prado',lat:3.735,lng:-74.85}];
+
+
+function labelHTML(text){return `<span class="label">${text}</span>`}
+function circle(lat,lng,color,r){
+const a=parseFloat(document.getElementById('alphaCtl').value);
+const glow=L.circleMarker([lat,lng],{radius:r+4,stroke:false,fillColor:color,fillOpacity:Math.max(0,a*0.35)});
+const core=L.circleMarker([lat,lng],{radius:r,color:'rgba(255,255,255,.6)',weight:1,fillColor:color,fillOpacity:a});
+return {glow,core};
+}
+function groupFrom(list,color){
+const g=L.featureGroup(); const r=parseInt(document.getElementById('radCtl').value,10);
+list.forEach(p=>{const {glow,core}=circle(p.lat,p.lng,color,r); glow.addTo(g); core.addTo(g); L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:labelHTML(p.nombre),iconSize:[0,0]})}).addTo(g)});
+return g;
+}
+const gold=getComputedStyle(document.documentElement).getPropertyValue('--gold').trim();
+const azure=getComputedStyle(document.documentElement).getPropertyValue('--azure').trim();
+const LYR_MUN=groupFrom(MUNICIPIOS,gold);
+const LYR_HIT=groupFrom(HITOS,azure);
+LYR_MUN.addTo(map); LYR_HIT.addTo(map);
+document.getElementById('count').textContent=`${MUNICIPIOS.length} municipios`;
+
+
+function fitAll(){ const b=L.featureGroup([LYR_MUN,LYR_HIT]).getBounds(); map.fitBounds(b.pad(0.15)); }
+fitAll();
+
+
+// Controles
+const fontCtl=document.getElementById('fontCtl');
+const alphaCtl=document.getElementById('alphaCtl');
+const intCtl=document.getElementById('intCtl');
+const radCtl=document.getElementById('radCtl');
+const fitBtn=document.getElementById('fitBtn');
+const search=document.getElementById('search');
+
+
+fontCtl.addEventListener('input',()=>{const v=parseInt(fontCtl.value,10);document.documentElement.style.setProperty('--font',v+'px'); sync('font',v)});
+alphaCtl.addEventListener('input',()=>{const a=parseFloat(alphaCtl.value);document.documentElement.style.setProperty('--alpha',a);[LYR_MUN,LYR_HIT].forEach(g=>g.eachLayer(l=>l.setStyle&&l.setStyle({fillOpacity:a}))); sync('alpha',a.toFixed(2))});
+intCtl.addEventListener('input',()=>{const i=parseFloat(intCtl.value);applyIntensity(i);sync('intensity',i.toFixed(2))});
+radCtl.addEventListener('input',()=>{const r=parseInt(radCtl.value,10); map.removeLayer(LYR_MUN); map.removeLayer(LYR_HIT); const L1=groupFrom(MUNICIPIOS,gold); const L2=groupFrom(HITOS,azure); LYR_MUN.clearLayers(); LYR_HIT.clearLayers(); L1.eachLayer(l=>LYR_MUN.addLayer(l)); L2.eachLayer(l=>LYR_HIT.addLayer(l)); LYR_MUN.addTo(map); LYR_HIT.addTo(map); sync('radius',r)});
+fitBtn.addEventListener('click',fitAll);
+search.addEventListener('keydown',e=>{ if(e.key!=='Enter')return;const q=e.target.value.trim().toLowerCase(); if(!q)return; const hit=MUNICIPIOS.find(m=>m.nombre.toLowerCase().includes(q)); if(hit){ map.flyTo([hit.lat,hit.lng],10,{duration:.9}); }});
+
+
+function sync(k,v){ const u=new URL(location); u.searchParams.set(k,v); history.replaceState({},'',u); }
+}
+</script>
+</body>
+</html>
