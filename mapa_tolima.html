@@ -1,0 +1,74 @@
+Mapa Tolima
+· html
+    <div><span class="dot" style="background:var(--azure)"></span> Hitos (referencia)</div>
+
+
+    LYR_MUNICIPIOS.addTo(map);
+    LYR_HITOS.addTo(map);
+    countEl.textContent = `${MUNICIPIOS.length} municipios`;
+
+
+    function fitAll(){
+      const b = L.featureGroup([LYR_MUNICIPIOS, LYR_HITOS]).getBounds();
+      map.fitBounds(b.pad(0.15));
+    }
+    fitAll();
+
+
+    // ========= Eventos UI =========
+    fontCtl.addEventListener('input', ()=>{
+      const v = parseInt(fontCtl.value,10);
+      document.documentElement.style.setProperty('--label-font-size', v+'px');
+      syncURL('font', v);
+    });
+    alphaCtl.addEventListener('input', ()=>{
+      const a = parseFloat(alphaCtl.value);
+      document.documentElement.style.setProperty('--dot-alpha', a);
+      // re-aplicar opacidad a círculos
+      [LYR_MUNICIPIOS, LYR_HITOS].forEach(g=> g.eachLayer(l=> l.setStyle && l.setStyle({ fillOpacity:a })));
+      syncURL('alpha', a.toFixed(2));
+    });
+    intCtl.addEventListener('input', ()=>{
+      const i = parseFloat(intCtl.value); applyIntensity(i); syncURL('intensity', i.toFixed(2));
+    });
+    radCtl.addEventListener('input', ()=>{
+      const r = parseInt(radCtl.value,10);
+      // reconstruir capas para aplicar nuevo radio
+      map.removeLayer(LYR_MUNICIPIOS); map.removeLayer(LYR_HITOS);
+      const L1 = featureGroupFrom(MUNICIPIOS, getComputedStyle(document.documentElement).getPropertyValue('--gold').trim());
+      const L2 = featureGroupFrom(HITOS, getComputedStyle(document.documentElement).getPropertyValue('--azure').trim());
+      LYR_MUNICIPIOS.clearLayers(); LYR_HITOS.clearLayers();
+      L1.eachLayer(l=> LYR_MUNICIPIOS.addLayer(l));
+      L2.eachLayer(l=> LYR_HITOS.addLayer(l));
+      LYR_MUNICIPIOS.addTo(map); LYR_HITOS.addTo(map);
+      syncURL('radius', r);
+    });
+
+
+    fitBtn.addEventListener('click', fitAll);
+
+
+    search.addEventListener('keydown', (e)=>{
+      if(e.key !== 'Enter') return;
+      const q = e.target.value.trim().toLowerCase(); if(!q) return;
+      const hit = MUNICIPIOS.find(m => m.nombre.toLowerCase().includes(q));
+      if(hit){ map.flyTo([hit.lat, hit.lng], 10, { duration:.9 }); }
+    });
+
+
+    // ========= Helpers =========
+    function applyIntensity(v){
+      // mapear a filtros CSS
+      const contrast = v;               // 0.8 - 1.8
+      const saturate = 0.9 + (v-1)*0.8; // aprox 0.7 - 1.6
+      const bright   = 0.95 + (v-1)*0.3;// aprox 0.8 - 1.25
+      document.documentElement.style.setProperty('--tile-contrast', contrast);
+      document.documentElement.style.setProperty('--tile-saturate', saturate);
+      document.documentElement.style.setProperty('--tile-bright', bright);
+    }
+    function syncURL(key, value){
+      const u = new URL(location); u.searchParams.set(key, value); history.replaceState({},'',u);
+    }
+  </script>
+</body>
+</html>
