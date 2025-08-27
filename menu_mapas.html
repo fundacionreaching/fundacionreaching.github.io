@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Menú de Mapas — Reaching</title>
-  <meta name="description" content="Menú central de mapas: Tolima interactivo, Ibagué (comunas/corregimientos) y Google Maps (embed) con generadores de iframe y vista previa." />
+  <title>Menú de Mapas — Reaching (Actualizado)</title>
+  <meta name="description" content="Menú central de mapas: Tolima interactivo con población, Ibagué v2 (comunas y corregimientos con población), listado de municipios (Google) y generador Google Maps." />
   <style>
     :root{ --bg:#0b1223; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --border:#1f2937; --hover:#122138 }
     *{box-sizing:border-box}
@@ -21,13 +21,13 @@
     .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .field{display:flex;flex-direction:column;gap:4px}
     label{font-size:12px;color:var(--muted)}
-    input[type="text"],select,input[type="number"],button{background:#0b1223;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+    input[type="text"],select,input[type="number"],button,a.btn{background:#0b1223;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px;text-decoration:none}
     button{cursor:pointer}
+    a.primary{background:var(--accent);color:#062411;border-color:#16a34a;font-weight:800}
     .chip{border:1px solid var(--border);background:#0b1223;color:#e5e7eb;padding:6px 10px;border-radius:999px;cursor:pointer}
     .chip:hover{background:var(--hover)}
-    .primary{background:var(--accent);color:#062411;border-color:#16a34a;font-weight:800}
-    .code{background:rgba(2,6,23,.55);color:#cbd5e1;border:1px dashed var(--border);border-radius:12px;padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-all}
     iframe{width:100%;height:56vh;border:0;background:#0a1220;border-radius:12px}
+    .code{background:rgba(2,6,23,.55);color:#cbd5e1;border:1px dashed var(--border);border-radius:12px;padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-all}
     .note{font-size:12px;color:#b4c0d6}
   </style>
 </head>
@@ -35,7 +35,7 @@
   <header>
     <h1>Menú de Mapas — Reaching</h1>
     <div class="row">
-      <a class="chip" href="./ibague_v2_menu.html">Ibagué — Generador</a>
+      <a class="chip" href="./menu_municipios_tolima.html">Municipios del Tolima</a>
       <a class="chip" href="./menu_mapas_google.html">Google Maps — Generador</a>
     </div>
   </header>
@@ -46,21 +46,21 @@
       <h2>🗺️ Tolima — Interactivo (con población)</h2>
       <div class="body">
         <div class="row">
-          <a class="primary" target="_blank" href="./mapa_tolima.html?font=24&alpha=0.55&intensity=1.25&radius=12">Abrir Tolima</a>
+          <a class="primary" target="_blank" href="./mapa_tolima.html?auto=1&fmin=16&fmax=34&alpha=0.55&intensity=1.35&radius=12">Abrir Tolima</a>
           <button id="copyTolima">Copiar iframe</button>
         </div>
         <div class="code" id="tolimaIframe"></div>
-        <p class="note">Tip: puede ajustar <code>font</code>, <code>alpha</code>, <code>intensity</code> y <code>radius</code> en la URL.</p>
+        <p class="note">Ajuste por URL: <code>auto</code>, <code>fmin</code>, <code>fmax</code>, <code>alpha</code>, <code>intensity</code>, <code>radius</code>.</p>
       </div>
     </section>
 
-    <!-- Ibagué -->
+    <!-- Ibagué v2 -->
     <section class="card half">
-      <h2>🏙️ Ibagué — Comunas & Corregimientos</h2>
+      <h2>🏙️ Ibagué v2 — Comunas y Corregimientos (con población)</h2>
       <div class="body">
         <div class="row">
-          <a class="chip" target="_blank" href="./ibague_v2.html?view=comunas&font=28&alpha=0.45">Abrir Comunas</a>
-          <a class="chip" target="_blank" href="./ibague_v2.html?view=corregimientos&font=28&alpha=0.45">Abrir Corregimientos</a>
+          <a class="chip" target="_blank" href="./ibague_v2.html?view=comunas&font=26&alpha=0.45">Abrir Comunas</a>
+          <a class="chip" target="_blank" href="./ibague_v2.html?view=corregimientos&font=26&alpha=0.45">Abrir Corregimientos</a>
           <a class="primary" target="_blank" href="./ibague_v2_menu.html">Generador Ibagué</a>
         </div>
         <div class="row" style="margin-top:8px">
@@ -69,52 +69,33 @@
         </div>
         <div class="code" id="ibagueCom"></div>
         <div class="code" id="ibagueCorr" style="margin-top:8px"></div>
+        <p class="note">Si creó <code>/data/datos_ibague.json</code>, el mapa toma esas cifras. Si no, usa los valores integrados (incluye referenciales en corregimientos).</p>
       </div>
     </section>
 
-    <!-- Google Maps Embed -->
-    <section class="card">
-      <h2>🧭 Google Maps — Embed (sin API)</h2>
+    <!-- Municipios del Tolima (Google) -->
+    <section class="card half">
+      <h2>📋 Municipios del Tolima — Menú (Google Embed)</h2>
       <div class="body">
         <div class="row">
-          <div class="field" style="min-width:260px;flex:1 1 340px">
-            <label for="q">Lugar / Búsqueda</label>
-            <input id="q" type="text" value="Departamento del Tolima, Colombia" />
-          </div>
-          <div class="field">
-            <label for="zoom">Zoom (1–21)</label>
-            <input id="zoom" type="number" min="1" max="21" step="1" value="9" />
-          </div>
-          <div class="field">
-            <label for="tipo">Tipo</label>
-            <select id="tipo">
-              <option value="">Mapa</option>
-              <option value="k">Satélite</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="idioma">Idioma</label>
-            <select id="idioma">
-              <option value="es">Español</option>
-              <option value="en">English</option>
-              <option value="pt">Português</option>
-            </select>
-          </div>
-          <a class="primary" target="_blank" href="./menu_mapas_google.html" style="margin-left:auto">Abrir Generador</a>
+          <a class="primary" target="_blank" href="./menu_municipios_tolima.html">Abrir Listado</a>
+          <a class="btn" target="_blank" href="./menu_mapas_google.html">Abrir Generador Google</a>
         </div>
-        <div class="row" style="margin:10px 0">
-          <span class="chip" data-preset="Tolima, Colombia">Tolima</span>
-          <span class="chip" data-preset="Ibagué, Tolima">Ibagué</span>
-          <span class="chip" data-preset="Espinal, Tolima">Espinal</span>
-          <span class="chip" data-preset="Melgar, Tolima">Melgar</span>
-          <span class="chip" data-preset="Honda, Tolima">Honda</span>
+        <p class="note">Desde el listado puede previsualizar, abrir en Google y copiar iframes para los 47 municipios.</p>
+      </div>
+    </section>
+
+    <!-- Google Maps (general) -->
+    <section class="card half">
+      <h2>🧭 Google Maps — Generador rápido</h2>
+      <div class="body">
+        <div class="row">
+          <a class="primary" href="./menu_mapas_google.html" target="_blank">Abrir Generador</a>
+          <span class="chip" data-gpreset="Departamento del Tolima, Colombia">Tolima</span>
+          <span class="chip" data-gpreset="Ibagué, Tolima">Ibagué</span>
+          <span class="chip" data-gpreset="Espinal, Tolima">Espinal</span>
         </div>
-        <iframe id="gPreview" title="Google Maps Preview" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-        <div class="row" style="margin-top:10px">
-          <button id="copyG">Copiar iframe de Google</button>
-        </div>
-        <div class="code" id="gIframe" style="margin-top:8px"></div>
-        <p class="note">Para marcadores personalizados o capas, considere la <strong>Google Maps JavaScript API</strong> con API Key restringida a su dominio.</p>
+        <p class="note">El generador crea la URL y el iframe de Google (sin API). Para marcadores/capas, use Google Maps JS API con clave restringida.</p>
       </div>
     </section>
   </main>
@@ -123,47 +104,24 @@
     const $ = (s,el=document)=> el.querySelector(s);
 
     // --- Tolima iframe ---
-    const tolimaURL = './mapa_tolima.html?font=24&alpha=0.55&intensity=1.25&radius=12';
+    const tolimaURL = './mapa_tolima.html?auto=1&fmin=16&fmax=34&alpha=0.55&intensity=1.35&radius=12';
     $('#tolimaIframe').textContent = `<iframe\n  src="${tolimaURL}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allowfullscreen>\n</iframe>`;
     $('#copyTolima').addEventListener('click', ()=> navigator.clipboard.writeText($('#tolimaIframe').textContent||'') );
 
     // --- Ibagué iframes ---
-    const ibgComURL = './ibague_v2.html?view=comunas&font=28&alpha=0.45';
-    const ibgCorURL = './ibague_v2.html?view=corregimientos&font=28&alpha=0.45';
+    const ibgComURL = './ibague_v2.html?view=comunas&font=26&alpha=0.45';
+    const ibgCorURL = './ibague_v2.html?view=corregimientos&font=26&alpha=0.45';
     $('#ibagueCom').textContent = `<iframe\n  src="${ibgComURL}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allow="fullscreen">\n</iframe>`;
     $('#ibagueCorr').textContent = `<iframe\n  src="${ibgCorURL}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allow="fullscreen">\n</iframe>`;
     $('#copyIbgCom').addEventListener('click', ()=> navigator.clipboard.writeText($('#ibagueCom').textContent||'') );
     $('#copyIbgCorr').addEventListener('click', ()=> navigator.clipboard.writeText($('#ibagueCorr').textContent||'') );
 
-    // --- Google Maps embed preview + iframe ---
-    const q = $('#q');
-    const zoom = $('#zoom');
-    const tipo = $('#tipo');
-    const idioma = $('#idioma');
-    const gPreview = $('#gPreview');
-    const gIframe = $('#gIframe');
-
-    function buildG(){
-      const base = 'https://www.google.com/maps';
-      const p = new URLSearchParams();
-      p.set('q', (q.value||'').trim());
-      p.set('z', String(Math.max(1, Math.min(21, parseInt(zoom.value||'9',10)))));
-      if((tipo.value||'').trim()) p.set('t', tipo.value);
-      p.set('hl', (idioma.value||'es').trim());
-      p.set('output','embed');
-      return `${base}?${p.toString()}`;
-    }
-    function renderG(){
-      const url = buildG();
-      gPreview.src = url;
-      gIframe.textContent = `<iframe\n  src="${url}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allowfullscreen>\n</iframe>`;
-    }
-    ['input','change'].forEach(evt=>{
-      [q,zoom,tipo,idioma].forEach(el=> el.addEventListener(evt, renderG));
-    });
-    document.querySelectorAll('[data-preset]').forEach(ch=> ch.addEventListener('click', ()=>{ q.value = ch.dataset.preset; renderG(); }));
-    $('#copyG').addEventListener('click', ()=> navigator.clipboard.writeText(gIframe.textContent||'') );
-    renderG();
+    // --- Presets Google (solo atajo para abrir generador con idea en el portapapeles) ---
+    document.querySelectorAll('[data-gpreset]').forEach(el=> el.addEventListener('click', ()=>{
+      const q = el.getAttribute('data-gpreset');
+      navigator.clipboard.writeText(q);
+      alert(`Copiado al portapapeles: ${q}\n\nAbra el Generador Google para pegarlo.`);
+    }));
   </script>
 </body>
 </html>
