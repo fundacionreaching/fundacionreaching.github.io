@@ -212,54 +212,407 @@
       const url = buildGoogle();
       iframeGoogle.src = url;
       openGoogle.href = url.replace('output=embed','');
+     <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Menú de Mapas — Reaching (Unificado v2)</title>
+  <meta name="description" content="Centro unificado de mapas: Tolima interactivo con población, Google Maps del departamento, tarjeta de población (con JSON externo opcional), Ibagué v2 y utilidades (favoritos, póster A3)." />
+  <style>
+    :root{ --bg:#0b1223; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --border:#1f2937; --hover:#122138 }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;background:radial-gradient(1200px 600px at 20% 0%, #0b1225 0%, var(--bg) 50%, #0a0f1e 100%);color:var(--text)}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(15,23,42,.9);position:sticky;top:0;z-index:30}
+    h1{margin:0;font-size:clamp(18px,2.5vw,26px)}
+    .wrap{max-width:1280px;margin:0 auto;padding:18px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .card{grid-column:span 12;background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.00));border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden}
+    @media (min-width:980px){ .half{grid-column:span 6} .third{grid-column:span 4} .twothird{grid-column:span 8} }
+    .card h2{margin:0;font-size:16px;padding:10px 12px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)}
+    .body{padding:12px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .field{display:flex;flex-direction:column;gap:4px}
+    label{font-size:12px;color:var(--muted)}
+    input[type="text"],select,input[type="number"],button,a.btn{background:#0b1223;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px;text-decoration:none}
+    button{cursor:pointer}
+    a.primary{background:var(--accent);color:#062411;border-color:#16a34a;font-weight:800}
+    .chip{border:1px solid var(--border);background:#0b1223;color:#e5e7eb;padding:6px 10px;border-radius:999px;cursor:pointer}
+    .chip:hover{background:var(--hover)}
+    iframe{width:100%;height:56vh;border:0;background:#0a1220;border-radius:12px}
+    .code{background:rgba(2,6,23,.55);color:#cbd5e1;border:1px dashed var(--border);border-radius:12px;padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-all}
+    .note{font-size:12px;color:#b4c0d6}
+    .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .kpi{background:#0b1223;border:1px solid var(--border);border-radius:12px;padding:10px}
+    .kpi .v{font-size:20px;font-weight:800}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #13223a;padding:6px 6px;text-align:left}
+    th{color:#bcd0ea;font-weight:700}
+    tbody tr:hover{background:#0e1931}
+
+    /* ====== PÓSTER A3 ====== */
+    #poster{display:none}
+    #poster .cover{display:grid;grid-template-columns: 1fr 1.2fr;gap:16px}
+    #poster h2{font-size:28px;margin:0}
+    #poster .kpis{grid-template-columns:repeat(3,1fr)}
+    #poster .stamp{font-size:12px;color:#b4c0d6}
+    #poster .mapbox iframe{width:100%;height:50vh;border-radius:12px;border:1px solid var(--border)}
+
+    @media print{
+      @page{ size:A3 landscape; margin:12mm }
+      body *{ visibility:hidden }
+      #poster, #poster *{ visibility:visible }
+      #poster{ display:block; position:absolute; inset:0; padding:8mm }
+      header, .wrap{ display:none!important }
+    }
+  
+    /* Brand/logo */
+    header .brand{display:flex;align-items:center;gap:10px}
+    header .brand h1{margin:0}
+    header .brand .logo img{height:44px;width:auto;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+    @media (max-width:520px){ header .brand .logo img{height:36px} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <a href="./" class="logo" title="Fundación Reaching">
+        <img id="brandLogo" src="./assets/logo_reaching.png" alt="Fundación Reaching" onerror="this.onerror=null; this.src='./assets/img/logo_reaching.png';">
+      </a>
+      <h1>Menú de Mapas — Reaching (Unificado v2)</h1>
+    </div>
+    <div class="row">
+      <a class="chip" href="#tolima">Tolima</a>
+      <a class="chip" href="#ibague">Ibagué v2</a>
+      <a class="chip" href="#municipios">Municipios (Google)</a>
+      <a class="chip" href="#google">Generador Google</a>
+      <button id="btnPoster" class="chip">🖨️ Imprimir Póster A3</button>
+    </div>
+  </header>
+
+  <!-- ====== PÓSTER A3 (se imprime solo esta sección) ====== -->
+  <section id="poster" class="wrap">
+    <div class="cover">
+      <div>
+        <h2>Departamento del Tolima — Población y Mapa</h2>
+        <div class="kpis" style="margin:12px 0">
+          <div class="kpi"><div>Habitantes</div><div class="v" id="pTotal">—</div></div>
+          <div class="kpi"><div>Municipios</div><div class="v" id="pMuni">47</div></div>
+          <div class="kpi"><div>Top municipio</div><div class="v" id="pTop">—</div></div>
+        </div>
+        <div style="max-height:55vh;overflow:auto;border:1px solid var(--border);border-radius:12px">
+          <table>
+            <thead><tr><th>Municipio</th><th style="text-align:right">Población</th></tr></thead>
+            <tbody id="pBody"></tbody>
+          </table>
+        </div>
+        <div class="stamp" style="margin-top:8px">Fuente: Proyección DANE 2018 (referencial). Fecha de impresión: <span id="pDate"></span></div>
+      </div>
+      <div class="mapbox">
+        <iframe id="pMap" src="about:blank" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <main class="wrap grid">
+    <!-- ====== SECCIÓN TOLIMA UNIFICADA ====== -->
+    <section id="tolima" class="card">
+      <h2>🗺️ Tolima — Centro de recursos (Mapa Reaching + Google + Población)</h2>
+      <div class="body grid">
+        <!-- Controles y tabs -->
+        <div class="card twothird">
+          <h2 style="display:flex;align-items:center;gap:8px">Mapas del Departamento
+            <span class="chip" id="tabReaching" aria-pressed="true">Mapa Reaching</span>
+            <span class="chip" id="tabGoogle">Google Maps</span>
+            <span class="chip" id="tabFavs">⭐ Favoritos (1‑clic)</span>
+          </h2>
+          <div class="body">
+            <!-- Reaching iframe -->
+            <div id="boxReaching">
+              <div class="row" style="margin-bottom:8px">
+                <a class="primary" target="_blank" id="openReaching">Abrir en pestaña</a>
+                <button id="copyReaching">Copiar iframe</button>
+              </div>
+              <iframe id="iframeReaching" title="Tolima Reaching"></iframe>
+              <div class="code" id="codeReaching" style="margin-top:8px"></div>
+            </div>
+
+            <!-- Google iframe -->
+            <div id="boxGoogle" style="display:none">
+              <div class="row" style="gap:12px;align-items:flex-end">
+                <div class="field">
+                  <label for="gZoom">Zoom (1–21)</label>
+                  <input id="gZoom" type="number" min="1" max="21" step="1" value="9" />
+                </div>
+                <div class="field">
+                  <label for="gTipo">Tipo</label>
+                  <select id="gTipo"><option value="">Mapa</option><option value="k" selected>Satélite</option></select>
+                </div>
+                <div class="field">
+                  <label for="gLang">Idioma</label>
+                  <select id="gLang"><option value="es" selected>Español</option><option value="en">English</option><option value="pt">Português</option></select>
+                </div>
+                <a id="openGoogle" class="primary" target="_blank" rel="noopener">Abrir en pestaña</a>
+                <button id="copyGoogle">Copiar iframe</button>
+              </div>
+              <iframe id="iframeGoogle" title="Tolima Google"></iframe>
+              <div class="code" id="codeGoogle" style="margin-top:8px"></div>
+            </div>
+
+            <!-- Favoritos 1‑clic -->
+            <div id="boxFavs" style="display:none">
+              <div class="row" style="margin-bottom:8px">
+                <div class="field"><label>Reaching (copiar iframe)</label>
+                  <div class="row">
+                    <button id="favTolima">Tolima (Reaching)</button>
+                    <button id="favIbgCom">Ibagué – Comunas</button>
+                    <button id="favIbgCor">Ibagué – Correg.</button>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="field"><label>Google (copiar iframe)</label>
+                  <div class="row">
+                    <button data-gq="Departamento del Tolima, Colombia" class="favG">Tolima – Google</button>
+                    <button data-gq="Ibagué, Tolima" class="favG">Ibagué – Google</button>
+                    <button data-gq="Espinal, Tolima" class="favG">Espinal – Google</button>
+                    <button data-gq="Melgar, Tolima" class="favG">Melgar – Google</button>
+                    <button data-gq="Honda, Tolima" class="favG">Honda – Google</button>
+                  </div>
+                </div>
+              </div>
+              <div class="note" style="margin-top:10px">Los botones copian el iframe al portapapeles. Solo péguelo en su plataforma.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Población departamental -->
+        <div class="card third">
+          <h2>Población — Departamento del Tolima</h2>
+          <div class="body">
+            <div class="kpis" style="margin-bottom:10px">
+              <div class="kpi"><div>Habitantes</div><div class="v" id="kTotal">—</div></div>
+              <div class="kpi"><div>Municipios</div><div class="v" id="kMuni">—</div></div>
+              <div class="kpi"><div>Top municipio</div><div class="v" id="kTop">—</div></div>
+            </div>
+            <div class="row" style="margin-bottom:8px">
+              <button id="copyCSV">Copiar CSV</button>
+              <input id="filtro" type="text" placeholder="Filtrar municipio…" style="flex:1 1 auto">
+            </div>
+            <div style="max-height:46vh;overflow:auto;border:1px solid var(--border);border-radius:12px">
+              <table>
+                <thead><tr><th>Municipio</th><th style="text-align:right">Población</th></tr></thead>
+                <tbody id="tbody"></tbody>
+              </table>
+            </div>
+            <p class="note" style="margin-top:8px">Fuente: Proyección DANE 2018 (referencial). Para actualizar sin tocar el HTML, suba <code>/data/poblacion_tolima.json</code>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== IBAGUÉ V2 ====== -->
+    <section id="ibague" class="card half">
+      <h2>🏙️ Ibagué v2 — Comunas y Corregimientos (con población)</h2>
+      <div class="body">
+        <div class="row">
+          <a class="chip" target="_blank" href="./ibague_v2.html?view=comunas&font=26&alpha=0.45">Abrir Comunas</a>
+          <a class="chip" target="_blank" href="./ibague_v2.html?view=corregimientos&font=26&alpha=0.45">Abrir Corregimientos</a>
+          <a class="primary" target="_blank" href="./ibague_v2_menu.html">Generador Ibagué</a>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="copyIbgCom">Copiar iframe (Comunas)</button>
+          <button id="copyIbgCorr">Copiar iframe (Correg.)</button>
+        </div>
+        <div class="code" id="ibagueCom"></div>
+        <div class="code" id="ibagueCorr" style="margin-top:8px"></div>
+      </div>
+    </section>
+
+    <!-- ====== MUNICIPIOS (GOOGLE) ====== -->
+    <section id="municipios" class="card half">
+      <h2>📋 Municipios del Tolima — Menú (Google Embed)</h2>
+      <div class="body">
+        <div class="row">
+          <a class="primary" target="_blank" href="./menu_municipios_tolima.html">Abrir Listado</a>
+          <a class="btn" target="_blank" href="./menu_mapas_google.html">Abrir Generador Google</a>
+        </div>
+        <p class="note">Desde el listado puede previsualizar, abrir en Google y copiar iframes para los 47 municipios.</p>
+      </div>
+    </section>
+
+    <!-- ====== GENERADOR GOOGLE ====== -->
+    <section id="google" class="card">
+      <h2>🧭 Google Maps — Generador rápido</h2>
+      <div class="body">
+        <div class="row">
+          <a class="primary" href="./menu_mapas_google.html" target="_blank">Abrir Generador</a>
+          <span class="chip" data-gpreset="Departamento del Tolima, Colombia">Tolima</span>
+          <span class="chip" data-gpreset="Ibagué, Tolima">Ibagué</span>
+          <span class="chip" data-gpreset="Espinal, Tolima">Espinal</span>
+        </div>
+        <p class="note">El generador crea la URL y el iframe de Google (sin API). Para marcadores/capas, use Google Maps JS API con clave restringida.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (s,el=document)=> el.querySelector(s);
+
+    // ====== URLs base ======
+    const reachingURL = './mapa_tolima.html?auto=1&fmin=16&fmax=34&alpha=0.55&intensity=1.35&radius=12';
+    const gBase = 'https://www.google.com/maps';
+
+    // ====== Tabs ======
+    const tabReaching = $('#tabReaching');
+    const tabGoogle = $('#tabGoogle');
+    const tabFavs = $('#tabFavs');
+    const boxReaching = $('#boxReaching');
+    const boxGoogle = $('#boxGoogle');
+    const boxFavs = $('#boxFavs');
+
+    function showTab(which){
+      boxReaching.style.display = which==='reach'?'block':'none';
+      boxGoogle.style.display = which==='ggl'?'block':'none';
+      boxFavs.style.display    = which==='fav'?'block':'none';
+      [tabReaching,tabGoogle,tabFavs].forEach(el=> el.style.background='');
+      (which==='reach'?tabReaching:which==='ggl'?tabGoogle:tabFavs).style.background='#13223a';
+    }
+    tabReaching.addEventListener('click', ()=> showTab('reach'));
+    tabGoogle .addEventListener('click', ()=> showTab('ggl'));
+    tabFavs   .addEventListener('click', ()=> showTab('fav'));
+    showTab('reach');
+
+    // ====== Reaching iframe ======
+    const iframeReaching = $('#iframeReaching');
+    const codeReaching = $('#codeReaching');
+    const openReaching = $('#openReaching');
+    const copyReaching = $('#copyReaching');
+    iframeReaching.src = reachingURL;
+    openReaching.href = reachingURL;
+    codeReaching.textContent = `<iframe\n  src="${reachingURL}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allowfullscreen>\n</iframe>`;
+    copyReaching.addEventListener('click', ()=> navigator.clipboard.writeText(codeReaching.textContent||'') );
+
+    // ====== Google iframe builder ======
+    const gZoom = $('#gZoom');
+    const gTipo = $('#gTipo');
+    const gLang = $('#gLang');
+    const iframeGoogle = $('#iframeGoogle');
+    const codeGoogle = $('#codeGoogle');
+    const openGoogle = $('#openGoogle');
+
+    function buildGoogle(){
+      const p = new URLSearchParams();
+      p.set('q','Departamento del Tolima, Colombia');
+      p.set('z', String(Math.max(1, Math.min(21, parseInt(gZoom.value||'9',10)))) );
+      if((gTipo.value||'').trim()) p.set('t', gTipo.value);
+      p.set('hl', (gLang.value||'es').trim());
+      p.set('output','embed');
+      return `${gBase}?${p.toString()}`;
+    }
+    function renderGoogle(){
+      const url = buildGoogle();
+      iframeGoogle.src = url;
+      openGoogle.href = url.replace('output=embed','');
       codeGoogle.textContent = `<iframe\n  src="${url}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allowfullscreen>\n</iframe>`;
     }
     ['input','change'].forEach(evt=> [gZoom,gTipo,gLang].forEach(el=> el.addEventListener(evt, renderGoogle)));
     $('#copyGoogle').addEventListener('click', ()=> navigator.clipboard.writeText(codeGoogle.textContent||'') );
     renderGoogle();
 
-    // ====== Población Departamental ======
-    const DATA = [
+    // ====== Favoritos (copiar iframes en 1‑clic) ======
+    const ibgComURL = './ibague_v2.html?view=comunas&font=26&alpha=0.45';
+    const ibgCorURL = './ibague_v2.html?view=corregimientos&font=26&alpha=0.45';
+
+    function buildIframe(url){
+      return `<iframe\n  src="${url}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allowfullscreen>\n</iframe>`; }
+
+    $('#favTolima').addEventListener('click', ()=> navigator.clipboard.writeText(buildIframe(reachingURL)) );
+    $('#favIbgCom').addEventListener('click', ()=> navigator.clipboard.writeText(buildIframe(ibgComURL)) );
+    $('#favIbgCor').addEventListener('click', ()=> navigator.clipboard.writeText(buildIframe(ibgCorURL)) );
+
+    document.querySelectorAll('.favG').forEach(btn=> btn.addEventListener('click', ()=>{
+      const q = btn.getAttribute('data-gq');
+      const p = new URLSearchParams({ q, z:'11', t:'k', hl:'es', output:'embed' });
+      const url = `${gBase}?${p.toString()}`;
+      navigator.clipboard.writeText(buildIframe(url));
+    }));
+
+    // ====== Población departamental: JSON externo → fallback interno ======
+    const DATA_DEFAULT = [
       {nombre:'Ibagué',pob:558815},{nombre:'Alpujarra',pob:4974},{nombre:'Alvarado',pob:8816},{nombre:'Ambalema',pob:6755},{nombre:'Anzoátegui',pob:18638},{nombre:'Armero (Guayabal)',pob:11839},{nombre:'Ataco',pob:22589},{nombre:'Cajamarca',pob:19641},{nombre:'Carmen de Apicalá',pob:8835},{nombre:'Casabianca',pob:6661},{nombre:'Chaparral',pob:47248},{nombre:'Coello',pob:9810},{nombre:'Coyaima',pob:28335},{nombre:'Cunday',pob:9634},{nombre:'Dolores',pob:8015},{nombre:'Espinal',pob:76149},{nombre:'Falan',pob:9211},{nombre:'Flandes',pob:29199},{nombre:'Fresno',pob:30165},{nombre:'Guamo',pob:32113},{nombre:'Herveo',pob:8008},{nombre:'Honda',pob:24547},{nombre:'Icononzo',pob:10894},{nombre:'Lérida',pob:17395},{nombre:'Líbano',pob:40266},{nombre:'Mariquita',pob:33329},{nombre:'Melgar',pob:36339},{nombre:'Murillo',pob:5018},{nombre:'Natagaima',pob:22516},{nombre:'Ortega',pob:32431},{nombre:'Palocabildo',pob:9160},{nombre:'Piedras',pob:5640},{nombre:'Planadas',pob:29974},{nombre:'Prado',pob:7701},{nombre:'Purificación',pob:29412},{nombre:'Rioblanco',pob:24459},{nombre:'Roncesvalles',pob:6344},{nombre:'Rovira',pob:20542},{nombre:'Saldaña',pob:14385},{nombre:'San Antonio',pob:14310},{nombre:'San Luis',pob:19153},{nombre:'Santa Isabel',pob:6357},{nombre:'Suárez',pob:4547},{nombre:'Valle de San Juan',pob:6368},{nombre:'Venadillo',pob:19652},{nombre:'Villahermosa',pob:10642},{nombre:'Villarrica',pob:5389}
     ];
+
     const tbody = $('#tbody');
     const kTotal = $('#kTotal');
     const kTop = $('#kTop');
+    const kMuni = $('#kMuni');
     const filtro = $('#filtro');
 
+    const pBody = $('#pBody');
+    const pTotal = $('#pTotal');
+    const pTop = $('#pTop');
+    const pMuni = $('#pMuni');
+    const pDate = $('#pDate');
+    const pMap = $('#pMap');
+
     function fmt(n){ return Number(n).toLocaleString('es-CO'); }
-    function renderTabla(){
+
+    async function getDeptoData(){
+      try{
+        const r = await fetch('./data/poblacion_tolima.json', { cache:'no-store' });
+        if(r.ok){ const j = await r.json(); if(Array.isArray(j) && j.length){ return j; } }
+      }catch(e){}
+      return DATA_DEFAULT;
+    }
+
+    function renderTabla(data){
       const term = (filtro.value||'').toLowerCase();
-      const rows = DATA
+      const rows = data
         .filter(d=> d.nombre.toLowerCase().includes(term))
         .sort((a,b)=> b.pob - a.pob)
         .map(d=> `<tr><td>${d.nombre}</td><td style="text-align:right">${fmt(d.pob)}</td></tr>`)
         .join('');
       tbody.innerHTML = rows;
     }
-    function renderKPIs(){
-      const total = DATA.reduce((s,x)=> s+x.pob, 0);
-      const top = DATA.slice().sort((a,b)=> b.pob-a.pob)[0];
+    function renderKPIs(data){
+      const total = data.reduce((s,x)=> s+x.pob, 0);
+      const top = data.slice().sort((a,b)=> b.pob-a.pob)[0];
       kTotal.textContent = fmt(total);
-      kTop.textContent = `${top.nombre}`;
+      kTop.textContent = top?`${top.nombre}`:'—';
+      kMuni.textContent = String(data.length);
     }
-    function toCSV(){
+    function toCSV(data){
       const head = 'Municipio,Poblacion';
-      const body = DATA.map(d=> `${d.nombre.replace(/,/g,' ')} , ${d.pob}`).join('\n');
+      const body = data.map(d=> `${d.nombre.replace(/,/g,' ')} , ${d.pob}`).join('\n');
       return head+'\n'+body+'\n';
     }
-    $('#copyCSV').addEventListener('click', ()=> navigator.clipboard.writeText(toCSV()) );
-    filtro.addEventListener('input', renderTabla);
-    renderKPIs();
-    renderTabla();
+
+    // Inicializar todo
+    let DATA = DATA_DEFAULT;
+    getDeptoData().then(arr=>{ DATA = arr; renderKPIs(DATA); renderTabla(DATA); });
+
+    $('#copyCSV').addEventListener('click', ()=> navigator.clipboard.writeText(toCSV(DATA)) );
+    filtro.addEventListener('input', ()=> renderTabla(DATA));
 
     // ====== Ibagué iframes (sección inferior) ======
-    const ibgComURL = './ibague_v2.html?view=comunas&font=26&alpha=0.45';
-    const ibgCorURL = './ibague_v2.html?view=corregimientos&font=26&alpha=0.45';
-    $('#ibagueCom').textContent = `<iframe\n  src="${ibgComURL}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allow="fullscreen">\n</iframe>`;
-    $('#ibagueCorr').textContent = `<iframe\n  src="${ibgCorURL}"\n  width="100%" height="640" style="border:none;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2)"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  allow="fullscreen">\n</iframe>`;
+    $('#ibagueCom').textContent = buildIframe(ibgComURL);
+    $('#ibagueCorr').textContent = buildIframe(ibgCorURL);
     $('#copyIbgCom').addEventListener('click', ()=> navigator.clipboard.writeText($('#ibagueCom').textContent||'') );
     $('#copyIbgCorr').addEventListener('click', ()=> navigator.clipboard.writeText($('#ibagueCorr').textContent||'') );
+
+    // ====== Póster A3 ======
+    const btnPoster = $('#btnPoster');
+    function fillPoster(data){
+      const rows = data.slice().sort((a,b)=> b.pob-a.pob).map(d=> `<tr><td>${d.nombre}</td><td style='text-align:right'>${fmt(d.pob)}</td></tr>`).join('');
+      pBody.innerHTML = rows; pMuni.textContent = String(data.length);
+      const total = data.reduce((s,x)=> s+x.pob, 0); pTotal.textContent = fmt(total);
+      const top = data.slice().sort((a,b)=> b.pob-a.pob)[0]; pTop.textContent = top?top.nombre:'—';
+      pDate.textContent = new Date().toLocaleDateString('es-CO');
+      pMap.src = reachingURL + '&font=30&radius=12&intensity=1.4';
+    }
+    btnPoster.addEventListener('click', ()=>{ fillPoster(DATA); document.getElementById('poster').style.display='block'; setTimeout(()=>window.print(), 200); });
 
     // Presets Google (atajo para copiar destino y usar en generador externo)
     document.querySelectorAll('[data-gpreset]').forEach(el=> el.addEventListener('click', ()=>{
