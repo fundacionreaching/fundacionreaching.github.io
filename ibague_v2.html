@@ -3,221 +3,161 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ibagué — Mapas (Robusto con fallbacks)</title>
-  <meta name="description" content="Mapa de Ibagué con vistas General, Corregimientos y Comunas. Etiquetas grandes y puntos semitransparentes. Carga robusta de Leaflet con CDNs de respaldo." />
+  <title>Ibagué — Comunas (13) y Corregimientos (17) — v3 completo</title>
+  <meta name="description" content="Mapa de Ibagué con las 13 comunas y 17 corregimientos. Etiquetas grandes, puntos transparentes, búsqueda y parámetros por URL." />
+  <!-- CSS Leaflet local → fallback CDN -->
+  <link rel="stylesheet" href="assets/leaflet/leaflet.css" id="leafletCSSLocal"/>
   <style>
-    :root{ --bg:#0b1223; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --border:#1f2937; --green:#22c55e; --blue:#3b82f6; --amber:#f59e0b; }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial; background:#0b1223; color:var(--text)}
-    header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; border-bottom:1px solid var(--border); background:rgba(15,23,42,.85)}
-    h1{font-size:clamp(18px,2.4vw,26px); margin:0}
-    .tabs{display:flex; flex-wrap:wrap; gap:8px}
-    .tabs button{border:1px solid var(--border); background:#0b1223; color:var(--text); padding:8px 12px; border-radius:10px; cursor:pointer}
-    .tabs button.active{background:var(--accent); color:#0b1223; font-weight:700}
-    .tools{display:flex; gap:8px; align-items:center}
-    .tools label{font-size:12px; color:var(--muted)}
-    .tools select,.tools input,.tools button{border:1px solid var(--border); background:#0b1223; color:var(--text); padding:8px 10px; border-radius:10px}
-    #map{height:calc(100vh - 70px); width:100%}
-    .leaflet-container{background:#0a1220}
-    .label-lg{font-size:24px; font-weight:800; letter-spacing:.3px; color:#fff; text-shadow: 0 1px 0 #000, 0 0 6px rgba(0,0,0,.75);} 
-    @media (max-width:760px){ .label-lg{font-size:20px} }
-    .legend{position:absolute; right:12px; bottom:12px; background:rgba(2,6,23,.8); color:var(--muted); border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:12px}
-    .legend .dot{display:inline-block; width:10px; height:10px; border-radius:999px; margin-right:6px}
-    .note{padding:8px 12px; font-size:12px; color:#cbd5e1; border-top:1px dashed var(--border); background:rgba(2,6,23,.55)}
+    :root{ --label-font-size: 28px; --badge-alpha: .45; --bg:#0b1020; --text:#e8eef7; --border:#1f2a4d }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; background:#0b1020; color:var(--text); }
+    #app { display:flex; flex-direction:column; height:100%; }
+    header { padding: 10px 12px; background: #121a33; border-bottom: 1px solid var(--border); display:flex; gap:12px; align-items:center; flex-wrap: wrap; position:sticky; top:0; z-index:10 }
+    header h1 { font-size: 18px; margin:0; font-weight:700; letter-spacing:.2px; }
+    header .pill { background: #0f1730; border:1px solid #27335f; padding:8px 10px; border-radius: 14px; display:flex; gap:8px; align-items:center; }
+    label { font-size: 13px; color:#b6c3e4; }
+    select, input[type="range"], input[type="text"]{ background:#0a1228; color:#e8eef7; border:1px solid #283562; border-radius:10px; padding:6px 8px; }
+    #map { flex:1; width:100%; }
+    .leaflet-container { background: #081022; }
+
+    /* Etiquetas grandes y legibles */
+    .marker-label { font-size: var(--label-font-size); font-weight: 900; letter-spacing: .3px; color: #fff; text-shadow: 0 0 4px rgba(0,0,0,.7), 0 1px 8px rgba(0,0,0,.9); pointer-events: none; white-space: nowrap; }
+    .marker-badge { backdrop-filter: blur(2px); background: rgba(2,10,25,var(--badge-alpha)); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 6px; font-weight:800; display:inline-block; margin-left: 6px; }
+    .legend { position:absolute; z-index:1000; bottom:14px; left:14px; background:#0f1730; border:1px solid #27335f; border-radius:12px; padding:10px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.35); font-size:13px; color:#c9d6f3; }
+    .legend .row{ display:flex; align-items:center; gap:8px; margin:6px 0; }
+    .dot{ width:12px; height:12px; border-radius:50%; display:inline-block; border:1px solid rgba(255,255,255,.4); }
   </style>
-  <!-- Carga CSS Leaflet con fallback dinámico -->
-  <link id="leafletCSS" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous"/>
   <script>
-    // Si el CSS de Leaflet falla, inyectar fallback desde cdnjs
-    (function(){
-      const test = document.createElement('div');
-      test.style.position = 'absolute';
-      test.style.left = '-9999px';
-      test.className = 'leaflet-container';
-      document.documentElement.appendChild(test);
-      setTimeout(()=>{
-        const applied = getComputedStyle(test).position === 'relative' || getComputedStyle(test).cursor === 'crosshair';
-        if(!applied){
-          const alt = document.createElement('link');
-          alt.rel = 'stylesheet';
-          alt.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
-          alt.crossOrigin = 'anonymous';
-          document.head.appendChild(alt);
-        }
-        test.remove();
-      }, 800);
-    })();
+    // Si el CSS local no aplica, agregar CDN
+    document.addEventListener('DOMContentLoaded',()=>{
+      const test=document.createElement('div'); test.className='leaflet-container'; test.style.position='absolute'; test.style.left='-9999px'; document.body.appendChild(test);
+      setTimeout(()=>{ const cs=getComputedStyle(test); const ok=cs.cursor==='grab'||cs.overflow==='hidden'; if(!ok){ const cdn=document.createElement('link'); cdn.rel='stylesheet'; cdn.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css'; document.head.appendChild(cdn);} test.remove(); },300);
+    });
   </script>
 </head>
 <body>
+<div id="app">
   <header>
-    <h1>Ibagué — Mapas</h1>
-    <div class="tabs" role="tablist" aria-label="Vistas del mapa">
-      <button class="active" data-view="general" role="tab" aria-selected="true">General</button>
-      <button data-view="corregimientos" role="tab">Corregimientos</button>
-      <button data-view="comunas" role="tab">Comunas</button>
+    <h1>🗺️ Ibagué — Comunas (13) y Corregimientos (17)</h1>
+    <div class="pill"><label for="viewSel">Capa:</label>
+      <select id="viewSel">
+        <option value="comunas" selected>Comunas (13)</option>
+        <option value="corregimientos">Corregimientos (17)</option>
+      </select>
     </div>
-    <div class="tools">
-      <label>Tamaño letra
-        <select id="fontCtl" title="Tamaño de etiqueta">
-          <option value="20">20</option>
-          <option value="24" selected>24</option>
-          <option value="28">28</option>
-          <option value="32">32</option>
-          <option value="36">36</option>
-        </select>
-      </label>
-      <label>Transparencia
-        <input id="alphaCtl" type="range" min="0.2" max="0.9" step="0.05" value="0.45" title="Transparencia de los puntos"/>
-      </label>
-      <button id="fitBtn" title="Ajustar a datos">Enfocar</button>
+    <div class="pill"><label for="fontSel">Tamaño letra:</label>
+      <input id="fontSel" type="range" min="16" max="40" step="1" value="28" />
+    </div>
+    <div class="pill"><label for="alphaSel">Transparencia punto:</label>
+      <input id="alphaSel" type="range" min="0.15" max="1" step="0.05" value="0.45" />
+    </div>
+    <div class="pill" style="flex:1 1 220px;">
+      <label for="searchBox">Buscar…</label>
+      <input id="searchBox" type="text" placeholder="Centro, Jordán, Juntas…" style="width: 100%;" />
     </div>
   </header>
+  <div id="map"></div>
+</div>
 
-  <div id="map" role="region" aria-label="Mapa interactivo de Ibagué"></div>
-  <div class="legend" id="legend">
-    <div><span class="dot" style="background:var(--green)"></span> General</div>
-    <div><span class="dot" style="background:var(--blue)"></span> Corregimientos</div>
-    <div><span class="dot" style="background:var(--amber)"></span> Comunas</div>
-  </div>
-  <div class="note">Si la vista queda en blanco, la página reintenta cargar Leaflet desde un CDN alterno automáticamente.</div>
+<!-- JS Leaflet local → CDN y app -->
+<script>
+  function injectJS(src){ return new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.async=true; s.onload=()=>res(true); s.onerror=()=>rej(); document.head.appendChild(s); }); }
+  injectJS('assets/leaflet/leaflet.js')
+    .catch(()=>injectJS('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'))
+    .catch(()=>injectJS('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'))
+    .then(initApp)
+    .catch(()=>{ document.getElementById('map').innerHTML='<div style="padding:16px">No se pudo cargar Leaflet.</div>'; });
 
-  <!-- Carga JS Leaflet con fallback automático -->
-  <script>
-    (function loadLeaflet(){
-      function inject(src, integrity){
-        return new Promise((resolve, reject)=>{
-          const s = document.createElement('script');
-          s.src = src; s.async = true; s.crossOrigin = 'anonymous';
-          if(integrity) s.integrity = integrity;
-          s.onload = ()=> resolve(true);
-          s.onerror = ()=> reject(new Error('script-load-failed'));
-          document.head.appendChild(s);
-        });
-      }
-      // Intento 1: jsDelivr
-      inject('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js', 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=')
-        .catch(()=> inject('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'))
-        .catch(()=> inject('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'))
-        .then(()=> initMap())
-        .catch(()=>{
-          document.getElementById('map').innerHTML = '<div style="padding:16px">No se pudo cargar Leaflet desde la red. Revise políticas de la plataforma o redes.</div>';
-        });
-    })();
-  </script>
+  function initApp(){
+    const params = new URLSearchParams(location.search);
+    let view = params.get('view') || 'comunas';
+    let font = parseInt(params.get('font')||28, 10);
+    let alpha = Math.min(1, Math.max(0.15, parseFloat(params.get('alpha')||0.45)));
 
-  <script>
-    // ========= LÓGICA DEL MAPA =========
-    function initMap(){
-      // Parámetros por querystring: ?view=comunas&font=28&alpha=0.5
-      const params = new URLSearchParams(location.search);
-      const qsView  = params.get('view');
-      const qsFont  = parseInt(params.get('font')||0,10);
-      const qsAlpha = parseFloat(params.get('alpha')||0);
+    document.getElementById('fontSel').value = font;
+    document.getElementById('alphaSel').value = alpha;
+    document.getElementById('viewSel').value = view;
+    document.documentElement.style.setProperty('--label-font-size', font+'px');
+    document.documentElement.style.setProperty('--badge-alpha', alpha);
 
-      const CENTER = [4.4389, -75.2322];
-      const map = L.map('map', { zoomControl:true }).setView(CENTER, 12);
+    const map = L.map('map', { zoomControl: true, minZoom: 11, maxZoom: 18 });
+    const CENTER = [4.4447, -75.2432];
+    map.setView(CENTER, 12);
 
-      // Capa base con fallback de tiles si hay error
-      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' });
-      osm.addTo(map);
-      const fallbackTiles = [
-        'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-        'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png'
-      ];
-      let fb = 0;
-      osm.on('tileerror', function(){
-        if(fb < fallbackTiles.length){
-          const url = fallbackTiles[fb++];
-          try{ osm.setUrl(url); }catch(e){}
-        }
-      });
+    // Tiles + fallbacks
+    const base1 = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(map);
+    const fb = ['https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png','https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png'];
+    let idx = 0; base1.on('tileerror', ()=>{ if(idx<fb.length){ try{ base1.setUrl(fb[idx++]); }catch(e){} } });
 
-      // Controles UI
-      const fontCtl = document.getElementById('fontCtl');
-      const alphaCtl = document.getElementById('alphaCtl');
-      if(qsFont){ fontCtl.value = String(qsFont); }
-      if(qsAlpha){ alphaCtl.value = String(qsAlpha); }
-      const tabs = document.querySelectorAll('.tabs button');
+    // ==== Datos completos ====
+    const comunas = [
+      { id: 1, nombre: 'Centro',               lat: 4.44341,  lng: -75.24116, pob: 31009 },
+      { id: 2, nombre: 'Calambeo',             lat: 4.45072,  lng: -75.24134, pob: 41219 },
+      { id: 3, nombre: 'San Simón',            lat: 4.44513,  lng: -75.22398, pob: 24603 },
+      { id: 4, nombre: 'Piedrapintada',        lat: 4.44132,  lng: -75.21016, pob: 44077 },
+      { id: 5, nombre: 'Jordán',               lat: 4.43874,  lng: -75.19411, pob: 30549 },
+      { id: 6, nombre: 'Vergel',               lat: 4.44914,  lng: -75.19169, pob: 50477 },
+      { id: 7, nombre: 'Salado',               lat: 4.44977,  lng: -75.14573, pob: 44219 },
+      { id: 8, nombre: 'Simón Bolívar',        lat: 4.43495,  lng: -75.17689, pob: 77421 },
+      { id: 9, nombre: 'Picaleña - Mirolindo', lat: 4.42996,  lng: -75.19297, pob: 64235 },
+      { id:10, nombre: 'Estadio',              lat: 4.42950,  lng: -75.21830, pob: 45149 },
+      { id:11, nombre: 'Ferias',               lat: 4.42776,  lng: -75.22658, pob: 31383 },
+      { id:12, nombre: 'Ricaurte',             lat: 4.43098,  lng: -75.24165, pob: 43130 },
+      { id:13, nombre: 'Boquerón',             lat: 4.40778,  lng: -75.26500, pob: 16086 }
+    ];
 
-      function labelIcon(text){
-        const size = parseInt(fontCtl.value,10);
-        return L.divIcon({
-          className: 'label-lg',
-          html: `<span style="font-size:${size}px">${text}</span>`,
-          iconSize: [size*4, size*1.6],
-          iconAnchor: [size*2, size*0.2]
-        });
-      }
-      function pin(lat, lng, options={}){
-        const alpha = parseFloat(alphaCtl.value);
-        const color = options.color || '#22c55e';
-        const radius = options.radius || 20;
-        const weight = options.weight || 2;
-        return L.circleMarker([lat, lng], { color, fillColor: color, fillOpacity: alpha, radius, weight });
-      }
-      function groupFrom(data, style){
-        const g = L.featureGroup();
-        data.forEach(d => {
-          const marker = pin(d.lat, d.lng, { color: style.color, radius: style.radius||20 });
-          marker.addTo(g);
-          const lbl = L.marker([d.lat, d.lng], { icon: labelIcon(d.nombre) });
-          lbl.addTo(g);
-          if(d.popup){ marker.bindPopup(d.popup); lbl.bindPopup(d.popup); }
-        });
-        return g;
-      }
+    const corregimientos = [
+      { id: 1,  nombre: 'Dantas',               lat: 4.34861,  lng: -75.39110 },
+      { id: 2,  nombre: 'Laureles',             lat: 4.37026,  lng: -75.36415 },
+      { id: 3,  nombre: 'Coello - Cocora',      lat: 4.40053,  lng: -75.29048 },
+      { id: 4,  nombre: 'Gamboa',               lat: 4.41106,  lng: -75.33662 },
+      { id: 5,  nombre: 'Tapias',               lat: 4.45583,  lng: -75.35830 },
+      { id: 6,  nombre: 'Toche',                lat: 4.53332,  lng: -75.41668 },
+      { id: 7,  nombre: 'Juntas',               lat: 4.55526,  lng: -75.32215 },
+      { id: 8,  nombre: 'Villa Restrepo',       lat: 4.52434,  lng: -75.31086 },
+      { id: 9,  nombre: 'Cay',                  lat: 4.47358,  lng: -75.25473 },
+      { id: 10, nombre: 'Calambeo (rural)',     lat: 4.46050,  lng: -75.25200 },
+      { id: 11, nombre: 'San Juan de la China', lat: 4.53333,  lng: -75.20000 },
+      { id: 12, nombre: 'San Bernardo',         lat: 4.49626,  lng: -75.07548 },
+      { id: 13, nombre: 'El Salado (rural)',    lat: 4.43100,  lng: -75.12000 },
+      { id: 14, nombre: 'Buenos Aires',         lat: 4.33035,  lng: -75.08216 },
+      { id: 15, nombre: 'Carmen de Bulira',     lat: 4.30500,  lng: -75.40250 },
+      { id: 16, nombre: 'El Totumo',            lat: 4.37805,  lng: -75.18305 },
+      { id: 17, nombre: 'La Florida (rural)',   lat: 4.44150,  lng: -75.19500 }
+    ];
 
-      // ====== DATOS (EJEMPLO/PLANTILLA) ======
-      const DATA_GENERAL = [
-        { nombre:'Ibagué Centro', lat:4.4389, lng:-75.2322, popup:'Ciudad de Ibagué' },
-        { nombre:'Terminal', lat:4.4256, lng:-75.2079 },
-        { nombre:'Aeropuerto Perales', lat:4.4219, lng:-75.1336 }
-      ];
-      const DATA_CORREGIMIENTOS = [
-        { nombre:'Buenos Aires', lat:4.500, lng:-75.280 },
-        { nombre:'Cay', lat:4.480, lng:-75.200 },
-        { nombre:'Tapias', lat:4.600, lng:-75.350 },
-        // … completar el resto
-      ];
-      const DATA_COMUNAS = [
-        { nombre:'Comuna 1', lat:4.443, lng:-75.232 },
-        { nombre:'Comuna 2', lat:4.444, lng:-75.220 },
-        { nombre:'Comuna 3', lat:4.433, lng:-75.228 },
-        // … completar el resto
-      ];
+    // helpers visuales
+    function makeCircle(lat,lng,color){ return L.circleMarker([lat,lng],{ radius: 9, color:'rgba(255,255,255,.35)', weight:1, fillColor:color, fillOpacity:alpha }); }
+    function addLabel(marker, html){ marker.bindTooltip(html,{ permanent:true, direction:'top', className:'marker-label', offset:[0,-6] }); }
+    function comunaHTML(c){ const pob=c.pob?`<span class="marker-badge">Pobl: ${Number(c.pob).toLocaleString('es-CO')}</span>`:''; return `<span>${c.id}. ${c.nombre}</span> ${pob}`; }
+    function corregHTML(c){ return `<span>${c.id}. ${c.nombre}</span>`; }
 
-      // ====== CAPAS ======
-      const green = getComputedStyle(document.documentElement).getPropertyValue('--green').trim();
-      const blue  = getComputedStyle(document.documentElement).getPropertyValue('--blue').trim();
-      const amber = getComputedStyle(document.documentElement).getPropertyValue('--amber').trim();
+    const colorComuna = '#ffd166';
+    const colorCorreg = '#06d6a0';
 
-      const LYR_GENERAL = groupFrom(DATA_GENERAL, { color: green });
-      const LYR_CORREG  = groupFrom(DATA_CORREGIMIENTOS, { color: blue,  radius:22 });
-      const LYR_COMUNAS = groupFrom(DATA_COMUNAS, { color: amber, radius:18 });
+    // capas
+    const capCom = L.layerGroup();
+    comunas.forEach(c=>{ if(typeof c.lat!=='number') return; const m=makeCircle(c.lat,c.lng,colorComuna).addTo(capCom); addLabel(m,comunaHTML(c)); m.bindPopup(`<b>Comuna ${c.id}: ${c.nombre}</b>${c.pob?`<br/>Población ref.: ${Number(c.pob).toLocaleString('es-CO')}`:''}`); });
+    const capCor = L.layerGroup();
+    corregimientos.forEach(c=>{ if(typeof c.lat!=='number') return; const m=makeCircle(c.lat,c.lng,colorCorreg).addTo(capCor); addLabel(m,corregHTML(c)); m.bindPopup(`<b>Corregimiento ${c.id}: ${c.nombre}</b>`); });
 
-      const layers = { general: LYR_GENERAL, corregimientos: LYR_CORREG, comunas: LYR_COMUNAS };
-      let current = 'general';
+    function showLayer(which){ map.eachLayer(l=>{ if(l!==base1) map.removeLayer(l); }); const g = which==='corregimientos'?capCor:capCom; g.addTo(map); try{ map.fitBounds(g.getBounds().pad(0.2)); }catch(e){ map.setView(CENTER, 12); } }
+    showLayer(view);
 
-      function activate(view){
-        Object.values(layers).forEach(l=>{ if(map.hasLayer(l)) map.removeLayer(l); });
-        map.addLayer(layers[view]);
-        current = view;
-        document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
-        document.querySelector(`.tabs button[data-view="${view}"]`).classList.add('active');
-        try{ map.fitBounds(layers[view].getBounds().pad(0.2)); }catch(e){ map.setView(CENTER, 12); }
-      }
+    // eventos UI
+    const viewSel=document.getElementById('viewSel');
+    const fontSel=document.getElementById('fontSel');
+    const alphaSel=document.getElementById('alphaSel');
+    const searchBox=document.getElementById('searchBox');
 
-      const initial = ['general','corregimientos','comunas'].includes(qsView) ? qsView : 'general';
-      activate(initial);
+    viewSel.addEventListener('change', e=>{ view=e.target.value; showLayer(view); const u=new URL(location); u.searchParams.set('view',view); history.replaceState({},'',u); });
+    fontSel.addEventListener('input', e=>{ font=parseInt(e.target.value,10); document.documentElement.style.setProperty('--label-font-size', font+'px'); const u=new URL(location); u.searchParams.set('font',font); history.replaceState({},'',u); });
+    alphaSel.addEventListener('input', e=>{ alpha=parseFloat(e.target.value); document.documentElement.style.setProperty('--badge-alpha', alpha); [capCom,capCor].forEach(g=>g.eachLayer(l=>l.setStyle&&l.setStyle({fillOpacity:alpha}))); const u=new URL(location); u.searchParams.set('alpha',alpha.toFixed(2)); history.replaceState({},'',u); });
+    searchBox.addEventListener('keydown', e=>{ if(e.key!=='Enter') return; const q=e.target.value.trim().toLowerCase(); if(!q) return; const ds=view==='corregimientos'?corregimientos:comunas; const hit=ds.find(x=>(`${x.id}. ${x.nombre}`.toLowerCase()).includes(q)||x.nombre.toLowerCase().includes(q)); if(hit&&typeof hit.lat==='number'){ map.flyTo([hit.lat,hit.lng],14,{duration:.8}); }});
 
-      // Eventos UI
-      document.querySelectorAll('.tabs button').forEach(b=> b.addEventListener('click', (ev)=> activate(ev.currentTarget.dataset.view)) );
-      fontCtl.addEventListener('change', ()=>{ const v = current; activate('general'); activate(v); });
-      alphaCtl.addEventListener('input', ()=>{ const a = parseFloat(alphaCtl.value); layers[current].eachLayer(l=>{ if(l.setStyle){ l.setStyle({ fillOpacity:a }); } }); });
-      document.getElementById('fitBtn').addEventListener('click', ()=>{ try{ map.fitBounds(layers[current].getBounds().pad(0.2)); }catch(e){ map.setView(CENTER, 12); } });
-    }
-  </script>
+    // leyenda
+    const legend = L.control({position:'bottomleft'}); legend.onAdd=()=>{ const d=L.DomUtil.create('div','legend'); d.innerHTML=`<div class="row"><span class="dot" style="background:${colorComuna}"></span> Comunas (13)</div><div class="row"><span class="dot" style="background:${colorCorreg}"></span> Corregimientos (17)</div><div class="row"><span class="dot" style="background:rgba(2,10,25,var(--badge-alpha)); width:18px; height:10px; border-radius:4px"></span> Fondo etiqueta (transparente)</div>`; return d; }; legend.addTo(map);
+  }
+</script>
 </body>
 </html>
