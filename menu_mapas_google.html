@@ -26,12 +26,16 @@
   </div>
 
   <!-- Player principal -->
-  <iframe src="https://fundacionreaching.github.io/menu_mapas_2.html?v=1" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+  <iframe id="player"
+    src="https://fundacionreaching.github.io/menu_mapas_2.html?v=2"
+    loading="lazy"
+    referrerpolicy="strict-origin-when-cross-origin"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
 
   <!-- Logo Fundación (WebP + PNG respaldo) -->
   <picture id="marcaFundacion">
-    <source type="image/webp" srcset="https://fundacionreaching.github.io/assets/branding/logo.webp?v=1">
-    <img src="https://fundacionreaching.github.io/assets/branding/logo-estatico.png?v=1" alt="Fundación Reaching">
+    <source type="image/webp" srcset="https://fundacionreaching.github.io/assets/branding/logo.webp?v=2">
+    <img src="https://fundacionreaching.github.io/assets/branding/logo-estatico.png?v=2" alt="Fundación Reaching">
   </picture>
 </div>
 
@@ -46,6 +50,7 @@
     const show=()=>{marca.style.opacity='1';marca.style.transform='translateY(0)'};
     const hide=()=>{marca.style.opacity='0';marca.style.transform='translateY(6px)'};
     if(img.complete) show(); else img.addEventListener('load',show,{once:true});
+    img.addEventListener('error',()=>{marca.remove()},{once:true}); // si falta el logo, no mostrar cuadro roto
     setTimeout(hide,6000); // ocultar tras 6s (ajuste libre)
   })();
 </script>
