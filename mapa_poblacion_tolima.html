@@ -253,6 +253,29 @@
       }catch(e){
         document.getElementById('msg').textContent='No se pudo cargar CSV. Verifica la ruta.';
       }
+
+const RUTAS = {
+  municipios: [
+    '/data/tolima_municipios.geojson',
+    '/data/data/data/data/tolima_municipios.geojson',
+    'https://raw.githubusercontent.com/fundacionreaching/fundacionreaching.github.io/main/data/tolima_municipios.geojson',
+    'https://raw.githubusercontent.com/fundacionreaching/data/main/tolima_municipios.geojson'
+  ],
+  comunas: [
+    '/data/ibague_comunas.geojson',
+    '/data/data/data/data/ibague_comunas.geojson',
+    'https://raw.githubusercontent.com/fundacionreaching/fundacionreaching.github.io/main/data/ibague_comunas.geojson',
+    'https://raw.githubusercontent.com/fundacionreaching/data/main/ibague_comunas.geojson'
+  ],
+  corregimientos: [
+    '/data/ibague_corregimientos.geojson',
+    '/data/data/data/data/ibague_corregimientos.geojson',
+    'https://raw.githubusercontent.com/fundacionreaching/fundacionreaching.github.io/main/data/ibague_corregimientos.geojson',
+    'https://raw.githubusercontent.com/fundacionreaching/data/main/ibague_corregimientos.geojson'
+  ]
+};
+
+
     })();
   </script>
 </body>
