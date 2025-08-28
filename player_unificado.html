@@ -1,247 +1,107 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full">
+<html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <title>Player Unificado — Fundación Reaching</title>
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapas — Embed Liviano · Fundación Reaching</title>
+  <meta name="color-scheme" content="dark light" />
   <style>
     :root{
-      --bg:#0b1220;--card:#0f172a;--muted:#94a3b8;--txt:#e2e8f0;--accent:#fbbf24;--brand:#1e40af;--ok:#10b981;--danger:#ef4444;
+      --bg:#0b1220;--card:#0f172a;--txt:#e5e7eb;--muted:#9ca3af;--line:#1f2937;--accent:#fbbf24;--btn:#1d4ed8;
     }
-    *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
-    a{color:#93c5fd;text-decoration:none}
-    header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,rgba(2,6,23,.9),rgba(2,6,23,.6));backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid #1f2937}
-    .wrap{max-width:1100px;margin:auto;padding:12px 16px}
-    .brand{display:flex;align-items:center;gap:12px}
-    .logo{width:36px;height:36px;border-radius:12px;object-fit:cover;border:1px solid #334155}
-    .title{font-weight:700;letter-spacing:.2px}
-    .subtitle{font-size:12px;color:var(--muted)}
-    .grid{display:grid;gap:16px}
-    @media(min-width:960px){.grid{grid-template-columns:2fr 1fr}}
-    .card{background:linear-gradient(180deg,#0f172a,#0b1220);border:1px solid #1f2937;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .card h3{margin:0;padding:14px 16px;border-bottom:1px solid #1f2937;background:#111827}
-    .pad{padding:12px}
-    .tabs{display:flex;gap:8px;flex-wrap:wrap;padding:10px}
-    .tab{padding:8px 12px;border-radius:999px;border:1px solid #303a4a;background:#0b1220;color:var(--muted);cursor:pointer}
-    .tab.active{color:#111827;background:linear-gradient(180deg,#facc15,#f59e0b);border-color:#f59e0b;font-weight:700}
-    .player{aspect-ratio:16/9;background:#0a0f1d;display:grid;place-items:center;border-radius:14px;overflow:hidden;border:1px solid #1f2937}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    button{appearance:none;border:none;cursor:pointer;border-radius:12px;padding:10px 12px;background:#1f2937;color:#e5e7eb}
-    button.primary{background:linear-gradient(180deg,#2563eb,#1d4ed8)}
-    button.accent{background:linear-gradient(180deg,#f59e0b,#d97706);color:#111827;font-weight:700}
-    .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .kpi{background:#0b1220;border:1px solid #1f2937;border-radius:14px;padding:10px}
-    .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .muted{color:var(--muted)}
-    .donate{display:grid;gap:10px}
-    .donate a{display:inline-block;background:linear-gradient(180deg,#22c55e,#16a34a);color:#052e16;padding:12px 14px;border-radius:12px;border:1px solid #14532d;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
-    .mini{position:fixed;left:8px;right:8px;bottom:8px;background:#0b1220;border:1px solid #1f2937;border-radius:16px;padding:10px;display:flex;align-items:center;gap:10px;z-index:60}
-    .mini .title{font-size:14px}
+    html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:var(--txt)}
+    .wrap{max-width:1100px;margin:auto;padding:16px}
+    .row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+    h1{font-size:clamp(18px,2.4vw,24px);margin:0;font-weight:800;letter-spacing:.2px}
+    .muted{color:var(--muted);font-size:13px}
+    .card{background:linear-gradient(180deg,#0f172a,#0b1220);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+    .btn{appearance:none;border:1px solid #0b3ea1;background:linear-gradient(180deg,#2563eb,#1d4ed8);color:white;padding:8px 12px;border-radius:12px;text-decoration:none;font-weight:700}
+    .btn.secondary{background:transparent;border-color:#374151;color:#e5e7eb}
+    .shell{position:relative}
+    iframe{width:100%;height:min(70vh,800px);min-height:420px;border:0;background:#0a0f1d}
+    @media(max-width:640px){ iframe{height:65vh;min-height:360px} }
+    .placeholder{position:absolute;inset:0;display:grid;place-items:center;background:repeating-linear-gradient(45deg,#0d1221 0 10px,#0f172a 10px 20px);color:#cbd5e1}
     .hide{display:none}
-    iframe{width:100%;height:100%;border:0}
-    audio, video{width:100%;height:100%;outline:none;background:black}
-    .footer{color:var(--muted);font-size:12px;text-align:center;padding:20px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#111827;border:1px solid var(--line);font-size:12px;color:#cbd5e1}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .cta{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:linear-gradient(180deg,#22c55e,#16a34a);color:#052e16;border:1px solid #14532d;font-weight:800;text-transform:uppercase;letter-spacing:.3px;text-decoration:none}
+    .foot{padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
   </style>
 </head>
-<body class="h-full">
-  <header>
-    <div class="wrap brand">
-      <img class="logo" src="https://fundacionreaching.github.io/assets/reaching_logo_256.png" alt="Reaching" onerror="this.remove()" />
-      <div>
-        <div class="title">Player Unificado — Reaching</div>
-        <div class="subtitle">CPU & MÓVIL · Radio · TV · Podcast · Mapas</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px">
-        <button onclick="openInNewTab()" title="Abrir en pestaña" class="accent">Abrir en pestaña</button>
-      </div>
-    </div>
-  </header>
-
-  <main class="wrap" style="padding:16px 16px 88px">
-    <div class="card">
-      <h3>Señal</h3>
-      <div class="tabs">
-        <button class="tab active" data-tab="radio">Radio</button>
-        <button class="tab" data-tab="tv">TV</button>
-        <button class="tab" data-tab="podcast">Podcast</button>
-        <button class="tab" data-tab="mapas">Mapas</button>
-      </div>
-      <div class="pad">
-        <!-- RADIO -->
-        <section class="view" id="view-radio">
-          <div class="player" id="radio-box">
-            <!-- Preferible MP3/AAC directo; HLS se maneja con hls.js si se requiere -->
-            <audio id="radio" preload="none" controls crossorigin="anonymous">
-              <!-- Reemplace con su URL de streaming -->
-              <source src="https://stream.example.com/reaching-radio.mp3" type="audio/mpeg" />
-              <p class="muted">Tu navegador no soporta audio embebido.</p>
-            </audio>
-          </div>
-          <div class="row" style="margin-top:10px">
-            <div class="controls">
-              <button onclick="play('radio')" class="primary"▶️ Reproducir</button>
-              <button onclick="pause('radio')">⏸️ Pausar</button>
-              <button onclick="toggleMini('radio','Radio en vivo')">📌 Mantener en mini</button>
-            </div>
-            <div class="muted">Calidad: 128 kbps MP3 (sugerido)</div>
-          </div>
-        </section>
-
-        <!-- TV -->
-        <section class="view hide" id="view-tv">
-          <div class="player" id="tv-box">
-            <!-- Si tienen HLS (.m3u8) descomentar video + hls.js. Si usan YouTube Live mantener iframe. -->
-            <iframe id="tv-yt" src="https://www.youtube.com/embed/live_stream?channel=UC1234567890&autoplay=0&modestbranding=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="TV en vivo"></iframe>
-            <!--
-            <video id="tv" controls playsinline preload="none"></video>
-            -->
-          </div>
-          <div class="row" style="margin-top:10px">
-            <div class="controls">
-              <button onclick="play('tv-yt')" class="primary">▶️ Reproducir</button>
-              <button onclick="pause('tv-yt')">⏸️ Pausar</button>
-              <button onclick="toggleMini('tv-yt','TV en vivo')">📌 Mantener en mini</button>
-            </div>
-            <div class="muted">Sugerido: YouTube Live o HLS (.m3u8) propio</div>
-          </div>
-        </section>
-
-        <!-- PODCAST -->
-        <section class="view hide" id="view-podcast">
-          <div class="player">
-            <iframe title="Podcast Reaching" loading="lazy" src="https://anchor.fm/some-show/embed" allowtransparency="true" sandbox="allow-forms allow-popups allow-same-origin allow-scripts" ></iframe>
-          </div>
-          <div class="row" style="margin-top:10px">
-            <div class="controls">
-              <a class="accent" href="#" target="_blank" rel="noopener">Abrir podcast en app</a>
-            </div>
-            <div class="muted">Integra Spotify / Anchor / Apple Podcasts</div>
-          </div>
-        </section>
-
-        <!-- MAPAS (EMBEBE TU PÁGINA EXISTENTE) -->
-        <section class="view hide" id="view-mapas">
-          <div class="player">
-            <iframe title="Menú de Mapas Reaching" src="https://fundacionreaching.github.io/menu_mapas_2.html"></iframe>
-          </div>
-          <div class="row" style="margin-top:10px">
-            <div class="controls">
-              <a class="accent" href="https://fundacionreaching.github.io/menu_mapas_2.html" target="_blank" rel="noopener">Abrir Mapas en pestaña</a>
-            </div>
-            <div class="muted">La vista se adapta a móvil automáticamente</div>
-          </div>
-        </section>
-      </div>
-    </div>
-
-    <div class="grid" style="margin-top:16px">
-      <div class="card">
-        <h3>Donaciones</h3>
-        <div class="pad donate">
-          <a href="https://www.paypal.com/donate" target="_blank" rel="noopener">Sembrar ahora</a>
-          <div class="muted">Opcional: integrar PayU, Wompi, Stripe; monto sugerido y donación recurrente.</div>
+<body>
+  <main class="wrap">
+    <section class="card" aria-label="Panel de Mapas (embed)">
+      <div class="head">
+        <div>
+          <h1>Panel de Mapas</h1>
+          <div class="muted">Fundación Reaching — versión ligera para incrustar</div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="https://fundacionreaching.github.io/menu_mapas_2.html" target="_blank" rel="noopener">Abrir en pestaña</a>
+          <button id="cargar" class="btn secondary" type="button">Cargar aquí</button>
         </div>
       </div>
-      <div class="card">
-        <h3>Estado</h3>
-        <div class="pad kpis">
-          <div class="kpi"><div class="muted">Último cambio</div><div id="kpi-date">—</div></div>
-          <div class="kpi"><div class="muted">Modo</div><div id="kpi-mode">Móvil primero</div></div>
+
+      <div class="shell" id="shell" data-src="https://fundacionreaching.github.io/menu_mapas_2.html">
+        <div id="placeholder" class="placeholder" aria-hidden="true">
+          <span class="pill">Mapas listos • clic en “Cargar aquí”</span>
         </div>
+        <iframe id="mapas" title="Panel de Mapas — Fundación Reaching" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="hide"
+        sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+        allow="fullscreen *; geolocation *; clipboard-write *; accelerometer *; gyroscope *; autoplay *; encrypted-media *"
+      ></iframe>
       </div>
-    </div>
+
+      <div class="foot">
+        <span class="muted">Carga bajo demanda para ahorrar datos — móvil primero.</span>
+        <a class="cta" href="https://fundacionreaching.github.io/menu_mapas_2.html" target="_blank" rel="noopener">Ver versión completa</a>
+      </div>
+    </section>
   </main>
 
-  <!-- MINI PLAYER STICKY -->
-  <div class="mini hide" id="mini">
-    <div style="width:44px;height:44px;border-radius:10px;background:#111827;display:grid;place-items:center">🎧</div>
-    <div style="flex:1 1 auto">
-      <div class="title" id="mini-title">Reproduciendo</div>
-      <div class="muted" id="mini-status">Pausado</div>
-    </div>
-    <div class="controls">
-      <button id="mini-toggle">▶️</button>
-      <button onclick="closeMini()">✖️</button>
-    </div>
-  </div>
-
-  <footer class="footer">© Fundación Reaching — Hecho con excelencia para la gloria de Dios.</footer>
-
   <script>
-    // Utilidades generales
-    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-    const $  = (sel, root=document) => root.querySelector(sel);
+    (function(){
+      const shell = document.getElementById('shell');
+      const iframe = document.getElementById('mapas');
+      const btn = document.getElementById('cargar');
+      const ph = document.getElementById('placeholder');
+      const src = shell?.dataset?.src;
+      let loaded = false;
 
-    // Tabs
-    const tabs = $$(".tab");
-    const views = $$(".view");
-    const last = localStorage.getItem('rx_tab');
-    if(last){ activateTab(last); } else { activateTab('radio'); }
-    tabs.forEach(btn=>btn.addEventListener('click',()=>activateTab(btn.dataset.tab)));
-
-    function activateTab(name){
-      tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
-      views.forEach(v=>v.classList.toggle('hide', v.id!==`view-${name}`));
-      localStorage.setItem('rx_tab', name);
-    }
-
-    // Mini player state
-    const mini = $('#mini');
-    const miniTitle = $('#mini-title');
-    const miniStatus = $('#mini-status');
-    const miniToggle = $('#mini-toggle');
-    let currentEl = null; // audio|video|iframe id
-
-    function toggleMini(id, title){
-      currentEl = document.getElementById(id) || id;
-      miniTitle.textContent = title || 'Reproduciendo';
-      mini.classList.remove('hide');
-      updateMiniStatus();
-    }
-    function closeMini(){ mini.classList.add('hide'); currentEl=null; }
-    miniToggle.addEventListener('click', ()=>{
-      if(!currentEl) return;
-      if(currentEl.tagName==='AUDIO' || currentEl.tagName==='VIDEO'){
-        if(currentEl.paused){ currentEl.play(); } else { currentEl.pause(); }
-        updateMiniStatus();
-      } else if(currentEl.tagName==='IFRAME'){
-        // Para iframes (YouTube) no hay API directa sin postMessage; recomendamos YouTube Iframe API si se requiere control total.
-        alert('Para pausar/reproducir YouTube, use los controles del cuadro. (Se puede integrar la API de YouTube si lo desean).');
+      function load(){
+        if(loaded || !src) return;
+        iframe.src = src;
+        iframe.classList.remove('hide');
+        ph?.classList.add('hide');
+        loaded = true;
       }
-    });
-    function updateMiniStatus(){
-      if(!currentEl){ miniStatus.textContent = '—'; return; }
-      if(currentEl.tagName==='AUDIO' || currentEl.tagName==='VIDEO'){
-        miniStatus.textContent = currentEl.paused ? 'Pausado' : 'Reproduciendo';
-        miniToggle.textContent = currentEl.paused ? '▶️' : '⏸️';
-      } else { miniStatus.textContent = 'En vivo'; miniToggle.textContent = '▶️'; }
-    }
 
-    // Reproducir/Pausar helpers
-    function play(id){ const el = document.getElementById(id); if(el && el.play) el.play(); updateMiniStatus(); }
-    function pause(id){ const el = document.getElementById(id); if(el && el.pause) el.pause(); updateMiniStatus(); }
+      // Botón manual
+      btn?.addEventListener('click', load);
 
-    // Abrir en pestaña
-    function openInNewTab(){ window.open(window.location.href, '_blank'); }
+      // Auto-carga cuando entra en viewport
+      if('IntersectionObserver' in window){
+        const io = new IntersectionObserver((entries)=>{
+          entries.forEach(e=>{ if(e.isIntersecting) { load(); io.disconnect(); } });
+        }, {rootMargin:'120px'});
+        io.observe(shell);
+      }
 
-    // KPI fecha
-    document.getElementById('kpi-date').textContent = new Date().toLocaleString('es-CO');
-
-    // NOTA HLS: si su TV usa HLS (.m3u8), incluir hls.js del CDN y vincular:
-    /*
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    const hlsUrl = 'https://tv.example.com/live.m3u8';
-    const video = document.getElementById('tv');
-    if(Hls.isSupported()){
-      const hls = new Hls({maxBufferLength:10});
-      hls.loadSource(hlsUrl);
-      hls.attachMedia(video);
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')){
-      video.src = hlsUrl; // Soporte nativo (iOS/Safari)
-    }
-    */
+      // Fallback: mostrar aviso si tarda mucho en cargar
+      let fallbackTimer = setTimeout(()=>{
+        if(!loaded){
+          ph.innerHTML = '<span class="pill">La carga puede tardar… También puedes abrir en pestaña.</span>';
+        }
+      }, 8000);
+      iframe.addEventListener('load', ()=>{ clearTimeout(fallbackTimer); try{
+          const doc = iframe.contentDocument || iframe.contentWindow?.document;
+          if(!doc) return;
+          // Reescribe vínculos para abrir en pestaña (evita que parezcan "no abrir")
+          doc.querySelectorAll('a[href]').forEach(a=>{ a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+        }catch(err){ /* Puede ser cross-origin si cambia de dominio; ignorar */ }
+      });
+    })();
   </script>
 </body>
 </html>
