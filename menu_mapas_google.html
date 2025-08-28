@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Menú de Mapas – Fundación Reaching</title>
+  <style>
+    :root{--bg:#f5f5f5;--btn:#2c3e50;--btnH:#1abc9c}
+    body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg)}
+    .mapas-wrapper{max-width:1400px;margin:0 auto;position:relative}
+    iframe{width:100%;height:100vh;min-height:900px;border:none;border-radius:12px}
+    /* Logo overlay */
+    #marcaFundacion{position:absolute;bottom:16px;right:16px;z-index:5;pointer-events:none;opacity:0;transform:translateY(6px);transition:opacity .5s ease,transform .5s ease}
+    #marcaFundacion img{width:140px;height:auto;display:block}
+    /* Botón */
+    .btn-generador{display:inline-block;padding:10px 18px;border-radius:8px;background:var(--btn);color:#fff;text-decoration:none;font-weight:600;transition:background .3s}
+    .btn-generador:hover{background:var(--btnH)}
+    .acciones{text-align:center;margin:12px 0 8px}
+  </style>
+</head>
+<body>
+
+<div class="mapas-wrapper">
+  <div class="acciones">
+    <a class="btn-generador" href="https://satellites.pro/Google_plan/Tolima_region_map" target="_blank" rel="noopener">🌐 Abrir Generador del Player (Tolima)</a>
+  </div>
+
+  <!-- Player principal -->
+  <iframe src="https://fundacionreaching.github.io/menu_mapas_2.html?v=1" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+
+  <!-- Logo Fundación (WebP + PNG respaldo) -->
+  <picture id="marcaFundacion">
+    <source type="image/webp" srcset="https://fundacionreaching.github.io/assets/branding/logo.webp?v=1">
+    <img src="https://fundacionreaching.github.io/assets/branding/logo-estatico.png?v=1" alt="Fundación Reaching">
+  </picture>
+</div>
+
+<p style="text-align:center;margin:8px 0;">
+  <a href="https://fundacionreaching.github.io/menu_mapas_2.html" target="_blank" rel="noopener">Abrir Menú de Mapas en pestaña</a>
+</p>
+
+<script>
+  (function(){
+    const marca=document.getElementById('marcaFundacion');
+    const img=marca.querySelector('img');
+    const show=()=>{marca.style.opacity='1';marca.style.transform='translateY(0)'};
+    const hide=()=>{marca.style.opacity='0';marca.style.transform='translateY(6px)'};
+    if(img.complete) show(); else img.addEventListener('load',show,{once:true});
+    setTimeout(hide,6000); // ocultar tras 6s (ajuste libre)
+  })();
+</script>
+
+</body>
+</html>
