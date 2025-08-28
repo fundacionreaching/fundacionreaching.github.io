@@ -1,263 +1,193 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Menú de Mapas — Reaching (Unificado v3)</title>
-  <meta name="description" content="Centro unificado de mapas con el mismo formato visual, ahora más limpio: Tolima (Reaching + Google + Población), Ibagué v2 y utilidades. Todo con despliegue progresivo para reducir saturación visual." />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Panel de Mapas – Fundación Reaching</title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <style>
     :root{
-      --bg:#0b1223; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --border:#1f2937; --hover:#122138;
-      --radius:16px; --sp:14px; --shadow:0 10px 26px rgba(0,0,0,.22); --soft:rgba(255,255,255,.03);
+      --bg:#0b1020; --card:#121933; --txt:#f8fafc; --muted:#cbd5e1;
+      --brand:#22c55e; --brand2:#10b981; --border:rgba(255,255,255,.08);
+      --radius:16px; --shadow:0 8px 30px rgba(0,0,0,.35);
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;background:radial-gradient(1200px 600px at 20% 0%, #0b1225 0%, var(--bg) 50%, #0a0f1e 100%);color:var(--text)}
-    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(15,23,42,.9);position:sticky;top:0;z-index:30}
-    h1{margin:0;font-size:clamp(18px,2.5vw,26px)}
-    .brand{display:flex;align-items:center;gap:10px}
-    .brand img{height:40px;width:auto;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
-    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .chip,button,a.btn{background:#0b1223;color:#e5e7eb;border:1px solid var(--border);border-radius:12px;padding:7px 10px;cursor:pointer;text-decoration:none}
-    .chip:hover,button:hover,a.btn:hover{background:var(--hover)}
-    .primary{background:var(--accent);color:#062411;border-color:#16a34a;font-weight:800}
+    html,body{height:100%;margin:0;background:linear-gradient(165deg,#0b1020,#0d1327 55%,#0b1020);color:var(--txt);font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    body.no-tap-hl{-webkit-tap-highlight-color:transparent}
+    .wrap{min-height:100svh;min-height:100dvh;display:flex;flex-direction:column}
 
-    .wrap{max-width:1240px;margin:0 auto;padding:16px}
-    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
-    .card{grid-column:span 12;background:linear-gradient(180deg, var(--soft), rgba(255,255,255,0));border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-    @media (min-width:980px){ .half{grid-column:span 6} .third{grid-column:span 4} .twothird{grid-column:span 8} }
-    .card h2{margin:0;font-size:16px;padding:10px 12px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .body{padding:12px}
-    .muted{color:var(--muted);font-size:12px}
+    header{position:sticky;top:0;z-index:50;backdrop-filter:saturate(1.2) blur(8px);
+      background:rgba(2,6,23,.6);border-bottom:1px solid var(--border)}
+    .container{max-width:1024px;margin:0 auto;padding:clamp(12px,2vw,16px)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .brand img{width:40px;height:40px;filter:drop-shadow(0 2px 6px rgba(34,197,94,.5))}
+    .brand h1{font-size:clamp(16px,2.4vw,18px);margin:0;font-weight:800;letter-spacing:.2px}
+    .brand small{display:block;color:var(--muted);font-weight:500}
 
-    /* CONTROLES LIGEROS */
-    .toolbar{display:flex;gap:8px;align-items:center}
-    .toggle{display:inline-flex;gap:6px;align-items:center}
-    input[type="text"],select,input[type="number"],textarea{background:#0b1223;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+    main{flex:1;}
+    .grid{display:grid;gap:14px;padding:16px;grid-template-columns:repeat(2,1fr)}
+    @media (min-width:700px){.grid{grid-template-columns:repeat(3,1fr);}}
 
-    /* BLOQUES COLAPSABLES (despliegue progresivo) */
-    details{border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#0b1223}
-    details:not([open]) summary .hint{opacity:.85}
-    summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px}
-    summary::-webkit-details-marker{display:none}
-    .hint{font-size:12px;color:#b6c0d6;margin-left:4px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+      box-shadow:var(--shadow); padding:14px; display:flex; flex-direction:column; gap:8px;
+      text-decoration:none;color:var(--txt); min-height:110px; position:relative;
+      transition:transform .15s ease, box-shadow .2s ease}
+    .card:hover{transform:translateY(-2px)}
+    .card h3{margin:0;font-size:16px}
+    .card p{margin:0;color:var(--muted);font-size:13px;line-height:1.25}
+    .pill{position:absolute; top:10px; right:10px; font-size:11px; padding:4px 8px; border-radius:999px;
+      background:rgba(16,185,129,.15); color:#a7f3d0; border:1px solid rgba(16,185,129,.25)}
 
-    /* IFRAMES */
-    iframe.frame{width:100%;height:56vh;border:0;background:#0a1220;border-radius:12px}
+    /* CTA superior */
+    .cta{display:flex;gap:10px;flex-wrap:wrap;padding:0 16px 6px}
+    .cta a{flex:1;min-width:220px;text-align:center;background:linear-gradient(135deg,var(--brand),var(--brand2));
+      color:#052e16;font-weight:800;padding:12px 16px;border-radius:12px;text-decoration:none}
 
-    /* TABASDO SIMPLE (chips) */
-    .tabs{display:flex;gap:8px;flex-wrap:wrap}
-    .tabs .tab{border:1px solid var(--border);background:#0b1223;border-radius:10px;padding:6px 10px;cursor:pointer}
-    .tabs .tab.active{background:#13223a}
+    footer{padding:10px 16px; text-align:center; color:var(--muted); font-size:12px}
 
-    /* TABLA POBLACIÓN */
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{border-bottom:1px solid #13223a;padding:6px 6px;text-align:left}
-    th{color:#bcd0ea;font-weight:700}
-    tbody tr:hover{background:#0e1931}
-    .tablebox{max-height:38vh;overflow:auto;border:1px solid var(--border);border-radius:12px}
-    .more{display:inline-block;margin-top:8px}
+    /* Modal responsive con animación */
+    .overlay{position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.7); backdrop-filter:blur(2px); padding:10px;
+      opacity:0; pointer-events:none; transition:opacity .35s ease}
+    .overlay[aria-hidden="false"]{opacity:1; pointer-events:auto}
+    .modal{position:relative;width:min(1100px,100%);height:min(92svh,92dvh);
+      background:#000;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);
+      border:1px solid var(--border); transform:translateY(30px); opacity:0;
+      transition:opacity .35s ease, transform .35s ease}
+    .overlay[aria-hidden="false"] .modal{transform:translateY(0);opacity:1}
+    .modal iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+    .close{position:absolute;top:8px;right:8px;width:44px;height:44px;border-radius:999px;display:grid;place-items:center;font-size:24px;border:none;cursor:pointer;background:rgba(255,255,255,.92)}
+    .close:active{transform:scale(.98)}
+
+    /* Animación de entrada para tarjetas (respetando reduce motion) */
+    @media (prefers-reduced-motion: no-preference){
+      .reveal{opacity:0; transform:translateY(14px);}
+      .reveal.is-visible{opacity:1; transform:none; transition:opacity .5s ease, transform .5s ease;}
+    }
   </style>
 </head>
-<body>
+<body class="no-tap-hl">
+<div class="wrap">
   <header>
-    <div class="brand">
-      <a class="logo" href="./" title="Fundación Reaching"><img src="./assets/logo_reaching.png" alt="Fundación Reaching" onerror="this.onerror=null;this.src='./assets/img/logo_reaching.png'"></a>
-      <h1>Menú de Mapas — Reaching (Unificado v3)</h1>
-    </div>
-    <div class="row">
-      <a class="chip" href="#tolima">Tolima</a>
-      <a class="chip" href="#ibague">Ibagué</a>
-      <a class="chip" href="#municipios">Municipios</a>
-      <a class="chip" href="#google">Google</a>
+    <div class="container brand">
+      <!-- AJUSTE: cambie la ruta del logo si su gif está en otro lugar -->
+      <img src="https://fundacionreaching.github.io/assets/branding/logo.gif?v=6"
+           alt="Fundación Reaching" width="40" height="40" decoding="async" fetchpriority="low"
+           onerror="this.remove()">
+      <div>
+        <h1>Panel de Mapas</h1>
+        <small>Fundación Reaching — Mobile-first</small>
+      </div>
     </div>
   </header>
 
-  <main class="wrap grid">
-    <!-- ====== TOLIMA (tabs + progressive disclosure) ====== -->
-    <section id="tolima" class="card">
-      <h2>
-        <span>🗺️ Tolima — Centro de recursos</span>
-        <span class="muted">Mismo formato, vista más limpia</span>
-      </h2>
-      <div class="body">
-        <div class="tabs" id="tolimaTabs">
-          <button class="tab active" data-pane="#tReach">Mapa Reaching</button>
-          <button class="tab" data-pane="#tGoogle">Google Maps</button>
-          <button class="tab" data-pane="#tPobl">Población</button>
-        </div>
+  <main>
+    <!-- CTA arriba -->
+    <div class="cta">
+      <a href="https://fundacionreaching.github.io/menu_mapas_google.html" target="_blank" rel="noopener">Abrir Google Satelital en pestaña</a>
+      <a href="https://fundacionreaching.github.io/menu_mapas_2.html#google-sat" target="_self">Abrir dentro del Player</a>
+    </div>
 
-        <!-- Reaching -->
-        <div id="tReach" class="pane" style="margin-top:10px">
-          <div class="toolbar">
-            <a class="primary" target="_blank" id="openReaching">Abrir en pestaña</a>
-            <button id="loadReaching">Cargar vista previa</button>
-          </div>
-          <div style="margin-top:10px"><iframe id="ifrReaching" class="frame" title="Tolima Reaching (prev)" data-src="./mapa_tolima.html?auto=1&fmin=16&fmax=34&alpha=0.55&intensity=1.35&radius=12"></iframe></div>
-          <details style="margin-top:10px">
-            <summary>Copiar iframe <span class="hint">(oculto por defecto)</span></summary>
-            <textarea id="codeReaching" rows="5" style="width:100%;margin-top:8px" readonly></textarea>
-            <div class="row" style="margin-top:8px"><button id="copyReaching">Copiar</button></div>
-          </details>
-        </div>
+    <div class="container">
+      <div class="grid">
+        <a class="card reveal" href="https://fundacionreaching.github.io/menu_mapas_2.html" target="_blank" rel="noopener">
+          <span class="pill">Player</span>
+          <h3>Menú de Mapas Unificado</h3>
+          <p>Versión oficial. Abre en pestaña para mejor desempeño en móvil.</p>
+        </a>
 
-        <!-- Google -->
-        <div id="tGoogle" class="pane" hidden style="margin-top:10px">
-          <div class="toolbar">
-            <div class="toggle"><label>Zoom</label><input id="gZoom" type="number" min="1" max="21" step="1" value="9"></div>
-            <div class="toggle"><label>Tipo</label>
-              <select id="gTipo"><option value="">Mapa</option><option value="k" selected>Satélite</option></select>
-            </div>
-            <div class="toggle"><label>Idioma</label>
-              <select id="gLang"><option value="es" selected>Español</option><option value="en">English</option><option value="pt">Português</option></select>
-            </div>
-            <button id="loadGoogle">Cargar vista previa</button>
-            <a id="openGoogle" class="btn" target="_blank" rel="noopener">Abrir en pestaña</a>
-          </div>
-          <div style="margin-top:10px"><iframe id="ifrGoogle" class="frame" title="Tolima Google (prev)"></iframe></div>
-          <details style="margin-top:10px">
-            <summary>Copiar iframe <span class="hint">(oculto por defecto)</span></summary>
-            <textarea id="codeGoogle" rows="5" style="width:100%;margin-top:8px" readonly></textarea>
-            <div class="row" style="margin-top:8px"><button id="copyGoogle">Copiar</button></div>
-          </details>
-        </div>
+        <a class="card reveal" href="#google-sat" data-open-sat>
+          <span class="pill">Overlay</span>
+          <h3>Google Maps Satelital</h3>
+          <p>Integrado en modal con animación; carga bajo demanda.</p>
+        </a>
 
-        <!-- Población -->
-        <div id="tPobl" class="pane" hidden style="margin-top:10px">
-          <div class="row" style="margin-bottom:8px">
-            <input id="filtro" type="text" placeholder="Filtrar municipio…" style="flex:1 1 auto">
-            <button id="copyCSV">Copiar CSV</button>
-          </div>
-          <div class="row" style="gap:12px;margin-bottom:8px">
-            <div class="chip">Habitantes: <b id="kTotal">—</b></div>
-            <div class="chip">Municipios: <b id="kMuni">—</b></div>
-            <div class="chip">Top municipio: <b id="kTop">—</b></div>
-          </div>
-          <div class="tablebox" id="tb" style="max-height:30vh">
-            <table>
-              <thead><tr><th>Municipio</th><th style="text-align:right">Población</th></tr></thead>
-              <tbody id="tbody"></tbody>
-            </table>
-          </div>
-          <button id="more" class="btn more">Ver tabla completa</button>
-          <p class="muted" style="margin-top:8px">Fuente: Proyección DANE 2018 (referencial). Si sube <code>/data/poblacion_tolima.json</code>, se usarán esas cifras.</p>
-        </div>
+        <a class="card reveal" href="https://satellites.pro/Google_plan/Tolima_region_map" target="_blank" rel="noopener">
+          <span class="pill">Externo</span>
+          <h3>Generador Tolima (satellites.pro)</h3>
+          <p>Herramienta externa. Abrir en pestaña por políticas de terceros.</p>
+        </a>
+
+        <a class="card reveal" href="#" onclick="alert('Pronto: Bing Maps');return false;">
+          <span class="pill">Pronto</span>
+          <h3>Bing Maps</h3>
+          <p>Integración pendiente.</p>
+        </a>
+
+        <a class="card reveal" href="#" onclick="alert('Pronto: OpenStreetMap');return false;">
+          <span class="pill">Pronto</span>
+          <h3>OpenStreetMap</h3>
+          <p>Integración pendiente.</p>
+        </a>
       </div>
-    </section>
-
-    <!-- ====== IBAGUÉ ====== -->
-    <section id="ibague" class="card half">
-      <h2>
-        <span>🏙️ Ibagué — Comunas y Corregimientos</span>
-        <span class="muted">v2 completa + vista ligera</span>
-      </h2>
-      <div class="body">
-        <div class="row">
-          <a class="chip" target="_blank" href="./ibague_v2.html?view=comunas&font=26&alpha=0.45">Abrir Comunas</a>
-          <a class="chip" target="_blank" href="./ibague_v2.html?view=corregimientos&font=26&alpha=0.45">Abrir Corregimientos</a>
-          <a class="primary" target="_blank" href="./ibague_v2_lite.html?mode=simple&view=comunas&font=24">Ibagué — Vista ligera</a>
-        </div>
-        <details style="margin-top:10px">
-          <summary>Copiar iframes <span class="hint">(oculto por defecto)</span></summary>
-          <div class="row" style="margin-top:8px">
-            <button id="copyIbgCom">Copiar (Comunas)</button>
-            <button id="copyIbgCor">Copiar (Correg.)</button>
-          </div>
-          <textarea id="ibagueCom" rows="4" style="width:100%;margin-top:8px" readonly></textarea>
-          <textarea id="ibagueCorr" rows="4" style="width:100%;margin-top:8px" readonly></textarea>
-        </details>
-      </div>
-    </section>
-
-    <!-- ====== MUNICIPIOS (GOOGLE) ====== -->
-    <section id="municipios" class="card half">
-      <h2>
-        <span>📋 Municipios del Tolima — Google</span>
-        <span class="muted">Listado de 47, previsualizar/copiar</span>
-      </h2>
-      <div class="body">
-        <a class="primary" target="_blank" href="./menu_municipios_tolima.html">Abrir listado</a>
-        <details style="margin-top:10px">
-          <summary>¿Cómo incrustar un municipio? <span class="hint">(ver pasos)</span></summary>
-          <ol style="margin:10px 0 0 18px">
-            <li>Abrir el listado y elegir <em>Previsualizar</em>.</li>
-            <li>Usar <em>Copiar iframe</em> para pegar en la plataforma.</li>
-          </ol>
-        </details>
-      </div>
-    </section>
-
-    <!-- ====== GENERADOR GOOGLE ====== -->
-    <section id="google" class="card">
-      <h2>
-        <span>🧭 Google Maps — Generador rápido</span>
-        <span class="muted">Para enlaces/iframes sin API</span>
-      </h2>
-      <div class="body">
-        <a class="primary" href="./menu_mapas_google.html" target="_blank">Abrir Generador</a>
-        <div class="row" style="margin-top:8px">
-          <span class="chip" data-gpreset="Departamento del Tolima, Colombia">Tolima</span>
-          <span class="chip" data-gpreset="Ibagué, Tolima">Ibagué</span>
-          <span class="chip" data-gpreset="Espinal, Tolima">Espinal</span>
-        </div>
-        <p class="muted">Para marcadores/capas personalizadas, use Google Maps JS API con clave restringida.</p>
-      </div>
-    </section>
+    </div>
   </main>
 
-  <script>
-    const $ = (s,el=document)=> el.querySelector(s);
+  <footer>
+    © Fundación Reaching — Hecho con excelencia para la gloria de Dios.
+  </footer>
+</div>
 
-    // ====== Tabs Tolima ======
-    const tabs = $('#tolimaTabs');
-    tabs.addEventListener('click', e=>{
-      const t = e.target.closest('.tab'); if(!t) return; [...tabs.children].forEach(x=>x.classList.remove('active')); t.classList.add('active');
-      const target = t.dataset.pane; document.querySelectorAll('#tReach,#tGoogle,#tPobl').forEach(p=> p.hidden = !(('#'+p.id)===target));
+<!-- Overlay Google Sat integrado -->
+<div class="overlay" id="overlay" aria-hidden="true">
+  <div class="modal">
+    <button class="close" id="close" aria-label="Cerrar">×</button>
+    <iframe id="satFrame"
+            title="Google Maps Satelital — Fundación Reaching"
+            data-src="https://fundacionreaching.github.io/menu_mapas_google.html?v=6"
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+  </div>
+</div>
+
+<script>
+  // Ajuste de 100vh en móviles
+  (function(){
+    function setVH(){document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px');}
+    setVH(); addEventListener('resize', setVH); addEventListener('orientationchange', setVH);
+  })();
+
+  // Modal Google Sat
+  (function(){
+    const overlay=document.getElementById('overlay');
+    const frame=document.getElementById('satFrame');
+    const closeBtn=document.getElementById('close');
+    function open(){
+      if(!frame.src) frame.src=frame.dataset.src; // carga diferida
+      overlay.setAttribute('aria-hidden','false');
+      document.body.style.overflow='hidden';
+      history.replaceState(null,'','#google-sat');
+    }
+    function close(){
+      overlay.setAttribute('aria-hidden','true');
+      document.body.style.overflow='';
+      history.replaceState(null,'',location.pathname+location.search);
+    }
+    document.addEventListener('click',(e)=>{
+      const a=e.target.closest('[data-open-sat]'); if(!a) return; e.preventDefault(); open();
     });
+    closeBtn.addEventListener('click',close);
+    overlay.addEventListener('click',(e)=>{ if(e.target===overlay) close(); });
+    document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'&&overlay.getAttribute('aria-hidden')==='false') close(); });
+    if(location.hash==="#google-sat") open();
+  })();
 
-    // ====== Reaching (carga a demanda) ======
-    const reachingURL = './mapa_tolima.html?auto=1&fmin=16&fmax=34&alpha=0.55&intensity=1.35&radius=12';
-    const ifrR = $('#ifrReaching');
-    const openR = $('#openReaching'); openR.href = reachingURL;
-    const codeR = $('#codeReaching'); codeR.value = `<iframe\n  src="${reachingURL}"\n  width="100%" height="640" style="border:none;border-radius:12px"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  sandbox="allow-scripts allow-same-origin allow-forms allow-popups">\n</iframe>`;
-    $('#copyReaching').addEventListener('click', ()=> navigator.clipboard.writeText(codeR.value) );
-    $('#loadReaching').addEventListener('click', ()=>{ if(!ifrR.src) ifrR.src = ifrR.dataset.src || reachingURL; });
-
-    // ====== Google (builder liviano + carga a demanda) ======
-    const gBase='https://www.google.com/maps';
-    const gZoom=$('#gZoom'), gTipo=$('#gTipo'), gLang=$('#gLang');
-    const ifrG=$('#ifrGoogle'); const codeG=$('#codeGoogle'); const openG=$('#openGoogle');
-    function buildG(){ const p=new URLSearchParams(); p.set('q','Departamento del Tolima, Colombia'); p.set('z',String(Math.max(1,Math.min(21,parseInt(gZoom.value||'9',10))))); if(gTipo.value) p.set('t',gTipo.value); p.set('hl',gLang.value||'es'); p.set('output','embed'); return `${gBase}?${p.toString()}`; }
-    function renderG(){ const url=buildG(); if(!ifrG.src) ifrG.src=url; openG.href=url.replace('output=embed',''); codeG.value = `<iframe\n  src="${url}"\n  width="100%" height="640" style="border:none;border-radius:12px"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  sandbox="allow-scripts allow-same-origin allow-forms allow-popups">\n</iframe>`; }
-    $('#loadGoogle').addEventListener('click', renderG);
-    $('#copyGoogle').addEventListener('click', ()=> navigator.clipboard.writeText(codeG.value) );
-
-    // ====== Población (tabla concentrada) ======
-    const DATA_DEFAULT = [
-      {nombre:'Ibagué',pob:558815},{nombre:'Alpujarra',pob:4974},{nombre:'Alvarado',pob:8816},{nombre:'Ambalema',pob:6755},{nombre:'Anzoátegui',pob:18638},{nombre:'Armero (Guayabal)',pob:11839},{nombre:'Ataco',pob:22589},{nombre:'Cajamarca',pob:19641},{nombre:'Carmen de Apicalá',pob:8835},{nombre:'Casabianca',pob:6661},{nombre:'Chaparral',pob:47248},{nombre:'Coello',pob:9810},{nombre:'Coyaima',pob:28335},{nombre:'Cunday',pob:9634},{nombre:'Dolores',pob:8015},{nombre:'Espinal',pob:76149},{nombre:'Falan',pob:9211},{nombre:'Flandes',pob:29199},{nombre:'Fresno',pob:30165},{nombre:'Guamo',pob:32113},{nombre:'Herveo',pob:8008},{nombre:'Honda',pob:24547},{nombre:'Icononzo',pob:10894},{nombre:'Lérida',pob:17395},{nombre:'Líbano',pob:40266},{nombre:'Mariquita',pob:33329},{nombre:'Melgar',pob:36339},{nombre:'Murillo',pob:5018},{nombre:'Natagaima',pob:22516},{nombre:'Ortega',pob:32431},{nombre:'Palocabildo',pob:9160},{nombre:'Piedras',pob:5640},{nombre:'Planadas',pob:29974},{nombre:'Prado',pob:7701},{nombre:'Purificación',pob:29412},{nombre:'Rioblanco',pob:24459},{nombre:'Roncesvalles',pob:6344},{nombre:'Rovira',pob:20542},{nombre:'Saldaña',pob:14385},{nombre:'San Antonio',pob:14310},{nombre:'San Luis',pob:19153},{nombre:'Santa Isabel',pob:6357},{nombre:'Suárez',pob:4547},{nombre:'Valle de San Juan',pob:6368},{nombre:'Venadillo',pob:19652},{nombre:'Villahermosa',pob:10642},{nombre:'Villarrica',pob:5389}
-    ];
-    const tbody=$('#tbody'), kTotal=$('#kTotal'), kTop=$('#kTop'), kMuni=$('#kMuni');
-    const filtro=$('#filtro'); const more=$('#more'); const tb=$('#tb');
-    function fmt(n){ return Number(n).toLocaleString('es-CO'); }
-    async function getData(){ try{ const r=await fetch('./data/poblacion_tolima.json',{cache:'no-store'}); if(r.ok){ const j=await r.json(); if(Array.isArray(j)&&j.length) return j; } }catch(e){} return DATA_DEFAULT; }
-    function renderTabla(data, full=false){ const term=(filtro.value||'').toLowerCase(); let arr=data.filter(d=> d.nombre.toLowerCase().includes(term)).sort((a,b)=> b.pob-a.pob); if(!full) arr=arr.slice(0,10); tbody.innerHTML = arr.map(d=>`<tr><td>${d.nombre}</td><td style='text-align:right'>${fmt(d.pob)}</td></tr>`).join(''); }
-    function renderKPIs(data){ const total=data.reduce((s,x)=>s+x.pob,0); const top=data.slice().sort((a,b)=>b.pob-a.pob)[0]; kTotal.textContent=fmt(total); kMuni.textContent=String(data.length); kTop.textContent=top?top.nombre:'—'; }
-    let DATA=DATA_DEFAULT, FULL=false; getData().then(d=>{ DATA=d; renderKPIs(DATA); renderTabla(DATA,FULL); });
-    filtro.addEventListener('input', ()=> renderTabla(DATA,FULL));
-    more.addEventListener('click', ()=>{ FULL=!FULL; tb.style.maxHeight = FULL?'unset':'30vh'; more.textContent = FULL?'Ver solo top 10':'Ver tabla completa'; renderTabla(DATA,FULL); });
-    $('#copyCSV').addEventListener('click', ()=>{ const head='Municipio,Poblacion'; const body=DATA.map(d=>`${d.nombre.replace(/,/g,' ')} , ${d.pob}`).join('\n'); navigator.clipboard.writeText(head+'\n'+body+'\n'); });
-
-    // ====== Ibagué iframes (solo visibles en details) ======
-    function buildIframe(url){ return `<iframe\n  src="${url}"\n  width="100%" height="640" style="border:none;border-radius:12px"\n  loading="lazy" referrerpolicy="strict-origin-when-cross-origin"\n  sandbox="allow-scripts allow-same-origin allow-forms allow-popups">\n</iframe>`; }
-    const ibgComURL = './ibague_v2.html?view=comunas&font=26&alpha=0.45';
-    const ibgCorURL = './ibague_v2.html?view=corregimientos&font=26&alpha=0.45';
-    $('#ibagueCom').value = buildIframe(ibgComURL);
-    $('#ibagueCorr').value = buildIframe(ibgCorURL);
-    $('#copyIbgCom').addEventListener('click', ()=> navigator.clipboard.writeText($('#ibagueCom').value) );
-    $('#copyIbgCor').addEventListener('click', ()=> navigator.clipboard.writeText($('#ibagueCorr').value) );
-
-    // ====== Presets Google (copiar destino) ======
-    document.querySelectorAll('[data-gpreset]').forEach(el=> el.addEventListener('click', ()=>{ const q=el.getAttribute('data-gpreset'); navigator.clipboard.writeText(q); }));
-  </script>
+  // Animación de tarjetas (respetando reduce motion)
+  (function(){
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      document.querySelectorAll('.reveal').forEach(c=>c.classList.add('is-visible')); return;
+    }
+    const cards=[...document.querySelectorAll('.reveal')];
+    if(!('IntersectionObserver' in window)){ cards.forEach(c=>c.classList.add('is-visible')); return; }
+    const io=new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('is-visible'); io.unobserve(e.target);} });
+    },{threshold:.2});
+    cards.forEach(c=>io.observe(c));
+  })();
+</script>
 </body>
 </html>
