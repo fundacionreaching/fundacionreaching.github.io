@@ -633,39 +633,26 @@ function selectFeature(rec) {
   geoLayer.eachLayer(l => { const props = l.feature?.properties || {}; const code = String(codeFromProps(props)); if (code === String(rec.code) || pad5(code) === pad5(String(rec.code))) { try { map.fitBounds(l.getBounds(), { padding: [20,20] }); } catch {} } });
 }
 
-// Eventos UI
-document.querySelectorAll('.layer-btn').forEach(btn => btn.addEventListener('click', async () => {
-  currentKey = btn.dataset.layer;
-  const card = document.getElementById('selectedCard'); card && card.classList.add('hidden');
-  await loadAndRender();
-}));
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plataforma Censo — Tolima / Ibagué / Comunas / Corregimientos</title>
+  <meta name="description" content="Plataforma de visualización de datos poblacionales del Tolima e Ibagué (comunas y corregimientos). Fundación Reaching." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%236366F1'/%3E%3Ctext x='50' y='58' font-size='44' text-anchor='middle' fill='white' font-family='Arial, Helvetica, sans-serif'%3ER%3C/text%3E%3C/svg%3E" />
 
-const searchEl = document.getElementById('search');
-if (searchEl) {
-  searchEl.addEventListener('input', () => {
-    const q = norm(searchEl.value); const tbody = document.getElementById('tbody'); tbody.innerHTML = '';
-    const filtered = joined.filter(j => !q || norm(j.name).includes(q) || String(j.code).includes(q));
-    filtered.forEach((r, i) => {
-      const tr = document.createElement('tr'); tr.className = 'border-b border-slate-100 hover:bg-indigo-50/40 cursor-pointer';
-      tr.innerHTML = `<td class="px-3 py-2 text-slate-500">${i+1}</td><td class="px-3 py-2 font-medium">${r.name || '(Sin nombre)'}</td><td class="px-3 py-2 font-mono text-xs text-slate-600">${r.code || '—'}</td><td class="px-3 py-2 text-right">${numberFmt(r.pop)}</td>`;
-      tr.addEventListener('click', ()=>selectFeature(r)); tbody.appendChild(tr);
-    });
-    document.getElementById('rows-count').textContent = `${filtered.length} filas`;
-  });
-}
-
-const exportBtn = document.getElementById('btn-export');
-if (exportBtn) exportBtn.addEventListener('click', () => {
-  const q = norm(document.getElementById('search')?.value || '');
-  const filtered = joined.filter(j => !q || norm(j.name).includes(q) || String(j.code).includes(q));
-  downloadCSV(filtered.map(r => ({ code: r.code, name: r.name, pop: r.pop })));
-});
-
-// Boot
-initMap();
-loadAndRender().catch(err => { alert('Error cargando datos: ' + err.message + '\\n\\nRevisa las rutas en DATA_SOURCES.'); console.error(err); });
-</script>
-
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { 600: '#6366F1', 700: '#4F46E5' } }
+        }
+      }
+    }
+  </script>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
