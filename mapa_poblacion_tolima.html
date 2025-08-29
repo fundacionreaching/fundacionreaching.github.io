@@ -1,282 +1,61 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mapa Poblacional — Fundación Reaching</title>
-  <meta name="color-scheme" content="dark light" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    :root{ --bg:#0b1220;--card:#0f172a;--txt:#e5e7eb;--muted:#9ca3af;--line:#1f2937;--accent:#fbbf24;--btn:#1d4ed8;--ok:#22c55e;--warn:#f59e0b; }
-    html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:var(--txt)}
-    .wrap{max-width:1200px;margin:auto;padding:16px}
-    h1{font-size:clamp(18px,2.4vw,24px);margin:0;font-weight:800;letter-spacing:.2px}
-    .muted{color:var(--muted);font-size:13px}
-    .card{background:linear-gradient(180deg,#0f172a,#0b1220);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);margin-bottom:16px}
-    .head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
-    .btn{appearance:none;border:1px solid #0b3ea1;background:linear-gradient(180deg,#2563eb,#1d4ed8);color:white;padding:8px 12px;border-radius:12px;text-decoration:none;font-weight:700;cursor:pointer}
-    .btn.secondary{background:transparent;border-color:#374151;color:#e5e7eb}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .section{padding:12px 14px}
-    .grid{display:grid;gap:10px}
-    @media(min-width:900px){.grid.cols-3{grid-template-columns:repeat(3,1fr)}}
-    .kpi{background:#0b1220;border:1px solid var(--line);border-radius:14px;padding:10px}
-    .kpi .lbl{font-size:12px;color:var(--muted)}
-    .kpi .val{font-size:18px;font-weight:800}
-    table{width:100%;border-collapse:collapse;font-size:14px}
-    th,td{border-bottom:1px solid #1f2937;padding:8px;text-align:left}
-    th{color:#cbd5e1;font-weight:700}
-    #mapid{width:100%;height:70vh;min-height:400px;border-radius:12px;}
-    .legend{background:#0f172a;color:#e5e7eb;padding:6px 10px;border-radius:6px;line-height:1.4;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.3)}
-  </style>
-</head>
-<body>
-  <main class="wrap">
-    <!-- === DATOS DANE === -->
-    <section class="card" aria-label="Datos DANE — Población Tolima/Ibagué">
-      <div class="head">
-        <div>
-          <h1>Datos de Población (DANE)</h1>
-          <div class="muted">CSV en GitHub + Visualización interactiva</div>
-        </div>
-        <div class="actions">
-          <button id="btnRefrescar" class="btn secondary" type="button">Refrescar</button>
-          <a id="btnDescargar" class="btn" href="#" download>Descargar CSV</a>
-          <label for="selAnio" class="muted">Año:</label>
-          <select id="selAnio"></select>
-        </div>
-      </div>
-      <div class="section">
-        <div class="grid cols-3" style="margin-bottom:10px">
-          <div class="kpi"><div class="lbl">Municipio</div><div class="val" id="kpiMuni">—</div></div>
-          <div class="kpi"><div class="lbl">Año</div><div class="val" id="kpiAnio">—</div></div>
-          <div class="kpi"><div class="lbl">Población</div><div class="val" id="kpiPoblacion">—</div></div>
-        </div>
-        <div style="overflow:auto">
-          <table id="tabla">
-            <thead><tr><th>Municipio</th><th>Año</th><th>Población</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div id="msg" class="muted" style="margin-top:8px"></div>
-      </div>
-    </section>
-
-    <!-- === MAPA INTERACTIVO === -->
-    <section class="card" aria-label="Mapa Choropleth">
-      <div class="head">
-        <div>
-          <h1>Mapa Poblacional — Tolima</h1>
-          <div class="muted">Comunas y Corregimientos de Ibagué + Departamental</div>
-        </div>
-        <div class="actions">
-          <label class="muted" for="selCapa">Capa:</label>
-          <select id="selCapa">
-            <option value="municipios">Municipios (Tolima)</option>
-            <option value="comunas">Comunas (Ibagué)</option>
-            <option value="corregimientos">Corregimientos (Ibagué)</option>
-          </select>
-          <label class="muted" for="selAnioMap">Año:</label>
-          <select id="selAnioMap"></select>
-        </div>
-      </div>
-      <div class="section">
-        <div id="mapid"></div>
-      </div>
-    </section>
-  </main>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // ========== CONFIG ==========
-    const CSV_URLS = [
-      'https://raw.githubusercontent.com/fundacionreaching/datos/main/dane_tolima_poblacion.csv',
-      'https://raw.githubusercontent.com/fundacionreaching/fundacionreaching.github.io/main/data/dane_tolima_poblacion.csv',
-      location.origin + '/data/dane_tolima_poblacion.csv'
-    ];
-    const RUTAS = {
-      municipios: '/data/tolima_municipios.geojson',
-      comunas: '/data/ibague_comunas.geojson',
-      corregimientos: '/data/ibague_corregimientos.geojson'
-    };
-
-    // ========== UTIL ==========
-    const norm = s => (s||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim();
-
-    // ========== CARGA CSV ==========
-    async function fetchCSV(){
-      for(const u of CSV_URLS){
-        try{ let r = await fetch(u,{cache:'no-store'}); if(r.ok){ return {url:u, text: await r.text()}; } }catch(e){}
-      }
-      throw new Error('No se pudo cargar CSV');
-    }
-    function parseCSV(text){
-      const lines = text.split(/
-?
-/).filter(Boolean);
-      if(lines.length<2) return [];
-      const headers = lines[0].split(',').map(h=>h.trim().toLowerCase());
-      const idxM = headers.findIndex(h=>/municipio|mpio|ciudad/.test(h));
-      const idxA = headers.findIndex(h=>/año|anio|year/.test(h));
-      const idxP = headers.findIndex(h=>/poblaci|pob_total|total/.test(h));
-      return lines.slice(1).map(row=>{
-        const cols=row.split(',');
-        return {muni:(cols[idxM]||'').trim(),anio:Number((cols[idxA]||'').trim()),pob:Number((cols[idxP]||'').replace(/\./g,''))};
-      }).filter(r=>r.muni && r.anio && !isNaN(r.pob));
-    }
-
-    // ========== UI TABLA/KPI ==========
-    function renderTabla(datos){
-      const TBL=document.querySelector('#tabla tbody');
-      TBL.innerHTML=datos.map(d=>`<tr><td>${d.muni}</td><td>${d.anio}</td><td>${d.pob.toLocaleString('es-CO')}</td></tr>`).join('');
-    }
-
-    // ========== MAPA ==========
-    const map=L.map('mapid').setView([4.44,-75.24],7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap'}).addTo(map);
-
-    let layer=null, legend=null, dane=[], daneByYear=new Map(), anos=[];
-
-    function buildIndexes(){
-      daneByYear = new Map();
-      anos = Array.from(new Set(dane.map(d=>d.anio))).sort((a,b)=>a-b);
-      anos.forEach(a=>{
-        const byName = new Map();
-        dane.filter(d=>d.anio===a).forEach(d=> byName.set(norm(d.muni), d.pob));
-        daneByYear.set(a, byName);
-      });
-      // llenar selector de año
-      const sel = document.getElementById('selAnioMap');
-      sel.innerHTML = anos.map(a=>`<option value="${a}">${a}</option>`).join('');
-      sel.value = anos[anos.length-1];
-    }
-
-    function getColorScale(vals){
-      if(vals.length===0) return (v)=>'#d1d5db';
-      vals.sort((a,b)=>a-b);
-      const q = p=> vals[Math.floor(p*(vals.length-1))];
-      const breaks=[q(0.1),q(0.3),q(0.5),q(0.7),q(0.9)];
-      return function(v){
-        if(v==null) return '#334155';
-        if(v<=breaks[0]) return '#dbeafe';
-        if(v<=breaks[1]) return '#93c5fd';
-        if(v<=breaks[2]) return '#60a5fa';
-        if(v<=breaks[3]) return '#2563eb';
-        if(v<=breaks[4]) return '#1d4ed8';
-        return '#0b3ea1';
-      }
-    }
-
-    function drawLegend(scale, vals){
-      if(legend){ legend.remove(); }
-      legend=L.control({position:'bottomright'});
-      legend.onAdd=function(){
-        const div=L.DomUtil.create('div','legend');
-        Object.assign(div.style,{background:'white',padding:'8px 10px',borderRadius:'10px',lineHeight:'1.2',fontSize:'12px',boxShadow:'0 2px 6px rgba(0,0,0,.3)'});
-        const samples=[...new Set([vals[0], vals[Math.floor(vals.length*0.25)]||vals[0], vals[Math.floor(vals.length*0.5)]||vals[0], vals[Math.floor(vals.length*0.75)]||vals[0], vals[vals.length-1]])];
-        div.innerHTML = '<b>Población</b><br>' + samples.map(v=>{
-          const c=scale(v);
-          return `<div style="display:flex;align-items:center;gap:8px;margin:2px 0"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${c}"></span>${Number(v).toLocaleString('es-CO')}</div>`;
-        }).join('');
-        return div;
-      };
-      legend.addTo(map);
-    }
-
-    async function cargarCapa(tipo){
-      // obtener año seleccionado
-      const anio = Number(document.getElementById('selAnioMap').value);
-      // cargar GeoJSON
-      const url = RUTAS[tipo];
-      if(!url){ return; }
-      try{
-        const geo = await fetch(url,{cache:'no-store'}).then(r=>r.json());
-        if(layer) { map.removeLayer(layer); }
-
-        // construir valores
-        const nameKeys=['MUNICIPIO','NOMBRE','NOMBRE_COM','COMUNA','CORREGIM','name'];
-        const byName = daneByYear.get(anio) || new Map();
-        const vals = [];
-        function pobFeature(props){
-          // prioridad: si la capa ya trae "poblacion", úsala
-          if(typeof props.poblacion==='number') return props.poblacion;
-          const nombre = norm(nameKeys.map(k=>props[k]).find(Boolean));
-          const v = byName.get(nombre);
-          return typeof v==='number'? v : null;
+{
+  "README": "Plantillas listas para subir a /data/ en fundacionreaching.github.io. Reemplaza con tus datos reales y guarda los nombres de archivo sugeridos.",
+  "files": {
+    "data/dane_tolima_poblacion.csv": "Municipio,Año,Población\nIbagué,2020,541101\nIbagué,2021,545000\nIbagué,2022,548200\nEspinal,2020,160328\nEspinal,2021,161200\nEspinal,2022,162050\nChaparral,2020,124321\nChaparral,2021,124900\nChaparral,2022,125450\n",
+    "data/tolima_municipios.geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {"MUNICIPIO": "Ibagué"},
+          "geometry": {"type": "Polygon", "coordinates": [[ [ -75.30, 4.40 ], [ -75.18, 4.40 ], [ -75.18, 4.56 ], [ -75.30, 4.56 ], [ -75.30, 4.40 ] ]]}
+        },
+        {
+          "type": "Feature",
+          "properties": {"MUNICIPIO": "Espinal"},
+          "geometry": {"type": "Polygon", "coordinates": [[ [ -74.94, 4.08 ], [ -74.82, 4.08 ], [ -74.82, 4.20 ], [ -74.94, 4.20 ], [ -74.94, 4.08 ] ]]}
         }
-        geo.features.forEach(f=>{ const v=pobFeature(f.properties||{}); if(v!=null) vals.push(v); });
-        const scale = getColorScale(vals);
-
-        function style(feat){
-          const v = pobFeature(feat.properties||{});
-          return { fillColor: scale(v), weight:1, opacity:1, color:'#1f2937', fillOpacity: .75 };
-        }
-        function onEachFeature(f,l){
-          const p=f.properties||{}; const v=pobFeature(p);
-          const nombre=p.MUNICIPIO||p.NOMBRE||p.NOMBRE_COM||p.COMUNA||p.CORREGIM||p.name||'—';
-          l.bindPopup(`<b>${nombre}</b><br>Población ${anio}: ${v!=null? Number(v).toLocaleString('es-CO'):'Sin dato'}`);
-        }
-        layer = L.geoJSON(geo,{style,onEachFeature}).addTo(map);
-        try{ map.fitBounds(layer.getBounds(),{padding:[12,12]}); }catch(e){}
-        drawLegend(scale, vals.sort((a,b)=>a-b));
-      }catch(e){ console.warn('No se pudo cargar la capa', e); }
+      ]
     }
-
-    // ========== INICIO ==========
-    (async()=>{
-      try{
-        const {url,text}=await fetchCSV();
-        dane=parseCSV(text);
-        renderTabla(dane);
-        document.getElementById('btnDescargar').href=url;
-
-        // KPIs: Ibagué último año
-        const ibg=dane.filter(d=>/ibague|ibagué/i.test(d.muni));
-        const ult=ibg.sort((a,b)=>b.anio-a.anio)[0];
-        if(ult){
-          document.getElementById('kpiMuni').textContent=ult.muni;
-          document.getElementById('kpiAnio').textContent=ult.anio;
-          document.getElementById('kpiPoblacion').textContent=ult.pob.toLocaleString('es-CO');
+      ]
+    },
+    "data/ibague_comunas.geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {"COMUNA": "Comuna 1", "poblacion": 35000},
+          "geometry": {"type": "Polygon", "coordinates": [[[ -75.25,4.44 ],[ -75.24,4.44 ],[ -75.24,4.45 ],[ -75.25,4.45 ],[ -75.25,4.44 ]]]}
+        },
+        {
+          "type": "Feature",
+          "properties": {"COMUNA": "Comuna 2", "poblacion": 42000},
+          "geometry": {"type": "Polygon", "coordinates": [[[ -75.24,4.44 ],[ -75.23,4.44 ],[ -75.23,4.45 ],[ -75.24,4.45 ],[ -75.24,4.44 ]]]}
         }
-        document.getElementById('msg').textContent=`Registros cargados: ${dane.length}`;
-
-        // Indexar por año y levantar UI de años
-        buildIndexes();
-
-        // Eventos UI
-        document.getElementById('selCapa').addEventListener('change', ()=>cargarCapa(document.getElementById('selCapa').value));
-        document.getElementById('selAnioMap').addEventListener('change', ()=>cargarCapa(document.getElementById('selCapa').value));
-
-        // Capa inicial
-        document.getElementById('selCapa').value='municipios';
-        await cargarCapa('municipios');
-      }catch(e){
-        document.getElementById('msg').textContent='No se pudo cargar CSV. Verifica la ruta.';
-      }
-
-const RUTAS = {
-  municipios: [
-    '/data/tolima_municipios.geojson',
-    '/data/data/data/data/tolima_municipios.geojson',
-    'https://raw.githubusercontent.com/fundacionreaching/fundacionreaching.github.io/main/data/tolima_municipios.geojson',
-    'https://raw.githubusercontent.com/fundacionreaching/data/main/tolima_municipios.geojson'
-  ],
-  comunas: [
-    '/data/ibague_comunas.geojson',
-    '/data/data/data/data/ibague_comunas.geojson',
-    'https://raw.githubusercontent.com/fundacionreaching/fundacionreaching.github.io/main/data/ibague_comunas.geojson',
-    'https://raw.githubusercontent.com/fundacionreaching/data/main/ibague_comunas.geojson'
-  ],
-  corregimientos: [
-    '/data/ibague_corregimientos.geojson',
-    '/data/data/data/data/ibague_corregimientos.geojson',
-    'https://raw.githubusercontent.com/fundacionreaching/fundacionreaching.github.io/main/data/ibague_corregimientos.geojson',
-    'https://raw.githubusercontent.com/fundacionreaching/data/main/ibague_corregimientos.geojson'
-  ]
-};
-
-
-    })();
-  </script>
-</body>
-</html>
+      ]
+    },
+          "geometry": {"type": "Polygon", "coordinates": [[[ -75.25,4.44 ],[ -75.24,4.44 ],[ -75.24,4.45 ],[ -75.25,4.45 ],[ -75.25,4.44 ]]]}
+        }
+      ]
+    },
+    "data/ibague_corregimientos.geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {"CORREGIM": "Cay", "poblacion": 5000},
+          "geometry": {"type": "Polygon", "coordinates": [[[ -75.30,4.40 ],[ -75.28,4.40 ],[ -75.28,4.42 ],[ -75.30,4.42 ],[ -75.30,4.40 ]]]}
+        },
+        {
+          "type": "Feature",
+          "properties": {"CORREGIM": "Buenavista", "poblacion": 3200},
+          "geometry": {"type": "Polygon", "coordinates": [[[ -75.28,4.42 ],[ -75.26,4.42 ],[ -75.26,4.44 ],[ -75.28,4.44 ],[ -75.28,4.42 ]]]}
+        }
+      ]
+    },
+          "geometry": {"type": "Polygon", "coordinates": [[[ -75.30,4.40 ],[ -75.28,4.40 ],[ -75.28,4.42 ],[ -75.30,4.42 ],[ -75.30,4.40 ]]]}
+        }
+      ]
+    }
+  }
+}
