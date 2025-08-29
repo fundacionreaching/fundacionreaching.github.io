@@ -19,24 +19,7 @@
     }
   </script>
 
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-  <!-- PapaParse -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <style>
-    html, body { height: 100%; }
-    #map { height: 420px; }
-    body {
-      background: url('https://fundacionreaching.github.io/mapa_poblacion_tolima.html?v=now') no-repeat center center fixed;
-      background-size: cover;
-    }
-    .leaflet-container { font: 12px/1.2 system-ui, sans-serif; }
-  
-    /* Fondo decorativo inspirado en la estética solicitada */
-   <script>
+<script>
 // ===============================
 // FUENTES DE DATOS + COLORES
 // ===============================
@@ -262,3 +245,102 @@ if (exportBtn) exportBtn.addEventListener('click', () => {
 initMap();
 loadAndRender().catch(err => { alert('Error cargando datos: ' + err.message + '\\n\\nRevisa las rutas en DATA_SOURCES.'); console.error(err); });
 </script>
+
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    html, body { height: 100%; }
+    #map { height: 420px; }
+    body {
+      background: url('https://fundacionreaching.github.io/mapa_poblacion_tolima.html?v=now') no-repeat center center fixed;
+      background-size: cover;
+    }
+    .leaflet-container { font: 12px/1.2 system-ui, sans-serif; }
+  
+    /* Fondo decorativo inspirado en la estética solicitada */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(1200px 800px at 10% 0%, rgba(79,70,229,.08), transparent 60%),
+        radial-gradient(1000px 800px at 100% 100%, rgba(16,185,129,.08), transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      background-attachment: fixed;
+      z-index: -2;
+    }
+    body::after {
+      content: "";
+      position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23c7d2fe' stroke-opacity='0.35' stroke-width='1'%3E%3Cpath d='M0 60h120M60 0v120'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 120px 120px;
+      opacity: .6;
+    }
+
+    /* Acento visual para polígonos del mapa */
+    .leaflet-container .leaflet-interactive {
+      filter: drop-shadow(0 0 6px rgba(0,0,0,.15));
+      transition: filter .2s ease, stroke .2s ease, stroke-width .2s ease;
+    }
+    .leaflet-container .feature-hover { filter: drop-shadow(0 0 12px rgba(79,70,229,.45)); }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900 bg-slate-50/80 backdrop-blur-sm">
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
+      <div class="flex items-center gap-3">
+        <img src="./logo-reaching.png" alt="Fundación Reaching" class="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200" onerror="this.remove();document.getElementById('logo-fallback').classList.remove('hidden')" />
+        <div id="logo-fallback" class="hidden h-9 w-9 grid place-items-center rounded-xl bg-brand-600 text-white text-sm font-bold shadow">R</div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">Plataforma Censo — Tolima / Ibagué</h1>
+          <p class="text-xs text-slate-500">Fundación Reaching • Encuentro con Dios y Oración Mundial RTV</p>
+        </div>
+      </div>
+      <div class="ml-auto hidden sm:flex items-center gap-2 text-xs text-slate-500">
+        <span>“Porque del SEÑOR es la tierra y su plenitud” — Salmo 24:1</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="mx-auto max-w-7xl px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <!-- Panel izquierdo -->
+    <aside class="lg:col-span-4 xl:col-span-3 space-y-4">
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Capa de datos</div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <button data-layer="tolima" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Tolima</button>
+          <button data-layer="ibague" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Ibagué</button>
+          <button data-layer="comunas" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Comunas</button>
+          <button data-layer="corregimientos" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Corregimientos</button>
+        </div>
+      </section>
+      <!-- Resto igual... -->
+    </aside>
+
+    <!-- Panel derecho -->
+    <section class="lg:col-span-8 xl:col-span-9 space-y-4">
+      <div class="relative rounded-2xl overflow-hidden bg-white/95 backdrop-blur shadow-md border border-slate-200">
+        <div id="map" class="w-full"></div>
+        <div id="badge-layer" class="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-3 py-2 text-sm shadow">Capa: <span id="layer-name" class="font-semibold">—</span></div>
+      </div>
+      <!-- Tabla ... -->
+    </section>
+  </main>
+
+  <footer class="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-white bg-brand-600/80 rounded-t-2xl">
+    <p>Desarrollado con excelencia para la misión: Fundación Reaching. Bendiciones. ✨</p>
+  </footer>
+
+  <script>
+    // Aquí va el mismo JS de carga de datos (idéntico al anterior)
+    // Solo ajusté estilos de botones/mapa y fondo.
+  </script>
+</body>
+</html>
