@@ -918,39 +918,26 @@ async function loadAndRender() {
         e.target.setStyle({ weight: 3, color: DATA_SOURCES[currentKey].accent });
         const el = e.target.getElement ? e.target.getElement() : e.target._path; if (el) el.classList.add('feature-hover');
       });
-      layer.on('mouseout',  (e) => {
-        e.target.setStyle({ weight: 1.5, color: '#334155' });
-        const el = e.target.getElement ? e.target.getElement() : e.target._path; if (el) el.classList.remove('feature-hover');
-      });
+     <!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plataforma Censo — Tolima / Ibagué / Comunas / Corregimientos</title>
+  <meta name="description" content="Plataforma de visualización de datos poblacionales del Tolima e Ibagué (comunas y corregimientos). Fundación Reaching." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%236366F1'/%3E%3Ctext x='50' y='58' font-size='44' text-anchor='middle' fill='white' font-family='Arial, Helvetica, sans-serif'%3ER%3C/text%3E%3C/svg%3E" />
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { 600: '#6366F1', 700: '#4F46E5' } }
+        }
+      }
     }
-  }).addTo(map);
-
-  try { map.fitBounds(geoLayer.getBounds(), { padding: [16,16] }); } catch {}
-}
-
-function selectFeature(rec) {
-  const card = document.getElementById('selectedCard'); if (card) card.classList.remove('hidden');
-  const n = document.getElementById('sel-name'); if (n) n.textContent = rec.name || '—';
-  const c = document.getElementById('sel-code'); if (c) c.textContent = rec.code || '—';
-  const p = document.getElementById('sel-pop'); if (p) p.textContent = numberFmt(rec.pop);
-  if (geoLayer) geoLayer.eachLayer(l => { const props = l.feature?.properties || {}; const code = String(codeFromProps(props)); if (code === String(rec.code) || pad5(code) === pad5(String(rec.code))) { try { map.fitBounds(l.getBounds(), { padding: [20,20] }); } catch {} } });
-}
-
-// Eventos: cambio de capa
-document.querySelectorAll('.layer-btn').forEach(btn => btn.addEventListener('click', async () => {
-  currentKey = btn.dataset.layer;
-  const card = document.getElementById('selectedCard'); card && card.classList.add('hidden');
-  await loadAndRender();
-}));
-
-// Arranque
-initMap();
-loadAndRender().catch(err => {
-  alert('Error cargando datos: ' + err.message + '\n\nRevisa las rutas en DATA_SOURCES.');
-  console.error(err);
-});
-</script>
-
+  </script>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -963,8 +950,7 @@ loadAndRender().catch(err => {
     html, body { height: 100%; }
     #map { height: 420px; }
     body {
-      background: url('https://fundacionreaching.github.io/mapa_poblacion_tolima.html?v=now') no-repeat center center fixed;
-      background-size: cover;
+      /* Fondo manejado por gradientes */
     }
     .leaflet-container { font: 12px/1.2 system-ui, sans-serif; }
   
@@ -1026,7 +1012,6 @@ loadAndRender().catch(err => {
           <button data-layer="corregimientos" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Corregimientos</button>
         </div>
       </section>
-      <!-- Resto igual... -->
     </aside>
 
     <!-- Panel derecho -->
@@ -1035,7 +1020,6 @@ loadAndRender().catch(err => {
         <div id="map" class="w-full"></div>
         <div id="badge-layer" class="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-2 rounded-xl bg-brand-600 text-white px-3 py-2 text-sm shadow">Capa: <span id="layer-name" class="font-semibold">—</span></div>
       </div>
-      <!-- Tabla ... -->
     </section>
   </main>
 
@@ -1044,8 +1028,143 @@ loadAndRender().catch(err => {
   </footer>
 
   <script>
-    // Aquí va el mismo JS de carga de datos (idéntico al anterior)
-    // Solo ajusté estilos de botones/mapa y fondo.
-  </script>
+  // ===============================
+  // FUENTES DE DATOS + COLORES
+  // ===============================
+  const DATA_SOURCES = {
+    tolima: { label: 'Tolima — Municipios', center: [4.4389, -75.2322], zoom: 8,  accent: '#4F46E5', geojson: '/tolima_municipios.geojson',        csv: '/dane_tolima_poblacion.csv' },
+    ibague: { label: 'Ibagué — Zonas urbanas', center: [4.4389, -75.2322], zoom: 12, accent: '#059669', geojson: '/ibague_urbano.geojson',         csv: '/ibague_urbano_poblacion.csv' },
+    comunas:{ label: 'Ibagué — Comunas',       center: [4.4389, -75.2322], zoom: 12, accent: '#D97706', geojson: '/ibague_comunas.geojson',        csv: '/ibague_comunas_poblacion.csv' },
+    corregimientos:{label:'Ibagué — Corregimientos',center:[4.4389,-75.2322],zoom:11,accent:'#E11D48',geojson:'/ibague_corregimientos.geojson',csv:'/ibague_corregimientos_poblacion.csv'}
+  };
+
+  // ===============================
+  // UTILIDADES
+  // ===============================
+  const PALETTE = ['#e6f2ff','#b3d1ff','#80b1ff','#4d91ff','#1a70ff','#0052cc'];
+  const norm = (s)=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const pad5 = (v)=>String(v??'').replace(/\D/g,'').padStart(5,'0');
+  const numberFmt=(n)=> (n==null||isNaN(n))?'—':Number(n).toLocaleString('es-CO');
+
+  function detectColumns(keys){
+    const lower = keys.map(k=>String(k||'').toLowerCase());
+    const findKey = (cands)=>{const i = lower.findIndex(k=>cands.some(c=>k.includes(c))); return i>=0?keys[i]:null};
+    return {
+      codeKey: findKey(['mpio_ccdgo','cod_dane','codigo_dane','coddane','cod_mun','codigo','cod','dane']),
+      nameKey: findKey(['nombre_mpio','nom_mpio','municipio','nombre','nom','sector','comuna','correg']),
+      popKey:  findKey(['poblacion','pobl','habitantes','habit','total'])
+    };
+  }
+
+  function codeFromProps(props){
+    const cands = [props?.MPIO_CCDGO, props?.COD_DANE, props?.Codigo, props?.codigo, props?.DANE, props?.CODIGO, props?.codigo_dane, props?.CODIGO_DANE, props?.CODIGO_MPIO, props?.codigo_mpio, props?.CODIGO2, props?.ID, props?.id];
+    for(const c of cands){ const n = pad5(c); if(n) return n; }
+    return '';
+  }
+
+  function quantile(sorted,q){const pos=(sorted.length-1)*q, base=Math.floor(pos), rest=pos-base;return sorted[base+1]!==undefined?sorted[base]+rest*(sorted[base+1]-sorted[base]):sorted[base];}
+  function makeBuckets(values,k=PALETTE.length){
+    const arr = values.filter(v=>typeof v==='number'&&!isNaN(v)).sort((a,b)=>a-b);
+    if(!arr.length) return {breaks:[], scale:()=> '#cccccc'};
+    const breaks=[]; for(let i=1;i<k;i++) breaks.push(Math.round(quantile(arr,i/k)));
+    const scale=(v)=>{ if(v==null||isNaN(v)) return '#cccccc'; let idx=breaks.findIndex(b=>v<=b); if(idx===-1) idx=k-1; return PALETTE[idx]; };
+    return {breaks, scale};
+  }
+
+  // ===============================
+  // ESTADO + MAPA
+  // ===============================
+  let currentKey='tolima';
+  let map, geoLayer, geoBorderLayer; let joined=[];
+
+  function initMap(){
+    const conf=DATA_SOURCES[currentKey];
+    map=L.map('map').setView(conf.center, conf.zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+  }
+
+  async function loadAndRender(){
+    const conf=DATA_SOURCES[currentKey];
+    const badge=document.getElementById('badge-layer');
+    document.getElementById('layer-name').textContent=conf.label;
+    badge.style.border='1px solid '+conf.accent;
+    badge.style.boxShadow=`0 0 0 3px ${conf.accent}22 inset`;
+
+    // --- Cargar GeoJSON
+    let geo; try{
+      const r=await fetch(conf.geojson); if(!r.ok) throw new Error('GeoJSON no encontrado: '+conf.geojson); geo=await r.json();
+    }catch(err){
+      console.error(err); alert('No se pudo cargar la geometría de la capa.\n'+err.message); return;
+    }
+
+    // --- Cargar CSV (si existe); si falla, seguimos con mapa sin datos
+    let rows=[]; try{
+      const r=await fetch(conf.csv); if(!r.ok) throw new Error('CSV no encontrado: '+conf.csv);
+      const csvText=await r.text();
+      const parsed=Papa.parse(csvText,{header:true,skipEmptyLines:true});
+      const fields=parsed.meta?.fields??Object.keys(parsed.data[0]??{});
+      const {codeKey,nameKey,popKey}=detectColumns(fields);
+      rows = parsed.data.map(rec=>{
+        const code = pad5(rec[codeKey]);
+        const name = String(rec[nameKey]??'').trim();
+        const popRaw = rec[popKey];
+        const pop = popRaw==null?null:Number(String(popRaw).replace(/[^0-9.-]/g,''));
+        return { code, name, pop: isNaN(pop)?null:pop };
+      }).filter(r=>r.code||r.name);
+    }catch(err){
+      console.warn('CSV opcional faltante:', err.message);
+    }
+
+    const byCode=new Map(rows.map(r=>[String(r.code), r]));
+    joined=(geo.features||[]).map(f=>{
+      const props=f.properties||{};
+      const code=codeFromProps(props);
+      const csv=byCode.get(code)||byCode.get(pad5(code));
+      const name = csv?.name || props.NOMBRE || props.NOM_MPIO || props.NOMBRE_MPIO || props.Nombre || props.MUNICIPIO || props.SECTOR || props.COMUNA || props.CORREGIMIENTO || '';
+      const pop = csv?.pop ?? null;
+      return { code, name, pop, feature:f };
+    });
+
+    // --- Escala de color
+    const { scale } = makeBuckets(joined.map(j=>j.pop).filter(Boolean));
+
+    // --- Borde acentuado (no interactivo)
+    if(geoBorderLayer) geoBorderLayer.remove();
+    geoBorderLayer = L.geoJSON(geo,{ style:()=>({weight:2.2,color:conf.accent,fillOpacity:0,opacity:.9}), interactive:false }).addTo(map);
+
+    // --- Capa principal
+    if(geoLayer) geoLayer.remove();
+    geoLayer = L.geoJSON(geo,{
+      style:(feat)=>{
+        const code = codeFromProps(feat.properties||{});
+        const rec = joined.find(j=> pad5(j.code)===pad5(code));
+        const fillColor = scale(rec?.pop ?? null);
+        return { weight:1.5, color:'#334155', fillColor, fillOpacity:.87 };
+      },
+      onEachFeature:(feature,layer)=>{
+        layer.on('click',()=>{
+          const code = codeFromProps(feature.properties||{});
+          const rec = joined.find(j=> pad5(j.code)===pad5(code));
+          if(rec) selectFeature(rec);
+        });
+        layer.on('mouseover',e=> e.target.setStyle({weight:3,color:conf.accent}));
+        layer.on('mouseout', e=> e.target.setStyle({weight:1.5,color:'#334155'}));
+      }
+    }).addTo(map);
+
+    try{ map.fitBounds(geoLayer.getBounds(), {padding:[16,16]}); }catch{}
+  }
+
+  function selectFeature(rec){
+    // Aquí podríamos mostrar detalles si más adelante se agrega la tarjeta lateral
+    console.log('Seleccionado:', rec);
+  }
+
+  document.querySelectorAll('.layer-btn').forEach(btn=> btn.addEventListener('click', async()=>{ currentKey=btn.dataset.layer; await loadAndRender(); }));
+
+  // Boot
+  initMap();
+  loadAndRender();
+</script>
 </body>
 </html>
