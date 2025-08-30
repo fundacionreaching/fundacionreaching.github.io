@@ -1,3 +1,310 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plataforma Censo — Tolima / Ibagué / Comunas / Corregimientos</title>
+  <meta name="description" content="Plataforma de visualización de datos poblacionales del Tolima e Ibagué (comunas y corregimientos). Fundación Reaching." />
+
+  <!-- Favicon simple con la R de Reaching -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%236366F1'/%3E%3Ctext x='50' y='58' font-size='44' text-anchor='middle' fill='white' font-family='Arial, Helvetica, sans-serif'%3ER%3C/text%3E%3C/svg%3E" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { 600: '#6366F1', 700: '#4F46E5' } } } }
+    }
+  </script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+
+  <!-- PapaParse (CSV) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    html, body { height: 100%; }
+    #map { height: 440px; }
+    .leaflet-container { font: 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; }
+
+    /* Fondo elegante (gradientes + grid) */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -2;
+      background:
+        radial-gradient(1200px 800px at 10% 0%, rgba(79,70,229,.08), transparent 60%),
+        radial-gradient(1000px 800px at 100% 100%, rgba(16,185,129,.08), transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      background-attachment: fixed;
+    }
+    body::after {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23c7d2fe' stroke-opacity='0.35' stroke-width='1'%3E%3Cpath d='M0 60h120M60 0v120'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 120px 120px; opacity: .6;
+    }
+
+    /* Glow suave al pasar el mouse */
+    .leaflet-container .leaflet-interactive {
+      filter: drop-shadow(0 0 6px rgba(0,0,0,.15));
+      transition: filter .2s ease, stroke .2s ease, stroke-width .2s ease;
+    }
+    .leaflet-container .feature-hover { filter: drop-shadow(0 0 12px rgba(79,70,229,.45)); }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900 bg-slate-50/70 backdrop-blur-sm">
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
+      <div class="flex items-center gap-3">
+        <img src="./logo-reaching.png" alt="Fundación Reaching" class="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200" onerror="this.remove();document.getElementById('logo-fallback').classList.remove('hidden')" />
+        <div id="logo-fallback" class="hidden h-9 w-9 grid place-items-center rounded-xl bg-brand-600 text-white text-sm font-bold shadow">R</div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">Plataforma Censo — Tolima / Ibagué</h1>
+          <p class="text-xs text-slate-500">Fundación Reaching • Encuentro con Dios y Oración Mundial RTV</p>
+        </div>
+      </div>
+      <div class="ml-auto hidden sm:flex items-center gap-2 text-xs text-slate-500">
+        <span>“Pon tus obras en manos del Señor” — Prov. 16:3</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="mx-auto max-w-7xl px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <!-- Panel izquierdo -->
+    <aside class="lg:col-span-4 xl:col-span-3 space-y-4">
+      <!-- Selector de capa -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Capa de datos</div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <button data-layer="tolima" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Tolima</button>
+          <button data-layer="ibague" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Ibagué</button>
+          <button data-layer="comunas" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Comunas</button>
+          <button data-layer="corregimientos" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Corregimientos</button>
+        </div>
+      </section>
+
+      <!-- Métricas -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Métricas</div>
+        <dl class="grid grid-cols-3 gap-3 text-sm">
+          <div><dt class="text-slate-500">Entidades</dt><dd id="stat-entidades" class="text-lg font-bold">—</dd></div>
+          <div><dt class="text-slate-500">Con dato</dt><dd id="stat-condato" class="text-lg font-bold">—</dd></div>
+          <div><dt class="text-slate-500">Población</dt><dd id="stat-poblacion" class="text-lg font-bold">—</dd></div>
+        </dl>
+      </section>
+
+      <!-- Búsqueda -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Buscar</div>
+        <input id="search" type="text" placeholder="Municipio / comuna / corregimiento" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+      </section>
+    </aside>
+
+    <!-- Panel derecho -->
+    <section class="lg:col-span-8 xl:col-span-9 space-y-4">
+      <!-- Mapa -->
+      <div class="relative rounded-2xl overflow-hidden bg-white/95 backdrop-blur shadow-md border border-slate-200">
+        <div id="map" class="w-full"></div>
+        <div id="badge-layer" class="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-2 rounded-xl bg-white/90 text-slate-800 px-3 py-2 text-sm border border-slate-300 shadow">
+          Capa: <span id="layer-name" class="font-semibold">—</span>
+        </div>
+      </div>
+
+      <!-- Top 5 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+          <div class="mb-2 font-semibold">Top 5 por población</div>
+          <ol id="top5" class="space-y-1 text-sm"></ol>
+        </section>
+
+        <!-- Tabla -->
+        <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+          <div class="mb-2 flex items-center justify-between">
+            <span class="font-semibold">Listado</span>
+            <button id="btn-export" class="text-xs rounded-lg border px-2 py-1 hover:bg-slate-100">Exportar CSV</button>
+          </div>
+          <div class="overflow-auto max-h-80">
+            <table class="w-full text-sm">
+              <thead class="text-left text-slate-500">
+                <tr>
+                  <th class="px-3 py-2">#</th>
+                  <th class="px-3 py-2">Nombre</th>
+                  <th class="px-3 py-2">Código</th>
+                  <th class="px-3 py-2 text-right">Población</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div id="rows-count" class="mt-1 text-xs text-slate-500">0 filas</div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-white bg-brand-600/80 rounded-t-2xl">
+    <p>Desarrollado con excelencia para la misión: Fundación Reaching. Bendiciones. ✨</p>
+  </footer>
+
+  <!-- ============================================================
+       SEÑAL: inserta debajo el script externo.
+       Si quieres probar cache-busting, cambia el número de ?v=.
+       ============================================================ -->
+  <!-- INSERTAR_AQUI_SCRIPT_CENSO -->
+  <!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plataforma Censo — Tolima / Ibagué / Comunas / Corregimientos</title>
+  <meta name="description" content="Plataforma de visualización de datos poblacionales del Tolima e Ibagué (comunas y corregimientos). Fundación Reaching." />
+
+  <!-- Favicon simple con la R de Reaching -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%236366F1'/%3E%3Ctext x='50' y='58' font-size='44' text-anchor='middle' fill='white' font-family='Arial, Helvetica, sans-serif'%3ER%3C/text%3E%3C/svg%3E" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: { 600: '#6366F1', 700: '#4F46E5' } } } }
+    }
+  </script>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+
+  <!-- PapaParse (CSV) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    html, body { height: 100%; }
+    #map { height: 440px; }
+    .leaflet-container { font: 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; }
+
+    /* Fondo elegante (gradientes + grid) */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -2;
+      background:
+        radial-gradient(1200px 800px at 10% 0%, rgba(79,70,229,.08), transparent 60%),
+        radial-gradient(1000px 800px at 100% 100%, rgba(16,185,129,.08), transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      background-attachment: fixed;
+    }
+    body::after {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23c7d2fe' stroke-opacity='0.35' stroke-width='1'%3E%3Cpath d='M0 60h120M60 0v120'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 120px 120px; opacity: .6;
+    }
+
+    /* Glow suave al pasar el mouse */
+    .leaflet-container .leaflet-interactive {
+      filter: drop-shadow(0 0 6px rgba(0,0,0,.15));
+      transition: filter .2s ease, stroke .2s ease, stroke-width .2s ease;
+    }
+    .leaflet-container .feature-hover { filter: drop-shadow(0 0 12px rgba(79,70,229,.45)); }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900 bg-slate-50/70 backdrop-blur-sm">
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
+      <div class="flex items-center gap-3">
+        <img src="./logo-reaching.png" alt="Fundación Reaching" class="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200" onerror="this.remove();document.getElementById('logo-fallback').classList.remove('hidden')" />
+        <div id="logo-fallback" class="hidden h-9 w-9 grid place-items-center rounded-xl bg-brand-600 text-white text-sm font-bold shadow">R</div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">Plataforma Censo — Tolima / Ibagué</h1>
+          <p class="text-xs text-slate-500">Fundación Reaching • Encuentro con Dios y Oración Mundial RTV</p>
+        </div>
+      </div>
+      <div class="ml-auto hidden sm:flex items-center gap-2 text-xs text-slate-500">
+        <span>“Pon tus obras en manos del Señor” — Prov. 16:3</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="mx-auto max-w-7xl px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <!-- Panel izquierdo -->
+    <aside class="lg:col-span-4 xl:col-span-3 space-y-4">
+      <!-- Selector de capa -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Capa de datos</div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <button data-layer="tolima" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Tolima</button>
+          <button data-layer="ibague" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Ibagué</button>
+          <button data-layer="comunas" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Comunas</button>
+          <button data-layer="corregimientos" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Corregimientos</button>
+        </div>
+      </section>
+
+      <!-- Métricas -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Métricas</div>
+        <dl class="grid grid-cols-3 gap-3 text-sm">
+          <div><dt class="text-slate-500">Entidades</dt><dd id="stat-entidades" class="text-lg font-bold">—</dd></div>
+          <div><dt class="text-slate-500">Con dato</dt><dd id="stat-condato" class="text-lg font-bold">—</dd></div>
+          <div><dt class="text-slate-500">Población</dt><dd id="stat-poblacion" class="text-lg font-bold">—</dd></div>
+        </dl>
+      </section>
+
+      <!-- Búsqueda -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Buscar</div>
+        <input id="search" type="text" placeholder="Municipio / comuna / corregimiento" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+      </section>
+    </aside>
+
+    <!-- Panel derecho -->
+    <section class="lg:col-span-8 xl:col-span-9 space-y-4">
+      <!-- Mapa -->
+      <div class="relative rounded-2xl overflow-hidden bg-white/95 backdrop-blur shadow-md border border-slate-200">
+        <div id="map" class="w-full"></div>
+        <div id="badge-layer" class="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-2 rounded-xl bg-white/90 text-slate-800 px-3 py-2 text-sm border border-slate-300 shadow">
+          Capa: <span id="layer-name" class="font-semibold">—</span>
+        </div>
+      </div>
+
+      <!-- Top 5 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+          <div class="mb-2 font-semibold">Top 5 por población</div>
+          <ol id="top5" class="space-y-1 text-sm"></ol>
+        </section>
+
+        <!-- Tabla -->
+        <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+          <div class="mb-2 flex items-center justify-between">
+            <span class="font-semibold">Listado</span>
+            <button id="btn-export" class="text-xs rounded-lg border px-2 py-1 hover:bg-slate-100">Exportar CSV</button>
+          </div>
+          <div class="overflow-auto max-h-80">
+            <table class="w-full text-sm">
+              <thead class="text-left text-slate-500">
+                <tr>
+                  <th class="px-3 py-2">#</th>
+                  <th class="px-3 py-2">Nombre</th>
+                  <th class="px-3 py-2">Código</th>
+                  <th class="px-3 py-2 text-right">Población</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div id="rows-count" class="mt-1 text-xs text-slate-500">0 filas</div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-white bg-brand-600/80 rounded-t-2xl">
+    <p>Desarrollado con excelencia para la misión: Fundación Reaching. Bendiciones. ✨</p>
+  </footer>
+
+  <script src="/app-censo.js?v=2"></script>
+  <noscript><div style="padding:8px;color:#b91c1c;font-weight:600">Activa JavaScript para ver el mapa.</div></noscript>
 // PRUEBA DE VIDA (activar 2 minutos y luego comentar):
 // alert("Script cargado OK"); console.log("✅ app-censo.js ejecutándose");
 
@@ -243,6 +550,11 @@ if (exportBtn) exportBtn.addEventListener('click', () => {
 initMap();
 loadAndRender();
 
+
+</body>
+</html>
+
+  
 
 
 
