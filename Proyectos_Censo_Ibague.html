@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es" x-data="app()" :class="{'dark': prefersDark}" class="min-h-screen">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proyectos Censo — Ibagué · Fundación Reaching</title>
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="Plataforma para proyectos con mapas de Ibagué (comunas, corregimientos, veredas) + municipios de Tolima, población DANE/CSV, tabla y exportación." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root{ --lbl-size: 12px; }
+    .leaflet-container{font:12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif}
+    .leaflet-tooltip.my-label{ background: rgba(17,24,39,.85); color:#e5e7eb; border:1px solid rgba(148,163,184,.25); border-radius:.5rem; padding:.15rem .4rem; font-size: var(--lbl-size); }
+    @media print{ .no-print{display:none!important} .print\:block{display:block!important} .print\:page{page-break-after:always} }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+  <!-- Header -->
+  <header class="no-print sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-900/70 border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-indigo-600"></div>
+        <div class="leading-tight">
+          <h1 class="text-base font-black">Proyectos Censo — Ibagué</h1>
+          <p class="text-[11px] text-slate-500">Comunas · Corregimientos · Veredas · + Tolima (Municipios)</p>
+        </div>
+      </div>
+      <div class="ml-auto flex items-center gap-2">
+        <button @click="toggleTheme()" class="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs">Tema</button>
+        <a href="#mapa" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs">Ir al mapa</a>
+        <button @click="imprimir()" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs">Exportar PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero / KPIs -->
+  <section class="max-w-7xl mx-auto px-4 py-6">
+    <div class="grid md:grid-cols-5 gap-4">
+      <div class="md:col-span-3 p-5 rounded-3xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-sky-400 text-white shadow">
+        <h2 class="text-xl md:text-2xl font-black">Censo + Mapas + Indicadores</h2>
+        <p class="text-sm opacity-90">Datos para formulación de proyectos: población por año (DANE/CSV) y capas territoriales hasta vereda.</p>
+        <div class="mt-3 flex flex-wrap gap-2 items-center">
+          <label class="text-xs opacity-80">Nivel</label>
+          <select x-model="nivel" @change="enfocarMapa()" class="text-slate-900 rounded-2xl px-3 py-1.5">
+            <option value="municipios">Tolima: Municipios</option>
+            <option value="comunas">Ibagué: Comunas</option>
+            <option value="correg">Ibagué: Corregimientos</option>
+            <option value="veredas">Ibagué: Veredas</option>
+          </select>
+          <label class="text-xs opacity-80 ml-2">Año</label>
+          <select x-model.number="anio" @change="restyle()" class="text-slate-900 rounded-2xl px-3 py-1.5">
+            <template x-for="y in anios" :key="y"><option :value="y" x-text="y"></option></template>
+          </select>
+          <label class="text-xs opacity-80 ml-2">Métrica</label>
+          <select x-model="metrica" @change="restyle()" class="text-slate-900 rounded-2xl px-3 py-1.5">
+            <option value="total">Población</option>
+            <option value="densidad">Densidad (hab/km²)</option>
+          </select>
+          <button @click="enfocarMapa()" class="rounded-2xl px-3 py-1.5 bg-black/20">Enfocar</button>
+        </div>
+      </div>
+      <div class="md:col-span-2 grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow">
+          <p class="text-[11px] text-slate-500">Municipios</p>
+          <p class="text-2xl font-black text-indigo-600 dark:text-indigo-300" x-text="kpi.municipios"></p>
+        </div>
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border p-4 shadow border-slate-200 dark:border-slate-800">
+          <p class="text-[11px] text-slate-500">Comunas</p>
+          <p class="text-2xl font-black text-indigo-600 dark:text-indigo-300" x-text="kpi.comunas"></p>
+        </div>
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border p-4 shadow border-slate-200 dark:border-slate-800">
+          <p class="text-[11px] text-slate-500">Corregimientos</p>
+          <p class="text-2xl font-black text-indigo-600 dark:text-indigo-300" x-text="kpi.correg"></p>
+        </div>
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border p-4 shadow border-slate-200 dark:border-slate-800">
+          <p class="text-[11px] text-slate-500">Población cargada</p>
+          <p class="text-2xl font-black text-indigo-600 dark:text-indigo-300" x-text="kpi.poblacion.toLocaleString('es-CO')"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="max-w-7xl mx-auto px-4 grid lg:grid-cols-3 gap-4">
+    <!-- Panel izquierdo: controles -->
+    <aside class="no-print lg:col-span-1 space-y-4">
+      <section class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow">
+        <h3 class="text-base font-bold">Capas geográficas</h3>
+        <p class="text-xs text-slate-500">Active mapas con población DANE/CSV.</p>
+        <div class="mt-3 space-y-2">
+          <button @click="cargarTolima()" class="w-full px-4 py-2 rounded-2xl bg-indigo-600 text-white font-semibold">Tolima: Municipios (local/DANE)</button>
+          <label class="block text-xs font-semibold mt-2">URL Comunas Ibagué (GeoJSON)</label>
+          <input type="url" x-model="uComunas" class="w-full rounded-2xl border px-3 py-1.5 text-sm" placeholder="https://fundacionreaching.github.io/data/ibague_comunas.geojson" />
+          <label class="block text-xs font-semibold">URL Corregimientos Ibagué (GeoJSON)</label>
+          <input type="url" x-model="uCorreg" class="w-full rounded-2xl border px-3 py-1.5 text-sm" placeholder="https://fundacionreaching.github.io/data/ibague_corregimientos.geojson" />
+          <label class="block text-xs font-semibold">URL Veredas Ibagué (GeoJSON)</label>
+          <input type="url" x-model="uVeredas" class="w-full rounded-2xl border px-3 py-1.5 text-sm" placeholder="https://fundacionreaching.github.io/data/ibague_veredas.geojson" />
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <button @click="cargarIbague()" class="w-full px-3 py-2 rounded-2xl border">Cargar Ibagué</button>
+            <button @click="cargarPoblacionGit()" class="w-full px-3 py-2 rounded-2xl border border-emerald-300 text-emerald-700">Población (GitHub)</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <label class="text-xs col-span-2">Transparencia</label>
+            <input type="range" min="0" max="100" x-model.number="opacidadRange" @input="restyle()"/>
+            <label class="text-xs col-span-2">Tamaño etiquetas</label>
+            <input type="range" min="10" max="20" x-model.number="labelSize" @input="aplicarLabelSize()"/>
+            <label class="text-xs flex items-center gap-2 col-span-2"><input type="checkbox" x-model="showLabels" @change="toggleLabels()"> Mostrar etiquetas</label>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold">Año</label>
+            <select x-model.number="anio" @change="restyle()" class="w-full rounded-2xl border px-3 py-1.5 text-sm">
+              <template x-for="y in anios" :key="y"><option :value="y" x-text="y"></option></template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold">Métrica</label>
+            <select x-model="metrica" @change="restyle()" class="w-full rounded-2xl border px-3 py-1.5 text-sm">
+              <option value="total">Población</option>
+              <option value="densidad">Densidad</option>
+            </select>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-2">CSV: <code>DIVIPOLA/CODIGO/NOMBRE, POBLACION, ANIO, AREA_KM2</code></p>
+        <input type="file" accept=".csv" @change="cargarCSV($event)" class="mt-2 w-full text-xs" />
+        <div class="mt-2 flex gap-2">
+          <input x-model="busca" type="search" placeholder="Buscar territorio…" class="rounded-2xl border px-3 py-1.5 text-sm w-full" @keyup.enter="buscarYEnfocar()"/>
+          <button @click="buscarYEnfocar()" class="px-3 py-1.5 rounded-2xl border text-sm">Ir</button>
+        </div>
+      </section>
+
+      <section class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow">
+        <h3 class="text-base font-bold">Descargas</h3>
+        <div class="text-sm">
+          <button @click="exportarTablaCSV()" class="text-indigo-600 dark:text-indigo-300 hover:underline">Exportar tabla CSV</button>
+          <span class="mx-2">·</span>
+          <button @click="descargarPlantilla()" class="hover:underline">Plantilla población</button>
+        </div>
+      </section>
+
+      <section class="rounded-3xl bg-gradient-to-br from-amber-500 to-pink-500 p-4 text-white shadow">
+        <h3 class="text-base font-extrabold">Oramos por Ibagué</h3>
+        <p class="text-sm opacity-95">“Escribe la visión…” (Hab. 2:2). Datos para servir mejor a nuestra gente.</p>
+      </section>
+    </aside>
+
+    <!-- Panel derecho: mapa + tabla -->
+    <section class="lg:col-span-2 space-y-4">
+      <div id="mapa" class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+          <i data-lucide="map" class="w-5 h-5 text-indigo-600"></i>
+          <h3 class="text-base font-bold">Mapa territorial</h3>
+          <span class="ml-auto text-xs text-slate-500">Ibagué / Tolima</span>
+        </div>
+        <div id="map" class="h-[28rem]"></div>
+      </div>
+
+      <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow overflow-hidden">
+        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+          <i data-lucide="table" class="w-5 h-5 text-indigo-600"></i>
+          <h3 class="text-base font-bold">Tabla territorial</h3>
+          <div class="ml-auto flex items-center gap-2">
+            <span class="text-xs text-slate-500">Filas: <strong x-text="filtradas.length"></strong></span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="text-left text-slate-500">
+              <tr>
+                <th class="py-2 px-4">Nombre</th>
+                <th class="py-2 px-4">Código</th>
+                <th class="py-2 px-4">Población</th>
+                <th class="py-2 px-4">Área km²</th>
+                <th class="py-2 px-4">Densidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="f in filtradas" :key="f.key">
+                <tr class="border-t border-slate-100 dark:border-slate-800">
+                  <td class="py-2 px-4" x-text="f.nombre"></td>
+                  <td class="py-2 px-4" x-text="f.codigo || '—'"></td>
+                  <td class="py-2 px-4" x-text="fmt(f.poblacion)"></td>
+                  <td class="py-2 px-4" x-text="f.area? f.area.toFixed(2): '—'"></td>
+                  <td class="py-2 px-4" x-text="(f.poblacion && f.area)? (f.poblacion/f.area).toFixed(1): '—'"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="no-print mt-8 py-6 text-center text-xs text-slate-500">Fundación Reaching · Hecho con amor para servir a Ibagué y Tolima</footer>
+
+<script>
+function app(){
+  return {
+    // Tema
+    prefersDark: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
+    toggleTheme(){ this.prefersDark = !this.prefersDark; },
+
+    // Estado UI
+    nivel: 'comunas', busca:'',
+    anios: Array.from({length:(2042-2018)+1}, (_,i)=>2018+i),
+    anio: new Date().getFullYear(),
+    metrica: 'total',
+    opacidadRange: 70, labelSize: 12, showLabels: false,
+
+    // Defaults de datos (rutas /data/)
+    uTolima:  'https://fundacionreaching.github.io/data/tolima_municipios.geojson',
+    uComunas: 'https://fundacionreaching.github.io/data/ibague_comunas.geojson',
+    uCorreg:  'https://fundacionreaching.github.io/data/ibague_corregimientos.geojson',
+    uVeredas: 'https://fundacionreaching.github.io/data/ibague_veredas.geojson',
+
+    // Estado datos
+    kpi:{ municipios:0, comunas:0, correg:0, poblacion:0 },
+    pob:{},
+    filas:[],
+    get filtradas(){ const q=this.busca.toLowerCase(); return this.filas.filter(f => (f.nombre||'').toLowerCase().includes(q)); },
+
+    // Mapa
+    map:null, capaTolima:null, capaCom:null, capaCor:null, capaVer:null, layersCtrl:null, leyenda:null,
+
+    init(){ this.$nextTick(()=>{ lucide.createIcons(); this.initMap(); this.autoCargar(); this.aplicarLabelSize(); }); },
+
+    initMap(){
+      this.map = L.map('map', { tap:true }).setView([4.4389,-75.2322], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(this.map);
+      this.capaTolima = L.geoJSON(null,{ onEachFeature:this.onEachTolima.bind(this), style:this.styleTolima.bind(this) });
+      this.capaCom    = L.geoJSON(null,{ onEachFeature:this.onEachIbg.bind(this),    style:this.styleIbg.bind(this) });
+      this.capaCor    = L.geoJSON(null,{ onEachFeature:this.onEachIbg.bind(this),    style:this.styleIbg.bind(this) });
+      this.capaVer    = L.geoJSON(null,{ onEachFeature:this.onEachIbg.bind(this),    style:this.styleIbg.bind(this) });
+      this.layersCtrl = L.control.layers(null,{
+        'Tolima — Municipios': this.capaTolima,
+        'Ibagué — Comunas': this.capaCom,
+        'Ibagué — Corregimientos': this.capaCor,
+        'Ibagué — Veredas': this.capaVer
+      },{collapsed:true}).addTo(this.map);
+      this.makeLegend();
+    },
+
+    async autoCargar(){
+      // Si existen URLs válidas, intenta cargar comunas/correg; Tolima opcional
+      await this.cargarIbague();
+      try{ await this.cargarTolima(); }catch(_){ /* silencioso */ }
+      try{ await this.cargarPoblacionGit(); }catch(_){ }
+      this.enfocarMapa();
+    },
+
+    // ---- CARGAS ----
+    async cargarTolima(){
+      let gj=null; try{ const r=await fetch(this.uTolima,{cache:'no-store'}); if(r.ok) gj=await r.json(); }catch(_){ }
+      if(!gj){
+        const url='https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=DPTO_CCDGO%3D%2773%27&outFields=*%2CMPIO_CCDGO%2CMPIO_CNMBR&f=geojson';
+        const r=await fetch(url); if(r.ok) gj=await r.json();
+      }
+      if(!gj||!gj.features) throw new Error('Tolima no disponible');
+      this.capaTolima.clearLayers(); this.capaTolima.addData(gj).addTo(this.map);
+      this.capture('municipios', this.capaTolima, ['MPIO_CNMBR','NOMBRE'], ['MPIO_CCDGO','CODIGO']);
+      this.recalcKPI(); this.restyle();
+    },
+
+    async cargarIbague(){
+      const load = async (url, capa, nombreKeys, codigoKeys) => {
+        if(!url) return false; const r=await fetch(url,{cache:'no-store'}); if(!r.ok) return false; const gj=await r.json(); if(!gj||!gj.features) return false; capa.clearLayers(); capa.addData(gj); this.capture(nombreKeys[0]==='MPIO_CNMBR'?'municipios': (capa===this.capaCom?'comunas':capa===this.capaCor?'correg':'veredas'), capa, nombreKeys, codigoKeys); return true;
+      };
+      await load(this.uComunas, this.capaCom, ['NOMBRE','COMUNA','name'], ['CODIGO','id']);
+      await load(this.uCorreg,  this.capaCor, ['NOMBRE','CORREGIM','name'], ['CODIGO','id']);
+      try{ await load(this.uVeredas, this.capaVer, ['NOMBRE','VEREDA','name'], ['CODIGO','id']); }catch(_){ }
+      this.recalcKPI(); this.restyle();
+    },
+
+    async cargarPoblacionGit(){
+      const urls=[
+        'https://fundacionreaching.github.io/data/dane_tolima_poblacion.csv',
+        'https://fundacionreaching.github.io/data/ibague_comunas_poblacion.csv',
+        'https://fundacionreaching.github.io/data/ibague_corregimientos_poblacion.csv',
+        'https://fundacionreaching.github.io/data/ibague_veredas_poblacion.csv'
+      ];
+      let ok=0; for(const u of urls){ try{ const r=await fetch(u,{cache:'no-store'}); if(r.ok){ this.ingestCSV(await r.text()); ok++; } }catch(_){ }
+      }
+      this.toast(ok?`Población cargada (${ok})`:'No se pudo cargar población');
+      this.recalcKPI(); this.restyle();
+    },
+
+    // ---- ESTILO / POPUPS ----
+    color(v){ if(v==null||isNaN(v)) return '#e5e7eb'; return v>500000?'#1d4ed8': v>200000?'#3b82f6': v>80000?'#60a5fa': v>30000?'#93c5fd': v>10000?'#bfdbfe':'#dbeafe'; },
+    styleTolima(f){ const k=this.keyMun(f), n=this.pByKey(k), a=this.area(f); const v=(this.metrica==='densidad'&&n&&a)?n/a:n; return {color:'#1f2937', weight:1, fillColor:this.color(v), fillOpacity:this.opacidadRange/100}; },
+    styleIbg(f){ const k=this.keyGen(f), n=this.pByKey(k)||this.pByKey((f.properties.NOMBRE||f.properties.name||'').toUpperCase()), a=this.area(f); const v=(this.metrica==='densidad'&&n&&a)?n/a:n; return {color:'#1f2937', weight:1, fillColor:this.color(v), fillOpacity:this.opacidadRange/100}; },
+    onEachTolima(f, layer){ layer.on('click',()=>{ const nom=(f.properties.MPIO_CNMBR||f.properties.NOMBRE||'').toUpperCase(); const k=this.keyMun(f); const n=this.pByKey(k); const a=this.area(f); const d=(n&&a)?(n/a).toFixed(1):'—'; layer.bindPopup(`<strong>${nom}</strong><br>Población ${this.anio}: ${this.fmt(n)}<br>Área: ${a?a.toFixed(2):'—'} km²<br>Densidad: ${d}`).openPopup(); }); if(this.showLabels){ layer.bindTooltip(String(f.properties.NOMBRE||f.properties.name||f.properties.MPIO_CNMBR||'').toUpperCase(), {permanent:true,direction:'center',className:'my-label'}); } },
+    onEachIbg(f, layer){ layer.on('click',()=>{ const nom=(f.properties.NOMBRE||f.properties.name||f.properties.COMUNA||f.properties.CORREGIM||f.properties.VEREDA||'').toUpperCase(); const k=this.keyGen(f)||nom; const n=this.pByKey(k)||this.pByKey(nom); const a=this.area(f); const d=(n&&a)?(n/a).toFixed(1):'—'; layer.bindPopup(`<strong>${nom}</strong><br>Población ${this.anio}: ${this.fmt(n)}<br>Área: ${a?a.toFixed(2):'—'} km²<br>Densidad: ${d}`).openPopup(); }); if(this.showLabels){ layer.bindTooltip(String(f.properties.NOMBRE||f.properties.name||f.properties.COMUNA||f.properties.CORREGIM||f.properties.VEREDA||'').toUpperCase(), {permanent:true,direction:'center',className:'my-label'}); } },
+    restyle(){ this.capaTolima && this.capaTolima.setStyle(this.styleTolima.bind(this)); this.capaCom && this.capaCom.setStyle(this.styleIbg.bind(this)); this.capaCor && this.capaCor.setStyle(this.styleIbg.bind(this)); this.capaVer && this.capaVer.setStyle(this.styleIbg.bind(this)); this.updateLegend(); },
+    makeLegend(){ this.leyenda && this.leyenda.remove(); const ctrl=L.control({position:'bottomright'}); ctrl.onAdd=()=>{ const d=L.DomUtil.create('div','rounded-2xl text-xs p-3 bg-white/80 dark:bg-slate-900/80 shadow border border-slate-200 dark:border-slate-800'); const r=[0,10000,30000,80000,200000,500000]; d.innerHTML='<strong>Leyenda</strong><div id="grades" class="mt-2 space-y-1"></div>'; return d; }; ctrl.addTo(this.map); this.leyenda=ctrl; this.updateLegend(); },
+    updateLegend(){ const el=document.getElementById('grades'); if(!el) return; const r=[0,10000,30000,80000,200000,500000]; el.innerHTML=r.map((x,i)=>{ const c=this.color(x+1); const label=i<r.length-1? `${this.fmt(x)}–${this.fmt(r[i+1])}`: `>${this.fmt(x)}`; return `<div class='flex items-center gap-2'><span style='background:${c}' class='inline-block w-4 h-3 rounded'></span><span>${label}</span></div>`; }).join(''); },
+
+    // ---- CAPTURA TABLA / KPI ----
+    capture(tipo, capa, camposNombre=['NOMBRE'], camposCodigo=['CODIGO']){
+      const out=[]; capa.eachLayer(l=>{ const f=l.feature||{}; const props=f.properties||{}; const nombre=[...camposNombre].map(k=>props[k]).find(Boolean)||''; const codigo=[...camposCodigo].map(k=>props[k]).find(Boolean)||''; const key=String(codigo||nombre).toUpperCase(); const pob=this.pByKey(key); const area=this.area(f); out.push({ key, nombre:nombre||'—', codigo, poblacion:pob||0, area:area||null }); });
+      this.features=this.features||{}; this.features[tipo]=out; this.refreshFilas(); this.recalcKPI();
+    },
+    refreshFilas(){ this.filas = (this.features?.[this.nivel]||[]); },
+    recalcKPI(){ this.kpi={ municipios:(this.features?.municipios||[]).length, comunas:(this.features?.comunas||[]).length, correg:(this.features?.correg||[]).length, poblacion:Object.values(this.pob).reduce((s,o)=> s+Number(o[this.anio]||o.total||0),0) }; this.refreshFilas(); },
+
+    // ---- CSV ----
+    descargarPlantilla(){ const csv='DIVIPOLA,MUNICIPIO,ANIO,POBLACION,AREA_KM2\n'; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='plantilla_poblacion.csv'; a.click(); },
+    async cargarCSV(e){ const f=e.target.files[0]; if(!f) return; const t=await f.text(); this.ingestCSV(t); this.recalcKPI(); this.restyle(); },
+    ingestCSV(text){ const rows=text.trim().split(/\r?\n/).map(r=>r.split(',')); const head=rows.shift().map(s=>s.trim().toUpperCase()); const iKey=head.indexOf('DIVIPOLA')>-1?head.indexOf('DIVIPOLA'):(head.indexOf('CODIGO')>-1?head.indexOf('CODIGO'):(head.indexOf('MUNICIPIO')>-1?head.indexOf('MUNICIPIO'):head.indexOf('NOMBRE'))); const iAnio=head.indexOf('ANIO')>-1?head.indexOf('ANIO'):head.indexOf('AÑO'); const iPob=head.indexOf('POBLACION')>-1?head.indexOf('POBLACION'):head.indexOf('POBLACIÓN'); const iArea=head.indexOf('AREA_KM2'); if(iKey<0||iPob<0) return; rows.forEach(r=>{ const key=(r[iKey]||'').toUpperCase(); this.pob[key]=this.pob[key]||{}; const an=iAnio>=0?Number(r[iAnio]):'total'; this.pob[key][an]=Number(r[iPob]); if(iArea>=0) this.pob[key].area_km2=Number(r[iArea]); }); },
+
+    // ---- Helpers ----
+    fmt(n){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('es-CO'); },
+    keyMun(f){ return ((f.properties.MPIO_CCDGO||f.properties.CODIGO||f.properties.MPIO_CNMBR||f.properties.NOMBRE)||'').toString().toUpperCase(); },
+    keyGen(f){ return ((f.properties.CODIGO||f.properties.id||f.properties.NOMBRE||f.properties.name||f.properties.COMUNA||f.properties.CORREGIM||f.properties.VEREDA)||'').toString().toUpperCase(); },
+    area(f){ if(f.properties.AREA_KM2) return Number(f.properties.AREA_KM2); if(f.properties.SHAPE_Area) return Number(f.properties.SHAPE_Area)/1e6; return null; },
+    pByKey(k){ const r=this.pob[k]||this.pob[(k||'').toUpperCase()]||null; return r? Number(r[this.anio]||r.total||0):0; },
+
+    enfocarMapa(){ let b=null; if(this.nivel==='municipios' && this.capaTolima.getLayers().length) b=this.capaTolima.getBounds(); if(this.nivel==='comunas' && this.capaCom.getLayers().length) b=this.capaCom.getBounds(); if(this.nivel==='correg' && this.capaCor.getLayers().length) b=this.capaCor.getBounds(); if(this.nivel==='veredas' && this.capaVer.getLayers().length) b=this.capaVer.getBounds(); if(b) this.map.fitBounds(b); },
+    buscarYEnfocar(){ const q=this.busca.trim().toLowerCase(); if(!q) return; let target=null; const tryFind=(capa)=>{ capa && capa.eachLayer(l=>{ if(target) return; const n=(l.feature.properties.NOMBRE||l.feature.properties.name||l.feature.properties.COMUNA||l.feature.properties.CORREGIM||l.feature.properties.VEREDA||'').toString().toLowerCase(); if(n.includes(q)) target=l; }); }; tryFind(this.capaCom); tryFind(this.capaCor); tryFind(this.capaVer); tryFind(this.capaTolima); if(target){ this.map.fitBounds(target.getBounds()); if(target.openPopup) target.openPopup(); }
+    },
+
+    aplicarLabelSize(){ document.documentElement.style.setProperty('--lbl-size', this.labelSize+'px'); },
+    toggleLabels(){ const bindAll=(capa)=>{ capa && capa.eachLayer(l=>{ if(this.showLabels){ l.bindTooltip(String(l.feature.properties.NOMBRE||l.feature.properties.name||l.feature.properties.COMUNA||l.feature.properties.CORREGIM||l.feature.properties.VEREDA||'').toUpperCase(), {permanent:true,direction:'center',className:'my-label'}); } else { l.unbindTooltip(); } }); }; bindAll(this.capaCom); bindAll(this.capaCor); bindAll(this.capaVer); bindAll(this.capaTolima); },
+
+    imprimir(){ window.print(); },
+    toast(msg){ const el=document.createElement('div'); el.textContent=msg; el.className='fixed bottom-5 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-900 text-white rounded-2xl shadow z-50'; document.body.appendChild(el); setTimeout(()=>el.remove(),1800); }
+  }
+}
+</script>
+</body>
+</html>
