@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plataforma Censo — Tolima / Ibagué / Comunas / Corregimientos</title>
   <meta name="description" content="Plataforma de visualización de datos poblacionales del Tolima e Ibagué (comunas y corregimientos). Fundación Reaching." />
+
+  <!-- Favicon simple con la R de Reaching -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%236366F1'/%3E%3Ctext x='50' y='58' font-size='44' text-anchor='middle' fill='white' font-family='Arial, Helvetica, sans-serif'%3ER%3C/text%3E%3C/svg%3E" />
 
-  <!-- TailwindCSS -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -18,359 +20,154 @@
       }
     }
   </script>
-<script>
-// ===============================
-// FUENTES DE DATOS + COLORES
-// ===============================
-const DATA_SOURCES = {
-  tolima: {
-    label: 'Tolima — Municipios',
-    center: [4.4389, -75.2322],
-    zoom: 8,
-    accent: '#4F46E5', // indigo
-    geojson: '/tolima_municipios.geojson',
-    csv: '/dane_tolima_poblacion.csv'
-  },
-  ibague: {
-    label: 'Ibagué — Zonas urbanas (si aplica)',
-    center: [4.4389, -75.2322],
-    zoom: 12,
-    accent: '#059669', // emerald
-    geojson: '/ibague_urbano.geojson',
-    csv: '/ibague_urbano_poblacion.csv'
-  },
-  comunas: {
-    label: 'Ibagué — Comunas',
-    center: [4.4389, -75.2322],
-    zoom: 12,
-    accent: '#D97706', // amber
-    geojson: '/ibague_comunas.geojson',
-    csv: '/ibague_comunas_poblacion.csv'
-  },
-  corregimientos: {
-    label: 'Ibagué — Corregimientos',
-    center: [4.4389, -75.2322],
-    zoom: 11,
-    accent: '#E11D48', // rose
-    geojson: '/ibague_corregimientos.geojson',
-    csv: '/ibague_corregimientos_poblacion.csv'
-  }
-};
 
-// ===============================
-// UTILIDADES
-// ===============================
-const PALETTE = ['#e6f2ff', '#b3d1ff', '#80b1ff', '#4d91ff', '#1a70ff', '#0052cc'];
-const norm = (s) => String(s ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-const pad5 = (v) => String(v ?? '').replace(/\D/g, '').padStart(5, '0');
-function numberFmt(n) { return (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString('es-CO'); }
-function detectColumns(keys) {
-  const lower = keys.map(k => (k||'').toLowerCase());
-  const findKey = (arr) => { const i = lower.findIndex(k => arr.some(a => k.includes(a))); return i>=0 ? keys[i] : null; };
-  return {
-    codeKey: findKey(['dane','cod','codigo','mpio','codigo_dane','coddane','cod_mun','mpio_ccdgo']),
-    nameKey: findKey(['municipio','nombre','nom','sector','comuna','correg','mpio_cn','mpio_nm']),
-    popKey:  findKey(['pob','pobl','habit','total'])
-  };
-}
-function codeFromProps(props) {
-  const candidates = [props?.MPIO_CCDGO, props?.COD_DANE, props?.Codigo, props?.codigo, props?.DANE, props?.CODIGO, props?.cod_dane, props?.CodDANE, props?.codigo_dane, props?.CODIGO_DANE, props?.CODIGO_MPIO, props?.codigo_mpio];
-  for (const c of candidates) { const n = pad5(c); if (n) return n; }
-  const anyCode = props?.CODIGO || props?.CODIGO2 || props?.ID || props?.id || props?.code || props?.Code;
-  return anyCode != null ? String(anyCode) : '';
-}
-function quantile(sorted, q) { const pos = (sorted.length - 1) * q; const base = Math.floor(pos); const rest = pos - base; return sorted[base + 1] !== undefined ? sorted[base] + rest * (sorted[base+1] - sorted[base]) : sorted[base]; }
-function makeBuckets(values, k = PALETTE.length) {
-  const arr = values.filter(v => typeof v === 'number' && !isNaN(v)).sort((a,b)=>a-b);
-  if (!arr.length) return { breaks: [], scale: ()=>'#cccccc' };
-  const breaks = []; for (let i=1;i<k;i++) breaks.push(Math.round(quantile(arr, i/k)));
-  const scale = (v) => { if (v == null || isNaN(v)) return '#cccccc'; let idx = breaks.findIndex(b => v <= b); if (idx === -1) idx = k-1; return PALETTE[idx]; };
-  return { breaks, scale };
-}
-function downloadCSV(rows) {
-  const header = ['codigo','nombre','poblacion'];
-  const lines = [header.join(',')].concat(rows.map(r => [JSON.stringify(r.code), JSON.stringify(r.name), r.pop ?? ''].join(',')));
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'export_filtrado.csv'; a.click(); URL.revokeObjectURL(url);
-}
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-// ===============================
-// ESTADO Y MAPA (tolerante a HTML parcial)
-// ===============================
-let currentKey = 'tolima';
-let map, geoLayer, geoBorderLayer;
-let joined = [];
-function initMap() {
-  const conf = DATA_SOURCES[currentKey];
-  map = L.map('map').setView(conf.center, conf.zoom);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
-}
-async function loadAndRender() {
-  const conf = DATA_SOURCES[currentKey];
-  const layerNameEl = document.getElementById('layer-name'); if (layerNameEl) layerNameEl.textContent = conf.label;
-  const badge = document.getElementById('badge-layer'); if (badge) { badge.style.border = '1px solid ' + conf.accent; badge.style.boxShadow = `0 0 0 3px ${conf.accent}22 inset`; }
+  <!-- PapaParse (CSV) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  // GeoJSON
-  const geo = await fetch(conf.geojson).then(r => { if (!r.ok) throw new Error('No se pudo cargar GeoJSON: ' + conf.geojson); return r.json(); });
+  <style>
+    html, body { height: 100%; }
+    #map { height: 440px; }
+    .leaflet-container { font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; }
 
-  // CSV
-  const csvText = await fetch(conf.csv).then(r => { if (!r.ok) throw new Error('No se pudo cargar CSV: ' + conf.csv); return r.text(); });
-  const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-  const fields = parsed.meta?.fields ?? Object.keys(parsed.data[0] ?? {});
-  const { codeKey, nameKey, popKey } = detectColumns(fields);
-
-  const rows = parsed.data.map(r => {
-    const code = r[codeKey]; const name = r[nameKey]; const popRaw = r[popKey];
-    const pop = popRaw == null ? null : Number(String(popRaw).replace(/[^0-9.-]/g, ''));
-    return { code: codeFromProps({ CODIGO: code, CODIGO_DANE: code, DANE: code }), name: String(name ?? '').trim(), pop: isNaN(pop) ? null : pop };
-  }).filter(r => r.code || r.name);
-
-  const byCode = new Map(rows.map(r => [String(r.code), r]));
-  joined = (geo.features || []).map(f => {
-    const props = f.properties || {}; const code = String(codeFromProps(props));
-    const name = props.NOMBRE || props.NOM_MPIO || props.NOMBRE_MPIO || props.Nombre || props.MUNICIPIO || props.SECTOR || props.COMUNA || props.CORREGIMIENTO || '';
-    const csv = byCode.get(code) || byCode.get(pad5(code));
-    return { code: code || (csv?.code ?? ''), name: String(csv?.name || name || ''), pop: csv?.pop ?? null, feature: f };
-  });
-
-  // Stats (si existen los elementos)
-  const entidades = joined.length; const conDato = joined.filter(j => typeof j.pop === 'number').length; const poblacion = joined.reduce((acc, j) => acc + (j.pop || 0), 0);
-  const entEl = document.getElementById('stat-entidades'); if (entEl) entEl.textContent = entidades;
-  const conDatoEl = document.getElementById('stat-condato'); if (conDatoEl) conDatoEl.textContent = conDato;
-  const pobEl = document.getElementById('stat-poblacion'); if (pobEl) pobEl.textContent = numberFmt(poblacion);
-
-  // Top 5 (si existe el contenedor)
-  const top5 = [...joined].filter(j => j.pop).sort((a,b)=>b.pop - a.pop).slice(0,5);
-  const top5El = document.getElementById('top5');
-  if (top5El) {
-    top5El.innerHTML = '';
-    top5.forEach((t,i)=> {
-      const li = document.createElement('li');
-      li.className = 'flex items-center justify-between gap-2';
-      li.innerHTML = `<span class="inline-flex items-center gap-2"><span class="text-slate-500 w-5">${i+1}.</span> ${t.name}</span><span class="font-medium">${numberFmt(t.pop)}</span>`;
-      top5El.appendChild(li);
-    });
-  }
-
-  // Tabla filtrable (si existe)
-  const searchEl = document.getElementById('search');
-  const tbody = document.getElementById('tbody');
-  const rowsCountEl = document.getElementById('rows-count');
-  const applyFilter = () => {
-    const q = norm(searchEl?.value || '');
-    const filtered = joined.filter(j => !q || norm(j.name).includes(q) || String(j.code).includes(q));
-    if (tbody) {
-      tbody.innerHTML = '';
-      filtered.forEach((r, i) => {
-        const tr = document.createElement('tr'); tr.className = 'border-b border-slate-100 hover:bg-indigo-50/40 cursor-pointer';
-        tr.innerHTML = `<td class="px-3 py-2 text-slate-500">${i+1}</td><td class="px-3 py-2 font-medium">${r.name || '(Sin nombre)'}</td><td class="px-3 py-2 font-mono text-xs text-slate-600">${r.code || '—'}</td><td class="px-3 py-2 text-right">${numberFmt(r.pop)}</td>`;
-        tr.addEventListener('click', ()=>selectFeature(r)); tbody.appendChild(tr);
-      });
+    /* Fondo elegante (gradientes + grid) */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(1200px 800px at 10% 0%, rgba(79,70,229,.08), transparent 60%),
+        radial-gradient(1000px 800px at 100% 100%, rgba(16,185,129,.08), transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+      background-attachment: fixed;
+      z-index: -2;
     }
-    if (rowsCountEl) rowsCountEl.textContent = `${filtered.length} filas`;
-  };
-  applyFilter();
-  if (searchEl) searchEl.addEventListener('input', applyFilter);
-
-  // Escala y capas
-  const { scale } = makeBuckets(joined.map(j => j.pop).filter(Boolean));
-
-  // Borde acentuado
-  if (geoBorderLayer) geoBorderLayer.remove();
-  geoBorderLayer = L.geoJSON(geo, { style: () => ({ weight: 2.2, color: conf.accent, fillOpacity: 0, opacity: 0.9 }), interactive: false }).addTo(map);
-
-  // Coropletas
-  if (geoLayer) geoLayer.remove();
-  geoLayer = L.geoJSON(geo, {
-    style: (feat) => {
-      const props = feat.properties || {}; const code = String(codeFromProps(props));
-      const rec = joined.find(j => String(j.code) === code || pad5(String(j.code)) === pad5(code));
-      const fillColor = scale(rec?.pop ?? null);
-      return { weight: 1.5, color: '#334155', fillColor, fillOpacity: 0.87 };
-    },
-    onEachFeature: (feature, layer) => {
-      layer.on('click', () => {
-        const props = feature.properties || {}; const code = String(codeFromProps(props));
-        const rec = joined.find(j => String(j.code) === code || pad5(String(j.code)) === pad5(code)); if (rec) selectFeature(rec);
-      });
-      layer.on('mouseover', (e) => {
-        e.target.setStyle({ weight: 3, color: DATA_SOURCES[currentKey].accent });
-        const el = e.target.getElement ? e.target.getElement() : e.target._path; if (el) el.classList.add('feature-hover');
-      });
-      layer.on('mouseout',  (e) => {
-        e.target.setStyle({ weight: 1.5, color: '#334155' });
-        const el = e.target.getElement ? e.target.getElement() : e.target._path; if (el) el.classList.remove('feature-hover');
-      });
-    }
-  }).addTo(map);
-
-  try { map.fitBounds(geoLayer.getBounds(), { padding: [16,16] }); } catch {}
-}
-
-function selectFeature(rec) {
-  const card = document.getElementById('selectedCard'); if (card) card.classList.remove('hidden');
-  const n = document.getElementById('sel-name'); if (n) n.textContent = rec.name || '—';
-  const c = document.getElementById('sel-code'); if (c) c.textContent = rec.code || '—';
-  const p = document.getElementById('sel-pop'); if (p) p.textContent = numberFmt(rec.pop);
-  if (geoLayer) geoLayer.eachLayer(l => { const props = l.feature?.properties || {}; const code = String(codeFromProps(props)); if (code === String(rec.code) || pad5(code) === pad5(String(rec.code))) { try { map.fitBounds(l.getBounds(), { padding: [20,20] }); } catch {} } });
-}
-
-// Eventos: cambio de capa
-document.querySelectorAll('.layer-btn').forEach(btn => btn.addEventListener('click', async () => {
-  currentKey = btn.dataset.layer;
-  const card = document.getElementById('selectedCard'); card && card.classList.add('hidden');
-  await loadAndRender();
-}));
-
-// Arranque
-initMap();
-loadAndRender().catch(err => {
-  alert('Error cargando datos: ' + err.message + '\n\nRevisa las rutas en DATA_SOURCES.');
-  console.error(err);
-});
-</script>
-
-  <script>
-  // ===============================
-  // FUENTES DE DATOS + COLORES
-  // ===============================
-  const DATA_SOURCES = {
-    tolima: { label: 'Tolima — Municipios', center: [4.4389, -75.2322], zoom: 8,  accent: '#4F46E5', geojson: '/tolima_municipios.geojson',        csv: '/dane_tolima_poblacion.csv' },
-    ibague: { label: 'Ibagué — Zonas urbanas', center: [4.4389, -75.2322], zoom: 12, accent: '#059669', geojson: '/ibague_urbano.geojson',         csv: '/ibague_urbano_poblacion.csv' },
-    comunas:{ label: 'Ibagué — Comunas',       center: [4.4389, -75.2322], zoom: 12, accent: '#D97706', geojson: '/ibague_comunas.geojson',        csv: '/ibague_comunas_poblacion.csv' },
-    corregimientos:{label:'Ibagué — Corregimientos',center:[4.4389,-75.2322],zoom:11,accent:'#E11D48',geojson:'/ibague_corregimientos.geojson',csv:'/ibague_corregimientos_poblacion.csv'}
-  };
-
-  // ===============================
-  // UTILIDADES
-  // ===============================
-  const PALETTE = ['#e6f2ff','#b3d1ff','#80b1ff','#4d91ff','#1a70ff','#0052cc'];
-  const norm = (s)=>String(s??'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  const pad5 = (v)=>String(v??'').replace(/\D/g,'').padStart(5,'0');
-  const numberFmt=(n)=> (n==null||isNaN(n))?'—':Number(n).toLocaleString('es-CO');
-
-  function detectColumns(keys){
-    const lower = keys.map(k=>String(k||'').toLowerCase());
-    const findKey = (cands)=>{const i = lower.findIndex(k=>cands.some(c=>k.includes(c))); return i>=0?keys[i]:null};
-    return {
-      codeKey: findKey(['mpio_ccdgo','cod_dane','codigo_dane','coddane','cod_mun','codigo','cod','dane']),
-      nameKey: findKey(['nombre_mpio','nom_mpio','municipio','nombre','nom','sector','comuna','correg']),
-      popKey:  findKey(['poblacion','pobl','habitantes','habit','total'])
-    };
-  }
-
-  function codeFromProps(props){
-    const cands = [props?.MPIO_CCDGO, props?.COD_DANE, props?.Codigo, props?.codigo, props?.DANE, props?.CODIGO, props?.codigo_dane, props?.CODIGO_DANE, props?.CODIGO_MPIO, props?.codigo_mpio, props?.CODIGO2, props?.ID, props?.id];
-    for(const c of cands){ const n = pad5(c); if(n) return n; }
-    return '';
-  }
-
-  function quantile(sorted,q){const pos=(sorted.length-1)*q, base=Math.floor(pos), rest=pos-base;return sorted[base+1]!==undefined?sorted[base]+rest*(sorted[base+1]-sorted[base]):sorted[base];}
-  function makeBuckets(values,k=PALETTE.length){
-    const arr = values.filter(v=>typeof v==='number'&&!isNaN(v)).sort((a,b)=>a-b);
-    if(!arr.length) return {breaks:[], scale:()=> '#cccccc'};
-    const breaks=[]; for(let i=1;i<k;i++) breaks.push(Math.round(quantile(arr,i/k)));
-    const scale=(v)=>{ if(v==null||isNaN(v)) return '#cccccc'; let idx=breaks.findIndex(b=>v<=b); if(idx===-1) idx=k-1; return PALETTE[idx]; };
-    return {breaks, scale};
-  }
-
-  // ===============================
-  // ESTADO + MAPA
-  // ===============================
-  let currentKey='tolima';
-  let map, geoLayer, geoBorderLayer; let joined=[];
-
-  function initMap(){
-    const conf=DATA_SOURCES[currentKey];
-    map=L.map('map').setView(conf.center, conf.zoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
-  }
-
-  async function loadAndRender(){
-    const conf=DATA_SOURCES[currentKey];
-    const badge=document.getElementById('badge-layer');
-    document.getElementById('layer-name').textContent=conf.label;
-    badge.style.border='1px solid '+conf.accent;
-    badge.style.boxShadow=`0 0 0 3px ${conf.accent}22 inset`;
-
-    // --- Cargar GeoJSON
-    let geo; try{
-      const r=await fetch(conf.geojson); if(!r.ok) throw new Error('GeoJSON no encontrado: '+conf.geojson); geo=await r.json();
-    }catch(err){
-      console.error(err); alert('No se pudo cargar la geometría de la capa.\n'+err.message); return;
+    body::after {
+      content: "";
+      position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23c7d2fe' stroke-opacity='0.35' stroke-width='1'%3E%3Cpath d='M0 60h120M60 0v120'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 120px 120px;
+      opacity: .6;
     }
 
-    // --- Cargar CSV (si existe); si falla, seguimos con mapa sin datos
-    let rows=[]; try{
-      const r=await fetch(conf.csv); if(!r.ok) throw new Error('CSV no encontrado: '+conf.csv);
-      const csvText=await r.text();
-      const parsed=Papa.parse(csvText,{header:true,skipEmptyLines:true});
-      const fields=parsed.meta?.fields??Object.keys(parsed.data[0]??{});
-      const {codeKey,nameKey,popKey}=detectColumns(fields);
-      rows = parsed.data.map(rec=>{
-        const code = pad5(rec[codeKey]);
-        const name = String(rec[nameKey]??'').trim();
-        const popRaw = rec[popKey];
-        const pop = popRaw==null?null:Number(String(popRaw).replace(/[^0-9.-]/g,''));
-        return { code, name, pop: isNaN(pop)?null:pop };
-      }).filter(r=>r.code||r.name);
-    }catch(err){
-      console.warn('CSV opcional faltante:', err.message);
+    /* Glow suave al pasar el mouse */
+    .leaflet-container .leaflet-interactive {
+      filter: drop-shadow(0 0 6px rgba(0,0,0,.15));
+      transition: filter .2s ease, stroke .2s ease, stroke-width .2s ease;
     }
+    .leaflet-container .feature-hover { filter: drop-shadow(0 0 12px rgba(79,70,229,.45)); }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900 bg-slate-50/70 backdrop-blur-sm">
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex items-center gap-3">
+      <div class="flex items-center gap-3">
+        <img src="./logo-reaching.png" alt="Fundación Reaching" class="h-9 w-9 rounded-xl object-contain bg-white border border-slate-200" onerror="this.remove();document.getElementById('logo-fallback').classList.remove('hidden')" />
+        <div id="logo-fallback" class="hidden h-9 w-9 grid place-items-center rounded-xl bg-brand-600 text-white text-sm font-bold shadow">R</div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">Plataforma Censo — Tolima / Ibagué</h1>
+          <p class="text-xs text-slate-500">Fundación Reaching • Encuentro con Dios y Oración Mundial RTV</p>
+        </div>
+      </div>
+      <div class="ml-auto hidden sm:flex items-center gap-2 text-xs text-slate-500">
+        <span>“Pon tus obras en manos del Señor” — Prov. 16:3</span>
+      </div>
+    </div>
+  </header>
 
-    const byCode=new Map(rows.map(r=>[String(r.code), r]));
-    joined=(geo.features||[]).map(f=>{
-      const props=f.properties||{};
-      const code=codeFromProps(props);
-      const csv=byCode.get(code)||byCode.get(pad5(code));
-      const name = csv?.name || props.NOMBRE || props.NOM_MPIO || props.NOMBRE_MPIO || props.Nombre || props.MUNICIPIO || props.SECTOR || props.COMUNA || props.CORREGIMIENTO || '';
-      const pop = csv?.pop ?? null;
-      return { code, name, pop, feature:f };
-    });
+  <!-- Main -->
+  <main class="mx-auto max-w-7xl px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <!-- Panel izquierdo -->
+    <aside class="lg:col-span-4 xl:col-span-3 space-y-4">
+      <!-- Selector de capa -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Capa de datos</div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <button data-layer="tolima" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Tolima</button>
+          <button data-layer="ibague" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Ibagué</button>
+          <button data-layer="comunas" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Comunas</button>
+          <button data-layer="corregimientos" class="layer-btn rounded-xl px-3 py-2 border border-slate-300 hover:bg-brand-600 hover:text-white">Corregimientos</button>
+        </div>
+      </section>
 
-    // --- Escala de color
-    const { scale } = makeBuckets(joined.map(j=>j.pop).filter(Boolean));
+      <!-- Métricas (opcionales; el JS no se rompe si no están) -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Métricas</div>
+        <dl class="grid grid-cols-3 gap-3 text-sm">
+          <div><dt class="text-slate-500">Entidades</dt><dd id="stat-entidades" class="text-lg font-bold">—</dd></div>
+          <div><dt class="text-slate-500">Con dato</dt><dd id="stat-condato" class="text-lg font-bold">—</dd></div>
+          <div><dt class="text-slate-500">Población</dt><dd id="stat-poblacion" class="text-lg font-bold">—</dd></div>
+        </dl>
+      </section>
 
-    // --- Borde acentuado (no interactivo)
-    if(geoBorderLayer) geoBorderLayer.remove();
-    geoBorderLayer = L.geoJSON(geo,{ style:()=>({weight:2.2,color:conf.accent,fillOpacity:0,opacity:.9}), interactive:false }).addTo(map);
+      <!-- Búsqueda -->
+      <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+        <div class="mb-2 font-semibold">Buscar</div>
+        <input id="search" type="text" placeholder="Municipio / comuna / corregimiento" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" />
+      </section>
+    </aside>
 
-    // --- Capa principal
-    if(geoLayer) geoLayer.remove();
-    geoLayer = L.geoJSON(geo,{
-      style:(feat)=>{
-        const code = codeFromProps(feat.properties||{});
-        const rec = joined.find(j=> pad5(j.code)===pad5(code));
-        const fillColor = scale(rec?.pop ?? null);
-        return { weight:1.5, color:'#334155', fillColor, fillOpacity:.87 };
-      },
-      onEachFeature:(feature,layer)=>{
-        layer.on('click',()=>{
-          const code = codeFromProps(feature.properties||{});
-          const rec = joined.find(j=> pad5(j.code)===pad5(code));
-          if(rec) selectFeature(rec);
-        });
-        layer.on('mouseover',e=> e.target.setStyle({weight:3,color:conf.accent}));
-        layer.on('mouseout', e=> e.target.setStyle({weight:1.5,color:'#334155'}));
-      }
-    }).addTo(map);
+    <!-- Panel derecho -->
+    <section class="lg:col-span-8 xl:col-span-9 space-y-4">
+      <!-- Mapa -->
+      <div class="relative rounded-2xl overflow-hidden bg-white/95 backdrop-blur shadow-md border border-slate-200">
+        <div id="map" class="w-full"></div>
+        <div id="badge-layer" class="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-2 rounded-xl bg-white/90 text-slate-800 px-3 py-2 text-sm border border-slate-300 shadow">
+          Capa: <span id="layer-name" class="font-semibold">—</span>
+        </div>
+      </div>
 
-    try{ map.fitBounds(geoLayer.getBounds(), {padding:[16,16]}); }catch{}
-  }
+      <!-- Top 5 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+          <div class="mb-2 font-semibold">Top 5 por población</div>
+          <ol id="top5" class="space-y-1 text-sm">
+            <!-- poblado por JS -->
+          </ol>
+        </section>
 
-  function selectFeature(rec){
-    // Aquí podríamos mostrar detalles si más adelante se agrega la tarjeta lateral
-    console.log('Seleccionado:', rec);
-  }
+        <!-- Tabla -->
+        <section class="rounded-2xl bg-white/95 backdrop-blur p-3 shadow-md border border-slate-200">
+          <div class="mb-2 flex items-center justify-between">
+            <span class="font-semibold">Listado</span>
+            <button id="btn-export" class="text-xs rounded-lg border px-2 py-1 hover:bg-slate-100">Exportar CSV</button>
+          </div>
+          <div class="overflow-auto max-h-80">
+            <table class="w-full text-sm">
+              <thead class="text-left text-slate-500">
+                <tr>
+                  <th class="px-3 py-2">#</th>
+                  <th class="px-3 py-2">Nombre</th>
+                  <th class="px-3 py-2">Código</th>
+                  <th class="px-3 py-2 text-right">Población</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div id="rows-count" class="mt-1 text-xs text-slate-500">0 filas</div>
+        </section>
+      </div>
+    </section>
+  </main>
 
-  document.querySelectorAll('.layer-btn').forEach(btn=> btn.addEventListener('click', async()=>{ currentKey=btn.dataset.layer; await loadAndRender(); }));
+  <footer class="mx-auto max-w-7xl px-4 pb-6 pt-2 text-xs text-white bg-brand-600/80 rounded-t-2xl">
+    <p>Desarrollado con excelencia para la misión: Fundación Reaching. Bendiciones. ✨</p>
+  </footer>
 
-  // Boot
-  initMap();
-  loadAndRender();
-</script>
+  <!-- ============================================================
+       SEÑAL PARA EL SCRIPT: Inserta aquí el <script src="app-censo.js"></script>
+       o pega el bloque <script> ...código JS… </script>.
+       ============================================================ -->
+  <!-- INSERTAR_AQUI_SCRIPT_CENSO -->
+
 </body>
 </html>
+
+
 
 
 
