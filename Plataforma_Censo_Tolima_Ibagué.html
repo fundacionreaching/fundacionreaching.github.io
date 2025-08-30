@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Plataforma Censo Tolima – Ibagué | Fundación Reaching</title>
+  <title>Plataforma Proyectos Censo – Tolimaima | Fundación Reaching</title>
   <meta name="description" content="Plataforma de censo ciudadano y ministerial para Tolima e Ibagué. Registro, estadísticas en vivo, mapa, exportación y conexión a hojas de cálculo." />
   <meta name="theme-color" content="#0ea5e9" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,7 +34,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Open Graph -->
-  <meta property="og:title" content="Plataforma Censo Tolima – Ibagué" />
+  <meta property="og:title" content="Plataforma Proyectos Censo – Tolima" />
   <meta property="og:description" content="Registra tu hogar, ministerio y necesidades. Juntos construimos soluciones con fe y datos." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://fundacionreaching.github.io/assets/og-censo-tolima.png" />
@@ -49,7 +49,7 @@
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
       <img src="https://fundacionreaching.github.io/assets/logo-reaching.png" alt="Fundación Reaching" class="h-10 w-10 rounded-xl shadow" onerror="this.style.display='none'"/>
       <div class="flex-1">
-        <h1 class="text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">Plataforma Censo Tolima – Ibagué</h1>
+        <h1 class="text-lg font-extrabold tracking-tight text-gray-900 dark:text-white">Plataforma Proyectos Censo – Tolima</h1>
         <p class="text-xs text-gray-600 dark:text-gray-300">Fundación Reaching • Encuentro con Dios • Oración Mundial RTV</p>
       </div>
       <button @click="toggleTheme" class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 shadow">
@@ -67,430 +67,71 @@
   <!-- Hero -->
   <section class="relative overflow-hidden">
     <div class="absolute inset-0 bg-gradient-to-br from-primary-600 via-primary-500 to-sky-400 opacity-20 dark:opacity-30"></div>
-    <div class="max-w-6xl mx-auto px-4 py-10 md:py-14 grid md:grid-cols-2 gap-8 items-center">
+    <div class="max-w-6xl mx-auto px-4 py-8 md:py-12 grid md:grid-cols-2 gap-8 items-center">
       <div class="space-y-4">
-        <h2 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white leading-tight">Con fe, datos y acción: <span class="text-primary-700 dark:text-primary-300">sirvamos a Tolima e Ibagué</span></h2>
-        <p class="text-gray-700 dark:text-gray-300">Completa el censo para conocer necesidades reales, coordinar ayudas, fortalecer las iglesias y planear evangelismo estratégico. “Y procurar el bien de la ciudad...” (Jer. 29:7)</p>
+        <h2 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white leading-tight">Censo + Mapas + Indicadores: <span class="text-primary-700 dark:text-primary-300">Tolima de vereda a departamento</span></h2>
+        <p class="text-gray-700 dark:text-gray-300">Plataforma optimizada para <strong>proyectos</strong>: población DANE, desagregación por <em>municipios, comunas, corregimientos y veredas</em>, tablas exportables y mapas responsivos para celular y computador.</p>
         <div class="flex flex-wrap gap-3">
-          <a href="#formulario" class="px-4 py-2 rounded-2xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700">Registrar ahora</a>
-          <a href="#panel" class="px-4 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">Ver estadísticas</a>
-          <a href="https://wa.me/573134000000?text=Censo%20Tolima%20Ibagu%C3%A9" target="_blank" class="px-4 py-2 rounded-2xl bg-green-600 text-white font-semibold shadow hover:bg-green-700">WhatsApp Soporte</a>
+          <a href="#mapa" class="px-4 py-2 rounded-2xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700">Ir al mapa</a>
+          <a href="#tabla" class="px-4 py-2 rounded-2xl border border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">Ver tabla</a>
+          <button @click="imprimir()" class="px-4 py-2 rounded-2xl bg-emerald-600 text-white font-semibold shadow hover:bg-emerald-700">Exportar PDF</button>
         </div>
       </div>
       <div class="glass rounded-3xl p-5 shadow-xl border border-white/40 dark:border-gray-700">
         <div class="grid grid-cols-2 gap-3 text-center">
           <div class="p-4 rounded-2xl bg-white/70 dark:bg-gray-800/60">
-            <p class="text-xs uppercase tracking-wider text-gray-500">Registros</p>
-            <p class="text-3xl font-black text-primary-700 dark:text-primary-300" x-text="registros.length"></p>
+            <p class="text-xs uppercase tracking-wider text-gray-500">Total municipios</p>
+            <p class="text-3xl font-black text-primary-700 dark:text-primary-300" x-text="kpi.municipios"></p>
           </div>
           <div class="p-4 rounded-2xl bg-white/70 dark:bg-gray-800/60">
-            <p class="text-xs uppercase tracking-wider text-gray-500">Municipios</p>
-            <p class="text-3xl font-black text-primary-700 dark:text-primary-300" x-text="totalMunicipios"></p>
+            <p class="text-xs uppercase tracking-wider text-gray-500">Comunas (Ibagué)</p>
+            <p class="text-3xl font-black text-primary-700 dark:text-primary-300" x-text="kpi.comunas"></p>
           </div>
           <div class="p-4 rounded-2xl bg-white/70 dark:bg-gray-800/60">
-            <p class="text-xs uppercase tracking-wider text-gray-500">Iglesias</p>
-            <p class="text-3xl font-black text-primary-700 dark:text-primary-300" x-text="totalIglesias"></p>
+            <p class="text-xs uppercase tracking-wider text-gray-500">Corregimientos</p>
+            <p class="text-3xl font-black text-primary-700 dark:text-primary-300" x-text="kpi.correg"></p>
           </div>
           <div class="p-4 rounded-2xl bg-white/70 dark:bg-gray-800/60">
-            <p class="text-xs uppercase tracking-wider text-gray-500">Necesidad + frecuente</p>
-            <p class="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200" x-text="topNecesidad"></p>
+            <p class="text-xs uppercase tracking-wider text-gray-500">Población cargada</p>
+            <p class="text-3xl font-black text-primary-700 dark:text-primary-300" x-text="kpi.poblacion.toLocaleString('es-CO')"></p>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Formulario -->
-  <section id="formulario" class="max-w-6xl mx-auto px-4 py-10">
+  <!-- Resumen Proyecto -->
+  <section id="resumen" class="max-w-6xl mx-auto px-4 py-8">
     <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2">
-        <i data-lucide="clipboard-list" class="w-5 h-5 text-primary-600"></i>
-        <h3 class="text-lg font-bold">Registro ciudadano y ministerial</h3>
-        <span class="ml-auto text-xs text-gray-500">* Campos obligatorios</span>
-      </div>
-      <form @submit.prevent="guardarRegistro" class="grid md:grid-cols-3 gap-4 p-5">
-        <div class="md:col-span-3">
-          <label class="block text-sm font-semibold">Tipo de registro *</label>
-          <div class="mt-2 flex flex-wrap gap-3">
-            <label class="inline-flex items-center gap-2"><input type="radio" name="tipo" value="Hogar" x-model="form.tipo" required class="accent-primary-600"/> Hogar</label>
-            <label class="inline-flex items-center gap-2"><input type="radio" name="tipo" value="Persona" x-model="form.tipo" class="accent-primary-600"/> Persona</label>
-            <label class="inline-flex items-center gap-2"><input type="radio" name="tipo" value="Iglesia/Ministerio" x-model="form.tipo" class="accent-primary-600"/> Iglesia/Ministerio</label>
+    <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2"><i data-lucide="table" class="w-5 h-5 text-primary-600"></i><h3 class="text-lg font-bold">Tabla territorial</h3></div>
+        <div id="tabla" class="p-4 overflow-x-auto">
+          <div class="flex flex-wrap items-center gap-3 mb-3">
+            <input type="search" placeholder="Buscar territorio..." class="w-full md:w-64 rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" x-model="buscar" />
+            <span class="text-xs text-gray-500">Filas: <strong x-text="filas.length"></strong></span>
           </div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold">Nombres y apellidos *</label>
-          <input type="text" x-model="form.nombre" required class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" placeholder="Ej. Juan Pérez" />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold">Documento *</label>
-          <input type="text" x-model="form.documento" required class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" placeholder="CC / TI / CE" />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold">Teléfono *</label>
-          <input type="tel" x-model="form.telefono" required class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" placeholder="+57..." />
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold">Correo</label>
-          <input type="email" x-model="form.correo" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" placeholder="correo@dominio.com" />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold">Municipio *</label>
-          <input list="municipios" x-model="form.municipio" required class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" placeholder="Ibagué, Espinal, ..." />
-          <datalist id="municipios"></datalist>
-        </div>
-        <div>
-          <label class="block text-sm font-semibold">Barrio/Vereda</label>
-          <input type="text" x-model="form.barrio" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold">Comuna (Ibagué)</label>
-          <select x-model="form.comuna" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <option value="">Selecciona</option>
-            <template x-for="n in 13"><option :value="n">Comuna <span x-text="n"></span></option></template>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-semibold">Edad</label>
-          <input type="number" min="0" max="120" x-model.number="form.edad" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold">Género</label>
-          <select x-model="form.genero" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <option value="">Selecciona</option>
-            <option>Mujer</option>
-            <option>Hombre</option>
-            <option>Prefiere no decir</option>
-          </select>
-        </div>
-
-        <div class="md:col-span-3 grid md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-semibold">Ocupación</label>
-            <input type="text" x-model="form.ocupacion" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold">Iglesia/Ministerio</label>
-            <input type="text" x-model="form.iglesia" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold">Área ministerial</label>
-            <select x-model="form.area" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
-              <option value="">Selecciona</option>
-              <option>Evangelismo</option>
-              <option>Intercesión</option>
-              <option>Alabanza</option>
-              <option>Docencia</option>
-              <option>Misiones</option>
-              <option>Juventud</option>
-              <option>Niñez</option>
-              <option>Ayuda social</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="md:col-span-3">
-          <label class="block text-sm font-semibold">Necesidad principal *</label>
-          <select x-model="form.necesidad" required class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <option value="">Selecciona</option>
-            <option>Alimentos</option>
-            <option>Empleo</option>
-            <option>Salud</option>
-            <option>Vivienda</option>
-            <option>Restauración familiar</option>
-            <option>Formación/Becas</option>
-            <option>Apoyo espiritual</option>
-            <option>Otro</option>
-          </select>
-        </div>
-
-        <div class="md:col-span-3">
-          <label class="block text-sm font-semibold">Dirección (para ubicar en mapa)</label>
-          <input type="text" x-model="form.direccion" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" placeholder="Calle 1 # 2-3, Ibagué" />
-        </div>
-
-        <div class="md:col-span-3">
-          <label class="block text-sm font-semibold">Observaciones</label>
-          <textarea x-model="form.obs" rows="3" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" placeholder="Notas, detalles, oración solicitada..."></textarea>
-        </div>
-
-        <div class="md:col-span-3 flex items-center gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60">
-          <input id="acepto" type="checkbox" x-model="form.acepto" class="accent-primary-600" required />
-          <label for="acepto" class="text-sm">Autorizo el tratamiento de datos conforme a la Ley 1581 de 2012 y la política de privacidad de la Fundación Reaching.</label>
-        </div>
-
-        <div class="md:col-span-3 flex flex-wrap gap-3">
-          <button type="submit" class="px-5 py-2 rounded-2xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700"><i data-lucide="save" class="inline w-4 h-4 mr-2"></i>Guardar</button>
-          <button type="button" @click="limpiar()" class="px-5 py-2 rounded-2xl border border-gray-300 dark:border-gray-700">Limpiar</button>
-          <button type="button" @click="exportarCSV()" class="ml-auto px-5 py-2 rounded-2xl bg-emerald-600 text-white font-semibold shadow hover:bg-emerald-700"><i data-lucide="download" class="inline w-4 h-4 mr-2"></i>Exportar CSV</button>
-        </div>
-      </form>
-    </div>
-  </section>
-
-  <!-- Panel y mapa -->
-  <section id="panel" class="max-w-6xl mx-auto px-4 py-10 grid lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 space-y-6">
-      <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800">
-        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2"><i data-lucide="activity" class="w-5 h-5 text-primary-600"></i><h3 class="text-lg font-bold">Estadísticas en vivo</h3></div>
-        <div class="grid md:grid-cols-3 gap-6 p-5">
-          <canvas id="chartMunicipios" class="md:col-span-1"></canvas>
-          <canvas id="chartNecesidades" class="md:col-span-1"></canvas>
-          <canvas id="chartGeneros" class="md:col-span-1"></canvas>
-        </div>
-      </div>
-
-      <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800">
-        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2"><i data-lucide="map" class="w-5 h-5 text-primary-600"></i><h3 class="text-lg font-bold">Mapa de registros</h3></div>
-        <div id="map" class="h-80 rounded-3xl m-4"></div>
-      </div>
-
-      <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800">
-        <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2"><i data-lucide="table" class="w-5 h-5 text-primary-600"></i><h3 class="text-lg font-bold">Listado (local)</h3></div>
-        <div class="p-4 overflow-x-auto">
-          <input type="search" placeholder="Buscar..." class="mb-3 w-full md:w-64 rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" x-model="buscar" />
           <table class="min-w-full text-sm">
             <thead class="text-left text-gray-500">
               <tr>
                 <th class="py-2 pr-4">Nombre</th>
-                <th class="py-2 pr-4">Municipio</th>
-                <th class="py-2 pr-4">Necesidad</th>
-                <th class="py-2 pr-4">Teléfono</th>
-                <th class="py-2 pr-4">Acciones</th>
+                <th class="py-2 pr-4">Código</th>
+                <th class="py-2 pr-4">Población</th>
+                <th class="py-2 pr-4">Área km²</th>
+                <th class="py-2 pr-4">Densidad</th>
               </tr>
             </thead>
             <tbody>
-              <template x-for="(r,idx) in registrosFiltrados" :key="r.id">
+              <template x-for="f in filasFiltradas" :key="f.key">
                 <tr class="border-t border-gray-100 dark:border-gray-800">
-                  <td class="py-2 pr-4" x-text="r.nombre"></td>
-                  <td class="py-2 pr-4" x-text="r.municipio"></td>
-                  <td class="py-2 pr-4" x-text="r.necesidad"></td>
-                  <td class="py-2 pr-4"><a :href="'https://wa.me/57'+r.telefono.replace(/\D/g,'')" target="_blank" class="text-primary-700 dark:text-primary-300">WhatsApp</a></td>
-                  <td class="py-2 pr-4">
-                    <button class="text-red-600 hover:underline" @click="eliminar(idx)">Eliminar</button>
-                  </td>
+                  <td class="py-2 pr-4" x-text="f.nombre"></td>
+                  <td class="py-2 pr-4" x-text="f.codigo || '—'"></td>
+                  <td class="py-2 pr-4" x-text="fmt(f.poblacion)"></td>
+                  <td class="py-2 pr-4" x-text="f.area? f.area.toFixed(2): '—'"></td>
+                  <td class="py-2 pr-4" x-text="(f.poblacion && f.area)? (f.poblacion/f.area).toFixed(1): '—'"></td>
                 </tr>
               </template>
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-
-    <aside class="space-y-6">
-      <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800 p-5">
-        <h3 class="text-lg font-bold mb-2">Conexión con Google Sheets</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-300">Opcional: envía cada registro a tu <em>Google Apps Script</em> o API propia.</p>
-        <label class="block text-sm font-semibold mt-3">URL del endpoint</label>
-        <input type="url" x-model="endpoint" placeholder="https://script.google.com/macros/s/XXX/exec" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
-        <label class="block text-sm font-semibold mt-3">Token (opcional)</label>
-        <input type="password" x-model="token" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
-        <button @click="probarEndpoint" class="mt-3 w-full px-4 py-2 rounded-2xl bg-emerald-600 text-white font-semibold">Probar envío</button>
-        <p class="text-xs mt-2" x-text="estadoEnvio"></p>
-      </div>
-
-      <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800 p-5">
-        <h3 class="text-lg font-bold mb-2">Descargas útiles</h3>
-        <ul class="list-disc list-inside text-sm">
-          <li><button @click="exportarCSV()" class="text-primary-700 dark:text-primary-300 hover:underline">Exportar CSV local</button></li>
-          <li><a href="#" @click.prevent="descargarPlantilla()" class="text-primary-700 dark:text-primary-300 hover:underline">Plantilla Excel</a></li>
-        </ul>
-      </div>
-
-      <div class="bg-gradient-to-br from-amber-500 to-pink-500 text-white rounded-3xl p-5 shadow-xl">
-        <h3 class="text-lg font-extrabold">Oramos por Tolima</h3>
-        <p class="text-sm opacity-90">“Levántate, resplandece; porque ha venido tu luz...” (Isaías 60:1).</p>
-      </div>
-          <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800 p-5">
-        <h3 class="text-lg font-bold mb-2">Capas geográficas (Tolima / Ibagué)</h3>
-        <p class="text-sm text-gray-600 dark:text-gray-300">Active mapas con población para proyectos y radicaciones oficiales.</p>
-        <div class="mt-3 space-y-3">
-          <button @click="cargarTolima()" class="w-full px-4 py-2 rounded-2xl bg-primary-600 text-white font-semibold">Tolima: Municipios (DANE) + población</button>
-          <div class="text-xs text-gray-500">Fuente: DIVIPOLA DANE. Se pinta por densidad o total según selección.</div>
-          <label class="block text-sm font-semibold">URL GeoJSON Comunas de Ibagué</label>
-          <input type="url" x-model="geojsonComunasUrl" placeholder="https://.../comunas_ibague.geojson" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
-          <label class="block text-sm font-semibold">URL GeoJSON Corregimientos de Ibagué</label>
-          <input type="url" x-model="geojsonCorregUrl" placeholder="https://.../corregimientos_ibague.geojson" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
-          <button @click="cargarIbague()" class="w-full px-4 py-2 rounded-2xl border border-gray-300 dark:border-gray-700">Cargar Comunas/Corregimientos</button>
-        </div>
-        <div class="mt-4 grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm font-semibold">Año proyección DANE</label>
-            <select x-model.number="anioPoblacion" @change="reestilizarCapas()" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
-              <template x-for="y in aniosPoblacion" :key="y"><option :value="y" x-text="y"></option></template>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-semibold">Métrica</label>
-            <select x-model="metrica" @change="reestilizarCapas()" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
-              <option value="total">Población total</option>
-              <option value="densidad">Densidad (hab/km²)</option>
-            </select>
-          </div>
-        </div>
-        <p class="text-xs mt-3 text-gray-500">Puede cargar CSV con columnas: <code>municipio,poblacion,anio</code> para actualizar valores locales.</p>
-        <input type="file" accept=".csv" @change="cargarCSV($event)" class="mt-2 w-full text-sm"/>
-      </div>
-    </aside>
-  </section>
-
-  <!-- Pie -->
-  <footer class="border-t border-gray-200 dark:border-gray-800 py-8 text-center text-sm text-gray-600 dark:text-gray-300">
-    © <span x-text="new Date().getFullYear()"></span> Fundación Reaching • Hecho con amor y excelencia.
-  </footer>
-
-  <script>
-    document.addEventListener('alpine:init', () => {
-      Alpine.data('censoApp', () => ({
-        prefersDark: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
-        toggleTheme(){ this.prefersDark = !this.prefersDark; },
-
-        registros: [],
-        buscar: '',
-        endpoint: localStorage.getItem('censo_endpoint') || '',
-        token: localStorage.getItem('censo_token') || '',
-        estadoEnvio: '',
-        municipiosTolima: [
-          'Ibagué','Espinal','Melgar','Guamo','Honda','Chaparral','Líbano','Mariquita','Flandes','Purificación','Coyaima','Natagaima','Ortega','Rovira','Saldaña','Lérida','Venadillo','Cajamarca','Planadas','Ataco','Icononzo','Anzoátegui','Villarrica','Prado','San Antonio','Rioblanco','Casabianca','Ambalema','Carmen de Apicalá','Coello','Dolores','Fresno','Herveo','Palocabildo','Piedras','Alpujarra','Alvarado','Murillo','Falán','Valle de San Juan'
-        ],
-
-        // NUEVO: capas geográficas y población
-        aniosPoblacion: Array.from({length: (2042-2018)+1}, (_,i)=>2018+i),
-        anioPoblacion: new Date().getFullYear(),
-        metrica: 'total',
-        geojsonComunasUrl: localStorage.getItem('geojson_comunas') || '',
-        geojsonCorregUrl: localStorage.getItem('geojson_correg') || '',
-        poblacionTolima: {}, // { 'IBAGUE': {2025: 563000, area_km2: 1498 } ... }
-
-        form: {
-          tipo: 'Hogar', nombre:'', documento:'', telefono:'', correo:'', municipio:'Ibagué', barrio:'', comuna:'', edad:'', genero:'', ocupacion:'', iglesia:'', area:'', necesidad:'', direccion:'', obs:'', acepto:false
-        },
-
-        get totalMunicipios(){ return new Set(this.registros.map(r=>r.municipio).filter(Boolean)).size; },
-        get totalIglesias(){ return new Set(this.registros.map(r=>r.iglesia).filter(Boolean)).size; },
-        get topNecesidad(){
-          const c = this._contar(this.registros.map(r=>r.necesidad));
-          const top = Object.entries(c).sort((a,b)=>b[1]-a[1])[0];
-          return top ? `${top[0]} (${top[1]})` : '—';
-        },
-        get registrosFiltrados(){
-          const q = this.buscar.toLowerCase();
-          return this.registros.filter(r => JSON.stringify(r).toLowerCase().includes(q));
-        },
-
-        init(){
-          const dl = document.getElementById('municipios');
-          this.municipiosTolima.forEach(m=>{ const o=document.createElement('option'); o.value=m; dl.appendChild(o); });
-          this.registros = JSON.parse(localStorage.getItem('censo_tolima')||'[]');
-          this.$nextTick(()=>{ lucide.createIcons(); this._initCharts(); this._initMap(); this._cargarPoblacionDANE(); });
-        },
-
-        limpiar(){ this.form = { ...this.form, nombre:'', documento:'', telefono:'', correo:'', barrio:'', comuna:'', edad:'', genero:'', ocupacion:'', iglesia:'', area:'', necesidad:'', direccion:'', obs:'', acepto:false }; },
-
-        async guardarRegistro(){
-          if(!this.form.acepto){ alert('Debes aceptar el tratamiento de datos.'); return; }
-          const registro = { id: crypto.randomUUID(), fecha: new Date().toISOString(), ...this.form };
-          this.registros.push(registro);
-          localStorage.setItem('censo_tolima', JSON.stringify(this.registros));
-          this._toast('Registro guardado');
-          this._actualizarVisualizaciones();
-          if(this.endpoint){
-            try{
-              const res = await fetch(this.endpoint, { method:'POST', headers:{'Content-Type':'application/json','Authorization': this.token?`Bearer ${this.token}`:''}, body: JSON.stringify(registro) });
-              this.estadoEnvio = res.ok ? 'Enviado correctamente al endpoint.' : 'No se pudo enviar (ver consola).';
-            }catch(e){ console.error(e); this.estadoEnvio='Error de red al enviar.'; }
-          }
-          this.limpiar();
-        },
-
-        eliminar(idx){ if(confirm('¿Eliminar registro?')){ this.registros.splice(idx,1); localStorage.setItem('censo_tolima', JSON.stringify(this.registros)); this._actualizarVisualizaciones(); } },
-
-        exportarCSV(){
-          const rows = [Object.keys(this.form).concat(['id','fecha'])];
-          this.registros.forEach(r=>{ rows.push(rows[0].map(k=> (r[k]??'').toString().replace(/
-/g,' '))) });
-          const csv = rows.map(r=>r.map(v=>`"${v.replaceAll('"','""')}"`).join(',')).join('
-');
-          const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = `censo_tolima_${new Date().toISOString().slice(0,10)}.csv`;
-          a.click();
-        },
-
-        descargarPlantilla(){
-          const headers = ['tipo','nombre','documento','telefono','correo','municipio','barrio','comuna','edad','genero','ocupacion','iglesia','area','necesidad','direccion','obs'];
-          const csv = headers.join(',')+'
-';
-          const blob = new Blob([csv], {type:'text/csv'});
-          const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='plantilla_censo_tolima.csv'; a.click();
-        },
-
-        probarEndpoint(){ localStorage.setItem('censo_endpoint', this.endpoint); localStorage.setItem('censo_token', this.token); this.estadoEnvio='Guardado. Intenta enviar un registro real.'; },
-
-        _contar(arr){ return arr.filter(Boolean).reduce((a,v)=> (a[v]=(a[v]||0)+1, a),{}); },
-
-        _initCharts(){
-          const cfgPie = (labels, data, title) => ({
-            type:'doughnut', data:{ labels, datasets:[{ data, backgroundColor:['#60a5fa','#34d399','#f472b6','#f59e0b','#a78bfa','#f87171','#22d3ee','#cbd5e1'] }]}, options:{ plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:title } } } });
-          this.chartMunicipios = new Chart(document.getElementById('chartMunicipios'), cfgPie([],[], 'Por municipio'));
-          this.chartNecesidades = new Chart(document.getElementById('chartNecesidades'), cfgPie([],[], 'Necesidades'));
-          this.chartGeneros = new Chart(document.getElementById('chartGeneros'), cfgPie([],[], 'Género'));
-          this._actualizarVisualizaciones();
-        },
-
-        _initMap(){
-          this.map = L.map('map', { tap: true }).setView([4.4389, -75.2322], 11);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(this.map);
-          this.markers = L.layerGroup().addTo(this.map);
-          this.capaTolima = L.geoJSON(null, { onEachFeature: this._onEachTolima.bind(this), style: this._styleTolima.bind(this) }).addTo(this.map);
-          this.capaComunas = L.geoJSON(null, { onEachFeature: this._onEachIbague.bind(this), style: this._styleIbague.bind(this) });
-          this.capaCorreg = L.geoJSON(null, { onEachFeature: this._onEachIbague.bind(this), style: this._styleIbague.bind(this) });
-          this.controlCapas = L.control.layers(null, {
-            'Tolima – Municipios (DANE)': this.capaTolima,
-            'Ibagué – Comunas': this.capaComunas,
-            'Ibagué – Corregimientos': this.capaCorreg
-          }, { collapsed: true }).addTo(this.map);
-          this._refrescarMarcadores();
-          this._crearLeyenda();
-        },
-
-        _refrescarMarcadores(){ if(!this.markers) return; this.markers.clearLayers(); this.registros.filter(r=>r.direccion).forEach(r=>{ const coords = this._coordsPorMunicipio(r.municipio); if(coords){ L.marker(coords).addTo(this.markers).bindPopup(`<strong>${r.nombre}</strong><br>${r.municipio}<br>${r.necesidad || ''}`); } }); },
-
-        _coordsPorMunicipio(m){ const dict = { 'Ibagué':[4.4389,-75.2322], 'Espinal':[4.1524,-74.8889], 'Melgar':[4.2047,-74.6400], 'Guamo':[4.0320,-74.9702], 'Honda':[5.2086,-74.7355], 'Chaparral':[3.7233,-75.4831], 'Líbano':[4.9217,-75.0628], 'Mariquita':[5.1989,-74.8926], 'Flandes':[4.2917,-74.8167], 'Purificación':[3.8653,-74.9311] }; return dict[m] || [4.4389,-75.2322]; },
-
-        _actualizarVisualizaciones(){
-          const porMunicipio = this._contar(this.registros.map(r=>r.municipio));
-          const porNecesidad = this._contar(this.registros.map(r=>r.necesidad));
-          const porGenero = this._contar(this.registros.map(r=>r.genero));
-          const setData = (chart, obj) => { chart.data.labels = Object.keys(obj); chart.data.datasets[0].data = Object.values(obj); chart.update(); };
-          if(this.chartMunicipios) setData(this.chartMunicipios, porMunicipio);
-          if(this.chartNecesidades) setData(this.chartNecesidades, porNecesidad);
-          if(this.chartGeneros) setData(this.chartGeneros, porGenero);
-          this._refrescarMarcadores();
-        },
-
-        // ====== POBLACIÓN DANE ======
-        async _cargarPoblacionDANE(){
-          const base = {
-            'IBAGUÉ': { area_km2: 1498 }, 'ESPINAL': { area_km2: 231 }, 'MELGAR': { area_km2: 205 }, 'HONDA': { area_km2: 291 }
-          };
-          this.poblacionTolima = base;
-          this.reestilizarCapas();
-        },
-
-        // ====== CAPAS ======
-        async cargarTolima(){
-          const url = 'https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=DPTO_CCDGO%3D%2773%27&outFields=*&f=geojson';
-          try{
-            const gj = await fetch(url).then(r=>r.json());
-            this.capaTolima.clearLayers();
-            this.capaTolima.addData(gj);
-            this.map.fitBounds(this.capaTolima.getBounds());
-            this.reestilizarCapas();
-          }catch(e){ console.error(e); alert('No se pudo cargar municipios de Tolima desde DANE.'); }
+        </div>de Tolima desde DANE.'); }
         },
 
         async cargarIbague(){
@@ -516,13 +157,39 @@
 
         _colorChoro(v){ if(v==null || isNaN(v)) return '#e5e7eb'; return v>500000?'#1d4ed8': v>200000?'#3b82f6': v>80000?'#60a5fa': v>30000?'#93c5fd': v>10000?'#bfdbfe':'#dbeafe'; },
 
-        _crearLeyenda(){ const ctrl = L.control({position:'bottomright'}); ctrl.onAdd = ()=>{ const div=L.DomUtil.create('div','rounded-2xl text-xs p-3 bg-white/80 dark:bg-gray-900/80 shadow border border-gray-200 dark:border-gray-800'); div.innerHTML = `<strong>Leyenda</strong><div id=\"legend-grades\" class=\"mt-2 space-y-1\"></div>`; return div; }; ctrl.addTo(this.map); this.leyendaCtrl = ctrl; this._actualizarLeyenda(); },
-        _actualizarLeyenda(){ const el = document.getElementById('legend-grades'); if(!el) return; const rangos = [0,10000,30000,80000,200000,500000]; el.innerHTML = rangos.map((r,i)=>{ const s = this._colorChoro(r+1); const label = i<rangos.length-1? `${this._fmt(r)}–${this._fmt(rangos[i+1])}` : `>${this._fmt(r)}`; return `<div class='flex items-center gap-2'><span style='background:${s}' class='inline-block w-4 h-3 rounded'></span><span>${label}</span></div>`; }).join(''); },
-
-        _fmt(n){ if(n==null || isNaN(n)) return '—'; return Number(n).toLocaleString('es-CO'); },
-
-        async cargarCSV(e){
-          const file = e.target.files[0]; if(!file) return; const text = await file.text();
+        _crearLeyenda(){ const ctrl = L.control({position:'bottomright'}); ctrl.onAdd = ()=>{ const div=L.DomUtil.create('div','rounded-2xl text-xs p-3 bg-white/80 <h3 class="text-lg font-bold mb-2">Capas geográficas (Tolima / Ibagué)</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-300">Active mapas con población para proyectos y radicaciones oficiales.</p>
+        <div class="mt-3 space-y-3">
+          <button @click="cargarTolima()" class="w-full px-4 py-2 rounded-2xl bg-primary-600 text-white font-semibold">Tolima: Municipios (GeoJSON local / DANE)</button>
+          <div class="text-xs text-gray-500">Fuentes: GeoJSON en su GitHub y, en caso de falla, DIVIPOLA DANE.</div>
+          <label class="block text-sm font-semibold">URL GeoJSON Comunas de Ibagué</label>
+          <input type="url" x-model="geojsonComunasUrl" placeholder="https://fundacionreaching.github.io/ibague_comunas.geojson" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
+          <label class="block text-sm font-semibold">URL GeoJSON Corregimientos de Ibagué</label>
+          <input type="url" x-model="geojsonCorregUrl" placeholder="https://fundacionreaching.github.io/ibague_corregimientos.geojson" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
+          <label class="block text-sm font-semibold">URL GeoJSON Veredas de Ibagué</label>
+          <input type="url" x-model="geojsonVeredasUrl" placeholder="https://fundacionreaching.github.io/ibague_veredas.geojson" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
+          <div class="grid grid-cols-2 gap-2">
+            <button @click="cargarIbague()" class="w-full px-4 py-2 rounded-2xl border border-gray-300 dark:border-gray-700">Cargar Comunas/Correg./Veredas</button>
+            <button @click="cargarPoblacionGit()" class="w-full px-4 py-2 rounded-2xl border border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-300">Cargar población (GitHub)</button>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-semibold">Año proyección DANE</label>
+            <select x-model.number="anioPoblacion" @change="reestilizarCapas()" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <template x-for="y in aniosPoblacion" :key="y"><option :value="y" x-text="y"></option></template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold">Métrica</label>
+            <select x-model="metrica" @change="reestilizarCapas()" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <option value="total">Población total</option>
+              <option value="densidad">Densidad (hab/km²)</option>
+            </select>
+          </div>
+        </div>
+        <p class="text-xs mt-3 text-gray-500">Puede cargar CSV con columnas: <code>municipio,poblacion,anio,area_km2</code> o por código <code>divipola</code>.</p>
+        <input type="file" accept=".csv" @change="cargarCSV($event)" class="mt-2 w-full text-sm"/>return; const text = await file.text();
           const rows = text.trim().split(/
 ?
 /).map(r=>r.split(',')); const head = rows.shift().map(s=>s.trim().toUpperCase());
@@ -539,6 +206,5 @@
   </script>
 </body>
 </html>
-
 
 
