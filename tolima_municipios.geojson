@@ -1,1 +1,63 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "MPIO_CCDGO": "73001",
+        "NOM_MPIO": "Ibagué"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-75.3, 4.5],
+            [-75.2, 4.5],
+            [-75.2, 4.4],
+            [-75.3, 4.4],
+            [-75.3, 4.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "MPIO_CCDGO": "73024",
+        "NOM_MPIO": "Alpujarra"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-75.4, 4.6],
+            [-75.3, 4.6],
+            [-75.3, 4.5],
+            [-75.4, 4.5],
+            [-75.4, 4.6]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "MPIO_CCDGO": "73026",
+        "NOM_MPIO": "Alvarado"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-75.2, 4.6],
+            [-75.1, 4.6],
+            [-75.1, 4.5],
+            [-75.2, 4.5],
+            [-75.2, 4.6]
+          ]
+        ]
+      }
+    }
+  ]
+}
 
