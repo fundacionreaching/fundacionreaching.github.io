@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Plataforma Proyectos Censo – Tolimaima | Fundación Reaching</title>
+  <title>Plataforma Proyectos Censo – Tolima | Fundación Reaching</title>
   <meta name="description" content="Plataforma de censo ciudadano y ministerial para Tolima e Ibagué. Registro, estadísticas en vivo, mapa, exportación y conexión a hojas de cálculo." />
   <meta name="theme-color" content="#0ea5e9" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -103,7 +103,7 @@
   <!-- Resumen Proyecto -->
   <section id="resumen" class="max-w-6xl mx-auto px-4 py-8">
     <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-    <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2"><i data-lucide="table" class="w-5 h-5 text-primary-600"></i><h3 class="text-lg font-bold">Tabla territorial</h3></div>
+      <div class="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2"><i data-lucide="table" class="w-5 h-5 text-primary-600"></i><h3 class="text-lg font-bold">Tabla territorial</h3></div>
         <div id="tabla" class="p-4 overflow-x-auto">
           <div class="flex flex-wrap items-center gap-3 mb-3">
             <input type="search" placeholder="Buscar territorio..." class="w-full md:w-64 rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" x-model="buscar" />
@@ -131,33 +131,12 @@
               </template>
             </tbody>
           </table>
-        </div>de Tolima desde DANE.'); }
-        },
+        </div>
+    </div>
 
-        async cargarIbague(){
-          try{
-            if(this.geojsonComunasUrl){ localStorage.setItem('geojson_comunas', this.geojsonComunasUrl); const gj1 = await fetch(this.geojsonComunasUrl).then(r=>r.json()); this.capaComunas.clearLayers(); this.capaComunas.addData(gj1); }
-            if(this.geojsonCorregUrl){ localStorage.setItem('geojson_correg', this.geojsonCorregUrl); const gj2 = await fetch(this.geojsonCorregUrl).then(r=>r.json()); this.capaCorreg.clearLayers(); this.capaCorreg.addData(gj2); }
-            if(this.capaComunas.getLayers().length) this.map.fitBounds(this.capaComunas.getBounds()); else if(this.capaCorreg.getLayers().length) this.map.fitBounds(this.capaCorreg.getBounds());
-            this.reestilizarCapas();
-          }catch(e){ console.error(e); alert('No se pudo cargar comunas/corregimientos. Verifique URLs GeoJSON.'); }
-        },
-
-        _styleTolima(f){ const n = this._poblacionMunicipio(f); const d = this._densidadMunicipio(f, n); const v = this.metrica==='densidad' ? d : n; return { color:'#1f2937', weight:1, fillColor: this._colorChoro(v), fillOpacity: .7 }; },
-        _styleIbague(f){ const n = this._poblacionSubzona(f); const v = n || 0; return { color:'#1f2937', weight:1, fillColor: this._colorChoro(v), fillOpacity: .7 }; },
-
-        _onEachTolima(f, layer){ layer.on('click', ()=>{ const n = this._poblacionMunicipio(f); const d = this._densidadMunicipio(f, n); const nom = (f.properties.MPIO_CNMBR || f.properties.NOMBRE || '').toUpperCase(); layer.bindPopup(`<strong>${nom}</strong><br>Población ${this.anioPoblacion}: ${this._fmt(n)}<br>Densidad: ${isFinite(d)?d.toFixed(1):'—'} hab/km²`).openPopup(); }); },
-        _onEachIbague(f, layer){ layer.on('click', ()=>{ const nom = (f.properties.NOMBRE || f.properties.name || '').toUpperCase(); const n = this._poblacionSubzona(f); layer.bindPopup(`<strong>${nom}</strong><br>Población ${this.anioPoblacion}: ${this._fmt(n)}`).openPopup(); }); },
-
-        _poblacionMunicipio(f){ const nom = (f.properties.MPIO_CNMBR || f.properties.NOMBRE || '').toUpperCase(); const reg = this.poblacionTolima[nom] || {}; return Number(reg[this.anioPoblacion]) || Number(reg.total) || null; },
-        _densidadMunicipio(f, n){ const area = (this.poblacionTolima[(f.properties.MPIO_CNMBR||'').toUpperCase()]||{}).area_km2 || (f.properties.SHAPE_Area? f.properties.SHAPE_Area/1e6 : null); return n && area ? n/area : NaN; },
-        _poblacionSubzona(f){ const nom = (f.properties.NOMBRE || f.properties.name || '').toUpperCase(); const reg = this.poblacionTolima[nom] || {}; return Number(reg[this.anioPoblacion]) || Number(reg.total) || null; },
-
-        reestilizarCapas(){ if(this.capaTolima) this.capaTolima.setStyle(this._styleTolima.bind(this)); if(this.capaComunas) this.capaComunas.setStyle(this._styleIbague.bind(this)); if(this.capaCorreg) this.capaCorreg.setStyle(this._styleIbague.bind(this)); this._actualizarLeyenda(); },
-
-        _colorChoro(v){ if(v==null || isNaN(v)) return '#e5e7eb'; return v>500000?'#1d4ed8': v>200000?'#3b82f6': v>80000?'#60a5fa': v>30000?'#93c5fd': v>10000?'#bfdbfe':'#dbeafe'; },
-
-        _crearLeyenda(){ const ctrl = L.control({position:'bottomright'}); ctrl.onAdd = ()=>{ const div=L.DomUtil.create('div','rounded-2xl text-xs p-3 bg-white/80 <h3 class="text-lg font-bold mb-2">Capas geográficas (Tolima / Ibagué)</h3>
+    <aside class="space-y-6">
+      <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800 p-5">
+        <h3 class="text-lg font-bold mb-2">Capas geográficas (Tolima / Ibagué)</h3>
         <p class="text-sm text-gray-600 dark:text-gray-300">Active mapas con población para proyectos y radicaciones oficiales.</p>
         <div class="mt-3 space-y-3">
           <button @click="cargarTolima()" class="w-full px-4 py-2 rounded-2xl bg-primary-600 text-white font-semibold">Tolima: Municipios (GeoJSON local / DANE)</button>
@@ -189,7 +168,240 @@
           </div>
         </div>
         <p class="text-xs mt-3 text-gray-500">Puede cargar CSV con columnas: <code>municipio,poblacion,anio,area_km2</code> o por código <code>divipola</code>.</p>
-        <input type="file" accept=".csv" @change="cargarCSV($event)" class="mt-2 w-full text-sm"/>return; const text = await file.text();
+        <input type="file" accept=".csv" @change="cargarCSV($event)" class="mt-2 w-full text-sm"/>
+
+      <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800 p-5">
+        <h3 class="text-lg font-bold mb-2">Descargas útiles</h3>
+        <ul class="list-disc list-inside text-sm">
+          <li><button @click="exportarCSV()" class="text-primary-700 dark:text-primary-300 hover:underline">Exportar CSV local</button></li>
+          <li><a href="#" @click.prevent="descargarPlantilla()" class="text-primary-700 dark:text-primary-300 hover:underline">Plantilla Excel</a></li>
+        </ul>
+      </div>
+
+      <div class="bg-gradient-to-br from-amber-500 to-pink-500 text-white rounded-3xl p-5 shadow-xl">
+        <h3 class="text-lg font-extrabold">Oramos por Tolima</h3>
+        <p class="text-sm opacity-90">“Levántate, resplandece; porque ha venido tu luz...” (Isaías 60:1).</p>
+      </div>
+          <div class="bg-white dark:bg-gray-900 shadow-xl rounded-3xl border border-gray-200 dark:border-gray-800 p-5">
+        <h3 class="text-lg font-bold mb-2">Capas geográficas (Tolima / Ibagué)</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-300">Active mapas con población para proyectos y radicaciones oficiales.</p>
+        <div class="mt-3 space-y-3">
+          <button @click="cargarTolima()" class="w-full px-4 py-2 rounded-2xl bg-primary-600 text-white font-semibold">Tolima: Municipios (DANE) + población</button>
+          <div class="text-xs text-gray-500">Fuente: DIVIPOLA DANE. Se pinta por densidad o total según selección.</div>
+          <label class="block text-sm font-semibold">URL GeoJSON Comunas de Ibagué</label>
+          <input type="url" x-model="geojsonComunasUrl" placeholder="https://.../comunas_ibague.geojson" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
+          <label class="block text-sm font-semibold">URL GeoJSON Corregimientos de Ibagué</label>
+          <input type="url" x-model="geojsonCorregUrl" placeholder="https://.../corregimientos_ibague.geojson" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" />
+          <button @click="cargarIbague()" class="w-full px-4 py-2 rounded-2xl border border-gray-300 dark:border-gray-700">Cargar Comunas/Corregimientos</button>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-semibold">Año proyección DANE</label>
+            <select x-model.number="anioPoblacion" @change="reestilizarCapas()" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <template x-for="y in aniosPoblacion" :key="y"><option :value="y" x-text="y"></option></template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold">Métrica</label>
+            <select x-model="metrica" @change="reestilizarCapas()" class="mt-1 w-full rounded-2xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <option value="total">Población total</option>
+              <option value="densidad">Densidad (hab/km²)</option>
+            </select>
+          </div>
+        </div>
+        <p class="text-xs mt-3 text-gray-500">Puede cargar CSV con columnas: <code>municipio,poblacion,anio</code> para actualizar valores locales.</p>
+        <input type="file" accept=".csv" @change="cargarCSV($event)" class="mt-2 w-full text-sm"/>
+      </div>
+    </aside>
+  </section>
+
+  <!-- Pie -->
+  <footer class="border-t border-gray-200 dark:border-gray-800 py-8 text-center text-sm text-gray-600 dark:text-gray-300">
+    © <span x-text="new Date().getFullYear()"></span> Fundación Reaching • Hecho con amor y excelencia.
+  </footer>
+
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('censoApp', () => ({
+        prefersDark: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
+        toggleTheme(){ this.prefersDark = !this.prefersDark; },
+
+        registros: [],
+        buscar: '',
+        endpoint: localStorage.getItem('censo_endpoint') || '',
+        token: localStorage.getItem('censo_token') || '',
+        estadoEnvio: '',
+        municipiosTolima: [
+          'Ibagué','Espinal','Melgar','Guamo','Honda','Chaparral','Líbano','Mariquita','Flandes','Purificación','Coyaima','Natagaima','Ortega','Rovira','Saldaña','Lérida','Venadillo','Cajamarca','Planadas','Ataco','Icononzo','Anzoátegui','Villarrica','Prado','San Antonio','Rioblanco','Casabianca','Ambalema','Carmen de Apicalá','Coello','Dolores','Fresno','Herveo','Palocabildo','Piedras','Alpujarra','Alvarado','Murillo','Falán','Valle de San Juan'
+        ],
+
+        // NUEVO: capas geográficas y población
+        aniosPoblacion: Array.from({length: (2042-2018)+1}, (_,i)=>2018+i),
+        anioPoblacion: new Date().getFullYear(),
+        metrica: 'total',
+        geojsonComunasUrl: localStorage.getItem('geojson_comunas') || '',
+        geojsonCorregUrl: localStorage.getItem('geojson_correg') || '',
+        poblacionTolima: {}, // { 'IBAGUE': {2025: 563000, area_km2: 1498 } ... }
+
+        form: {
+          tipo: 'Hogar', nombre:'', documento:'', telefono:'', correo:'', municipio:'Ibagué', barrio:'', comuna:'', edad:'', genero:'', ocupacion:'', iglesia:'', area:'', necesidad:'', direccion:'', obs:'', acepto:false
+        },
+
+        get totalMunicipios(){ return new Set(this.registros.map(r=>r.municipio).filter(Boolean)).size; },
+        get totalIglesias(){ return new Set(this.registros.map(r=>r.iglesia).filter(Boolean)).size; },
+        get topNecesidad(){
+          const c = this._contar(this.registros.map(r=>r.necesidad));
+          const top = Object.entries(c).sort((a,b)=>b[1]-a[1])[0];
+          return top ? `${top[0]} (${top[1]})` : '—';
+        },
+        get registrosFiltrados(){
+          const q = this.buscar.toLowerCase();
+          return this.registros.filter(r => JSON.stringify(r).toLowerCase().includes(q));
+        },
+
+        init(){
+          const dl = document.getElementById('municipios');
+          this.municipiosTolima.forEach(m=>{ const o=document.createElement('option'); o.value=m; dl.appendChild(o); });
+          this.registros = JSON.parse(localStorage.getItem('censo_tolima')||'[]');
+          this.$nextTick(()=>{ lucide.createIcons(); this._initCharts(); this._initMap(); this._cargarPoblacionDANE(); });
+        },
+
+        limpiar(){ this.form = { ...this.form, nombre:'', documento:'', telefono:'', correo:'', barrio:'', comuna:'', edad:'', genero:'', ocupacion:'', iglesia:'', area:'', necesidad:'', direccion:'', obs:'', acepto:false }; },
+
+        async guardarRegistro(){
+          if(!this.form.acepto){ alert('Debes aceptar el tratamiento de datos.'); return; }
+          const registro = { id: crypto.randomUUID(), fecha: new Date().toISOString(), ...this.form };
+          this.registros.push(registro);
+          localStorage.setItem('censo_tolima', JSON.stringify(this.registros));
+          this._toast('Registro guardado');
+          this._actualizarVisualizaciones();
+          if(this.endpoint){
+            try{
+              const res = await fetch(this.endpoint, { method:'POST', headers:{'Content-Type':'application/json','Authorization': this.token?`Bearer ${this.token}`:''}, body: JSON.stringify(registro) });
+              this.estadoEnvio = res.ok ? 'Enviado correctamente al endpoint.' : 'No se pudo enviar (ver consola).';
+            }catch(e){ console.error(e); this.estadoEnvio='Error de red al enviar.'; }
+          }
+          this.limpiar();
+        },
+
+        eliminar(idx){ if(confirm('¿Eliminar registro?')){ this.registros.splice(idx,1); localStorage.setItem('censo_tolima', JSON.stringify(this.registros)); this._actualizarVisualizaciones(); } },
+
+        exportarCSV(){
+          const rows = [Object.keys(this.form).concat(['id','fecha'])];
+          this.registros.forEach(r=>{ rows.push(rows[0].map(k=> (r[k]??'').toString().replace(/
+/g,' '))) });
+          const csv = rows.map(r=>r.map(v=>`"${v.replaceAll('"','""')}"`).join(',')).join('
+');
+          const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `censo_tolima_${new Date().toISOString().slice(0,10)}.csv`;
+          a.click();
+        },
+
+        descargarPlantilla(){
+          const headers = ['tipo','nombre','documento','telefono','correo','municipio','barrio','comuna','edad','genero','ocupacion','iglesia','area','necesidad','direccion','obs'];
+          const csv = headers.join(',')+'
+';
+          const blob = new Blob([csv], {type:'text/csv'});
+          const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='plantilla_censo_tolima.csv'; a.click();
+        },
+
+        probarEndpoint(){ localStorage.setItem('censo_endpoint', this.endpoint); localStorage.setItem('censo_token', this.token); this.estadoEnvio='Guardado. Intenta enviar un registro real.'; },
+
+        _contar(arr){ return arr.filter(Boolean).reduce((a,v)=> (a[v]=(a[v]||0)+1, a),{}); },
+
+        _initCharts(){
+          const cfgPie = (labels, data, title) => ({
+            type:'doughnut', data:{ labels, datasets:[{ data, backgroundColor:['#60a5fa','#34d399','#f472b6','#f59e0b','#a78bfa','#f87171','#22d3ee','#cbd5e1'] }]}, options:{ plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:title } } } });
+          this.chartMunicipios = new Chart(document.getElementById('chartMunicipios'), cfgPie([],[], 'Por municipio'));
+          this.chartNecesidades = new Chart(document.getElementById('chartNecesidades'), cfgPie([],[], 'Necesidades'));
+          this.chartGeneros = new Chart(document.getElementById('chartGeneros'), cfgPie([],[], 'Género'));
+          this._actualizarVisualizaciones();
+        },
+
+        _initMap(){
+          this.map = L.map('map', { tap: true }).setView([4.4389, -75.2322], 11);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(this.map);
+          this.markers = L.layerGroup().addTo(this.map);
+          this.capaTolima = L.geoJSON(null, { onEachFeature: this._onEachTolima.bind(this), style: this._styleTolima.bind(this) }).addTo(this.map);
+          this.capaComunas = L.geoJSON(null, { onEachFeature: this._onEachIbague.bind(this), style: this._styleIbague.bind(this) });
+          this.capaCorreg = L.geoJSON(null, { onEachFeature: this._onEachIbague.bind(this), style: this._styleIbague.bind(this) });
+          this.controlCapas = L.control.layers(null, {
+            'Tolima – Municipios (DANE)': this.capaTolima,
+            'Ibagué – Comunas': this.capaComunas,
+            'Ibagué – Corregimientos': this.capaCorreg
+          }, { collapsed: true }).addTo(this.map);
+          this._refrescarMarcadores();
+          this._crearLeyenda();
+        },
+
+        _refrescarMarcadores(){ if(!this.markers) return; this.markers.clearLayers(); this.registros.filter(r=>r.direccion).forEach(r=>{ const coords = this._coordsPorMunicipio(r.municipio); if(coords){ L.marker(coords).addTo(this.markers).bindPopup(`<strong>${r.nombre}</strong><br>${r.municipio}<br>${r.necesidad || ''}`); } }); },
+
+        _coordsPorMunicipio(m){ const dict = { 'Ibagué':[4.4389,-75.2322], 'Espinal':[4.1524,-74.8889], 'Melgar':[4.2047,-74.6400], 'Guamo':[4.0320,-74.9702], 'Honda':[5.2086,-74.7355], 'Chaparral':[3.7233,-75.4831], 'Líbano':[4.9217,-75.0628], 'Mariquita':[5.1989,-74.8926], 'Flandes':[4.2917,-74.8167], 'Purificación':[3.8653,-74.9311] }; return dict[m] || [4.4389,-75.2322]; },
+
+        _actualizarVisualizaciones(){
+          const porMunicipio = this._contar(this.registros.map(r=>r.municipio));
+          const porNecesidad = this._contar(this.registros.map(r=>r.necesidad));
+          const porGenero = this._contar(this.registros.map(r=>r.genero));
+          const setData = (chart, obj) => { chart.data.labels = Object.keys(obj); chart.data.datasets[0].data = Object.values(obj); chart.update(); };
+          if(this.chartMunicipios) setData(this.chartMunicipios, porMunicipio);
+          if(this.chartNecesidades) setData(this.chartNecesidades, porNecesidad);
+          if(this.chartGeneros) setData(this.chartGeneros, porGenero);
+          this._refrescarMarcadores();
+        },
+
+        // ====== POBLACIÓN DANE ======
+        async _cargarPoblacionDANE(){
+          const base = {
+            'IBAGUÉ': { area_km2: 1498 }, 'ESPINAL': { area_km2: 231 }, 'MELGAR': { area_km2: 205 }, 'HONDA': { area_km2: 291 }
+          };
+          this.poblacionTolima = base;
+          this.reestilizarCapas();
+        },
+
+        // ====== CAPAS ======
+        async cargarTolima(){
+          const url = 'https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=DPTO_CCDGO%3D%2773%27&outFields=*&f=geojson';
+          try{
+            const gj = await fetch(url).then(r=>r.json());
+            this.capaTolima.clearLayers();
+            this.capaTolima.addData(gj);
+            this.map.fitBounds(this.capaTolima.getBounds());
+            this.reestilizarCapas();
+          }catch(e){ console.error(e); alert('No se pudo cargar municipios de Tolima desde DANE.'); }
+        },
+
+        async cargarIbague(){
+          try{
+            if(this.geojsonComunasUrl){ localStorage.setItem('geojson_comunas', this.geojsonComunasUrl); const gj1 = await fetch(this.geojsonComunasUrl).then(r=>r.json()); this.capaComunas.clearLayers(); this.capaComunas.addData(gj1); }
+            if(this.geojsonCorregUrl){ localStorage.setItem('geojson_correg', this.geojsonCorregUrl); const gj2 = await fetch(this.geojsonCorregUrl).then(r=>r.json()); this.capaCorreg.clearLayers(); this.capaCorreg.addData(gj2); }
+            if(this.capaComunas.getLayers().length) this.map.fitBounds(this.capaComunas.getBounds()); else if(this.capaCorreg.getLayers().length) this.map.fitBounds(this.capaCorreg.getBounds());
+            this.reestilizarCapas();
+          }catch(e){ console.error(e); alert('No se pudo cargar comunas/corregimientos. Verifique URLs GeoJSON.'); }
+        },
+
+        _styleTolima(f){ const n = this._poblacionMunicipio(f); const d = this._densidadMunicipio(f, n); const v = this.metrica==='densidad' ? d : n; return { color:'#1f2937', weight:1, fillColor: this._colorChoro(v), fillOpacity: .7 }; },
+        _styleIbague(f){ const n = this._poblacionSubzona(f); const v = n || 0; return { color:'#1f2937', weight:1, fillColor: this._colorChoro(v), fillOpacity: .7 }; },
+
+        _onEachTolima(f, layer){ layer.on('click', ()=>{ const n = this._poblacionMunicipio(f); const d = this._densidadMunicipio(f, n); const nom = (f.properties.MPIO_CNMBR || f.properties.NOMBRE || '').toUpperCase(); layer.bindPopup(`<strong>${nom}</strong><br>Población ${this.anioPoblacion}: ${this._fmt(n)}<br>Densidad: ${isFinite(d)?d.toFixed(1):'—'} hab/km²`).openPopup(); }); },
+        _onEachIbague(f, layer){ layer.on('click', ()=>{ const nom = (f.properties.NOMBRE || f.properties.name || '').toUpperCase(); const n = this._poblacionSubzona(f); layer.bindPopup(`<strong>${nom}</strong><br>Población ${this.anioPoblacion}: ${this._fmt(n)}`).openPopup(); }); },
+
+        _poblacionMunicipio(f){ const nom = (f.properties.MPIO_CNMBR || f.properties.NOMBRE || '').toUpperCase(); const reg = this.poblacionTolima[nom] || {}; return Number(reg[this.anioPoblacion]) || Number(reg.total) || null; },
+        _densidadMunicipio(f, n){ const area = (this.poblacionTolima[(f.properties.MPIO_CNMBR||'').toUpperCase()]||{}).area_km2 || (f.properties.SHAPE_Area? f.properties.SHAPE_Area/1e6 : null); return n && area ? n/area : NaN; },
+        _poblacionSubzona(f){ const nom = (f.properties.NOMBRE || f.properties.name || '').toUpperCase(); const reg = this.poblacionTolima[nom] || {}; return Number(reg[this.anioPoblacion]) || Number(reg.total) || null; },
+
+        reestilizarCapas(){ if(this.capaTolima) this.capaTolima.setStyle(this._styleTolima.bind(this)); if(this.capaComunas) this.capaComunas.setStyle(this._styleIbague.bind(this)); if(this.capaCorreg) this.capaCorreg.setStyle(this._styleIbague.bind(this)); this._actualizarLeyenda(); },
+
+        _colorChoro(v){ if(v==null || isNaN(v)) return '#e5e7eb'; return v>500000?'#1d4ed8': v>200000?'#3b82f6': v>80000?'#60a5fa': v>30000?'#93c5fd': v>10000?'#bfdbfe':'#dbeafe'; },
+
+        _crearLeyenda(){ const ctrl = L.control({position:'bottomright'}); ctrl.onAdd = ()=>{ const div=L.DomUtil.create('div','rounded-2xl text-xs p-3 bg-white/80 dark:bg-gray-900/80 shadow border border-gray-200 dark:border-gray-800'); div.innerHTML = `<strong>Leyenda</strong><div id=\"legend-grades\" class=\"mt-2 space-y-1\"></div>`; return div; }; ctrl.addTo(this.map); this.leyendaCtrl = ctrl; this._actualizarLeyenda(); },
+        _actualizarLeyenda(){ const el = document.getElementById('legend-grades'); if(!el) return; const rangos = [0,10000,30000,80000,200000,500000]; el.innerHTML = rangos.map((r,i)=>{ const s = this._colorChoro(r+1); const label = i<rangos.length-1? `${this._fmt(r)}–${this._fmt(rangos[i+1])}` : `>${this._fmt(r)}`; return `<div class='flex items-center gap-2'><span style='background:${s}' class='inline-block w-4 h-3 rounded'></span><span>${label}</span></div>`; }).join(''); },
+
+        _fmt(n){ if(n==null || isNaN(n)) return '—'; return Number(n).toLocaleString('es-CO'); },
+
+        async cargarCSV(e){
+          const file = e.target.files[0]; if(!file) return; const text = await file.text();
           const rows = text.trim().split(/
 ?
 /).map(r=>r.split(',')); const head = rows.shift().map(s=>s.trim().toUpperCase());
@@ -206,5 +418,3 @@
   </script>
 </body>
 </html>
-
-
