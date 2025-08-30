@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel de Mapas — Proyectos Censo (Embed) · Fundación Reaching</title>
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="Versión ligera para incrustar el panel de mapas y enlaces útiles de la Fundación Reaching. Móvil primero." />
+  <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
+  <style>
+    :root{ --bg:#0b1220;--card:#0f172a;--txt:#e5e7eb;--muted:#9ca3af;--line:#1f2937;--accent:#fbbf24;--btn:#1d4ed8; }
+    html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:var(--txt)}
+    .wrap{max-width:1100px;margin:auto;padding:16px}
+    .row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+    h1{font-size:clamp(18px,2.4vw,24px);margin:0;font-weight:800;letter-spacing:.2px}
+    .muted{color:var(--muted);font-size:13px}
+    .card{background:linear-gradient(180deg,#0f172a,#0b1220);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+    .btn{appearance:none;border:1px solid #0b3ea1;background:linear-gradient(180deg,#2563eb,#1d4ed8);color:white;padding:8px 12px;border-radius:12px;text-decoration:none;font-weight:700}
+    .btn.secondary{background:transparent;border-color:#374151;color:#e5e7eb}
+    .shell{position:relative}
+    iframe{width:100%;height:min(70vh,800px);min-height:420px;border:0;background:#0a0f1d}
+    @media(max-width:640px){ iframe{height:65vh;min-height:360px} }
+    .placeholder{position:absolute;inset:0;display:grid;place-items:center;background:repeating-linear-gradient(45deg,#0d1221 0 10px,#0f172a 10px 20px);color:#cbd5e1}
+    .hide{display:none}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#111827;border:1px solid var(--line);font-size:12px;color:#cbd5e1}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .cta{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:linear-gradient(180deg,#22c55e,#16a34a);color:#052e16;border:1px solid #14532d;font-weight:800;text-transform:uppercase;letter-spacing:.3px;text-decoration:none}
+    .foot{padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card" aria-label="Panel de Mapas (embed)">
+      <div class="head">
+        <div>
+          <h1>Panel de Mapas — Proyectos Censo</h1>
+          <div class="muted">Fundación Reaching · versión ligera para incrustar</div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="/mapas_embed_liviano.html" target="_blank" rel="noopener">Abrir en pestaña</a>
+          <button id="cargar" class="btn secondary" type="button" aria-controls="mapas">Cargar aquí</button>
+        </div>
+      </div>
+
+      <div style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line)">
+        <span class="pill" aria-hidden="true">Accesos rápidos</span>
+        <a class="btn secondary" href="https://www.arcgis.com/apps/mapviewer/index.html?webmap=4fac7ecbe6e84e8ea3efcc3c01ef42d7" target="_blank" rel="noopener">Comunas de Ibagué (ArcGIS)</a>
+        <a class="btn secondary" href="https://tolima.gov.co/images/SIG/gobierno/poblacion/Corregimientos_Ibague.pdf" target="_blank" rel="noopener">Corregimientos de Ibagué (PDF)</a>
+        <a class="btn secondary" href="https://www.dane.gov.co/index.php/estadisticas-por-tema/demografia-y-poblacion/proyecciones-de-poblacion" target="_blank" rel="noopener">Población Tolima (DANE)</a>
+        <a class="btn secondary" href="https://geoportal.dane.gov.co/" target="_blank" rel="noopener">Geoportal DANE</a>
+        <a class="btn secondary" href="https://www.arcgis.com/apps/mapviewer/index.html?webmap=a481889edc534833899efa222f8e08ee" target="_blank" rel="noopener">Visor Alcaldía Ibagué</a>
+        <a class="btn secondary" href="https://satellites.pro/Google_plan/Tolima_region_map" target="_blank" rel="noopener">Generador Tolima (Satellites)</a>
+      </div>
+
+      <div class="shell" id="shell" data-src="/mapas_embed_liviano.html">
+        <div id="placeholder" class="placeholder" aria-hidden="true">
+          <span class="pill">Mapas listos • clic en “Cargar aquí”</span>
+        </div>
+        <iframe id="mapas" title="Panel de Mapas — Fundación Reaching" loading="lazy" referrerpolicy="no-referrer-when-downgrade" class="hide"
+          sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+          allow="fullscreen *; geolocation *; clipboard-write *; accelerometer *; gyroscope *; autoplay *; encrypted-media *">
+        </iframe>
+      </div>
+
+      <div class="foot">
+        <span class="muted">Carga bajo demanda para ahorrar datos — móvil primero.</span>
+        <a class="cta" href="/mapas_embed_liviano.html" target="_blank" rel="noopener">Ver versión completa</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function(){
+      const shell = document.getElementById('shell');
+      const iframe = document.getElementById('mapas');
+      const btn = document.getElementById('cargar');
+      const ph = document.getElementById('placeholder');
+      const src = shell?.dataset?.src;
+      let loaded = false;
+
+      function load(){
+        if(loaded || !src) return;
+        iframe.src = src;
+        iframe.classList.remove('hide');
+        ph?.classList.add('hide');
+        loaded = true;
+      }
+
+      // Botón manual
+      btn?.addEventListener('click', load);
+
+      // Auto-carga cuando entra en viewport
+      if('IntersectionObserver' in window){
+        const io = new IntersectionObserver((entries)=>{
+          entries.forEach(e=>{ if(e.isIntersecting) { load(); io.disconnect(); } });
+        }, {rootMargin:'120px'});
+        io.observe(shell);
+      } else {
+        // Fallback: si no hay IO, carga al primer scroll
+        window.addEventListener('scroll', load, { once:true });
+      }
+
+      // Fallback: mostrar aviso si tarda mucho en cargar
+      let fallbackTimer = setTimeout(()=>{
+        if(!loaded && ph){ ph.innerHTML = '<span class="pill">La carga puede tardar… También puedes abrir en pestaña.</span>'; }
+      }, 8000);
+
+      iframe.addEventListener('load', ()=>{
+        clearTimeout(fallbackTimer);
+        try{
+          const doc = iframe.contentDocument || iframe.contentWindow?.document;
+          if(!doc) return;
+          // Reescribe vínculos para abrir en pestaña (evita bloqueos del sandbox)
+          doc.querySelectorAll('a[href]').forEach(a=>{ a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+        }catch(err){ /* si es cross-origin, ignorar */ }
+      });
+    })();
+  </script>
+
+  <noscript>
+    <div style="max-width:1100px;margin:auto;padding:16px;color:#e5e7eb">
+      Para ver los mapas, active JavaScript o abra la <a href="/mapas_embed_liviano.html" style="color:#93c5fd">versión completa</a>.
+    </div>
+  </noscript>
+</body>
+</html>
