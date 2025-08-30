@@ -9,3 +9,16 @@
 </head><body>
 <div id="map"></div>
 <script>
+const conf={center:[4.4389,-75.2322],zoom:12,accent:'#D97706',geojson:'/ibague_comunas.geojson',csv:'/ibague_comunas_poblacion.csv'};
+const map=L.map('map').setView(conf.center,conf.zoom);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
+const pad5=v=>String(v??'').replace(/\D/g,'').padStart(5,'0');const PALETTE=['#fff7ed','#ffedd5','#fed7aa','#fdba74','#fb923c','#ea580c'];
+function detectColumns(keys){const L=keys.map(k=>(k||'').toLowerCase());const f=a=>{const i=L.findIndex(k=>a.some(x=>k.includes(x)));return i>=0?keys[i]:null};return{codeKey:f(['codigo','dane','id']),nameKey:f(['comuna','nombre']),popKey:f(['pobl','habit'])}};
+function codeFromProps(p){const c=[p?.COD_DANE,p?.Codigo,p?.ID,p?.id,p?.COMUNA];for(const x of c){const n=pad5(x);if(n)return n}return''}
+(async()=>{let geo;try{const r=await fetch(conf.geojson);if(!r.ok)throw new Error('GeoJSON '+r.status);geo=await r.json()}catch(e){alert('Error GeoJSON: '+e.message);return}
+let rows=[];try{const r=await fetch(conf.csv);if(!r.ok)throw new Error('CSV '+r.status);const t=await r.text();const p=Papa.parse(t,{header:true,skipEmptyLines:true});const f=p.meta?.fields??Object.keys(p.data[0]??{});const {codeKey,nameKey,popKey}=detectColumns(f);rows=p.data.map(x=>({code:pad5(x[codeKey]),name:String(x[nameKey]??'').trim(),pop:Number(String(x[popKey]??'').replace(/[^0-9.-]/g,''))||null}))}catch{rows=[]}
+const by=new Map(rows.map(r=>[r.code,r]));const joined=(geo.features||[]).map(ft=>{const pr=ft.properties||{};const code=codeFromProps(pr);const csv=by.get(code)||by.get(pad5(code));return{code,name:csv?.name||pr.NOMBRE||pr.COMUNA||'',pop:csv?.pop??null,feature:ft}});
+const vals=joined.map(j=>j.pop).filter(v=>typeof v==='number').sort((a,b)=>a-b);const breaks=[1,2,3,4,5].map(i=>vals[Math.floor((vals.length-1)*i/6)]||0);const scale=v=>{if(v==null)return'#ccc';let idx=breaks.findIndex(b=>v<=b);if(idx===-1)idx=5;return PALETTE[idx]};
+const layer=L.geoJSON(geo,{style:ft=>{const pr=ft.properties||{};const code=codeFromProps(pr);const r=joined.find(j=>pad5(j.code)===pad5(code));return{weight:1.2,color:'#7c2d12',fillColor:scale(r?.pop??null),fillOpacity:.9}}});layer.addTo(map);try{map.fitBounds(layer.getBounds(),{padding:[16,16]})}catch{}}
+)();
+</script>
+</body></html>
