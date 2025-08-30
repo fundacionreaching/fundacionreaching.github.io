@@ -215,7 +215,217 @@ async function loadAndRender() {
         }
       }
     }
-  </script>
+  </script><script>
+// ===============================
+// FUENTES DE DATOS + COLORES
+// ===============================
+const DATA_SOURCES = {
+  tolima: {
+    label: 'Tolima — Municipios',
+    center: [4.4389, -75.2322],
+    zoom: 8,
+    accent: '#4F46E5', // indigo
+    geojson: '/tolima_municipios.geojson',
+    csv: '/dane_tolima_poblacion.csv'
+  },
+  ibague: {
+    label: 'Ibagué — Zonas urbanas (si aplica)',
+    center: [4.4389, -75.2322],
+    zoom: 12,
+    accent: '#059669', // emerald
+    geojson: '/ibague_urbano.geojson',
+    csv: '/ibague_urbano_poblacion.csv'
+  },
+  comunas: {
+    label: 'Ibagué — Comunas',
+    center: [4.4389, -75.2322],
+    zoom: 12,
+    accent: '#D97706', // amber
+    geojson: '/ibague_comunas.geojson',
+    csv: '/ibague_comunas_poblacion.csv'
+  },
+  corregimientos: {
+    label: 'Ibagué — Corregimientos',
+    center: [4.4389, -75.2322],
+    zoom: 11,
+    accent: '#E11D48', // rose
+    geojson: '/ibague_corregimientos.geojson',
+    csv: '/ibague_corregimientos_poblacion.csv'
+  }
+};
+
+// ===============================
+// UTILIDADES
+// ===============================
+const PALETTE = ['#e6f2ff', '#b3d1ff', '#80b1ff', '#4d91ff', '#1a70ff', '#0052cc'];
+const norm = (s) => String(s ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const pad5 = (v) => String(v ?? '').replace(/\D/g, '').padStart(5, '0');
+function numberFmt(n) { return (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString('es-CO'); }
+function detectColumns(keys) {
+  const lower = keys.map(k => (k||'').toLowerCase());
+  const findKey = (arr) => { const i = lower.findIndex(k => arr.some(a => k.includes(a))); return i>=0 ? keys[i] : null; };
+  return {
+    codeKey: findKey(['dane','cod','codigo','mpio','codigo_dane','coddane','cod_mun','mpio_ccdgo']),
+    nameKey: findKey(['municipio','nombre','nom','sector','comuna','correg','mpio_cn','mpio_nm']),
+    popKey:  findKey(['pob','pobl','habit','total'])
+  };
+}
+function codeFromProps(props) {
+  const candidates = [props?.MPIO_CCDGO, props?.COD_DANE, props?.Codigo, props?.codigo, props?.DANE, props?.CODIGO, props?.cod_dane, props?.CodDANE, props?.codigo_dane, props?.CODIGO_DANE, props?.CODIGO_MPIO, props?.codigo_mpio];
+  for (const c of candidates) { const n = pad5(c); if (n) return n; }
+  const anyCode = props?.CODIGO || props?.CODIGO2 || props?.ID || props?.id || props?.code || props?.Code;
+  return anyCode != null ? String(anyCode) : '';
+}
+function quantile(sorted, q) { const pos = (sorted.length - 1) * q; const base = Math.floor(pos); const rest = pos - base; return sorted[base + 1] !== undefined ? sorted[base] + rest * (sorted[base+1] - sorted[base]) : sorted[base]; }
+function makeBuckets(values, k = PALETTE.length) {
+  const arr = values.filter(v => typeof v === 'number' && !isNaN(v)).sort((a,b)=>a-b);
+  if (!arr.length) return { breaks: [], scale: ()=>'#cccccc' };
+  const breaks = []; for (let i=1;i<k;i++) breaks.push(Math.round(quantile(arr, i/k)));
+  const scale = (v) => { if (v == null || isNaN(v)) return '#cccccc'; let idx = breaks.findIndex(b => v <= b); if (idx === -1) idx = k-1; return PALETTE[idx]; };
+  return { breaks, scale };
+}
+function downloadCSV(rows) {
+  const header = ['codigo','nombre','poblacion'];
+  const lines = [header.join(',')].concat(rows.map(r => [JSON.stringify(r.code), JSON.stringify(r.name), r.pop ?? ''].join(',')));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'export_filtrado.csv'; a.click(); URL.revokeObjectURL(url);
+}
+
+// ===============================
+// ESTADO Y MAPA (tolerante a HTML parcial)
+// ===============================
+let currentKey = 'tolima';
+let map, geoLayer, geoBorderLayer;
+let joined = [];
+function initMap() {
+  const conf = DATA_SOURCES[currentKey];
+  map = L.map('map').setView(conf.center, conf.zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+}
+async function loadAndRender() {
+  const conf = DATA_SOURCES[currentKey];
+  const layerNameEl = document.getElementById('layer-name'); if (layerNameEl) layerNameEl.textContent = conf.label;
+  const badge = document.getElementById('badge-layer'); if (badge) { badge.style.border = '1px solid ' + conf.accent; badge.style.boxShadow = `0 0 0 3px ${conf.accent}22 inset`; }
+
+  // GeoJSON
+  const geo = await fetch(conf.geojson).then(r => { if (!r.ok) throw new Error('No se pudo cargar GeoJSON: ' + conf.geojson); return r.json(); });
+
+  // CSV
+  const csvText = await fetch(conf.csv).then(r => { if (!r.ok) throw new Error('No se pudo cargar CSV: ' + conf.csv); return r.text(); });
+  const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+  const fields = parsed.meta?.fields ?? Object.keys(parsed.data[0] ?? {});
+  const { codeKey, nameKey, popKey } = detectColumns(fields);
+
+  const rows = parsed.data.map(r => {
+    const code = r[codeKey]; const name = r[nameKey]; const popRaw = r[popKey];
+    const pop = popRaw == null ? null : Number(String(popRaw).replace(/[^0-9.-]/g, ''));
+    return { code: codeFromProps({ CODIGO: code, CODIGO_DANE: code, DANE: code }), name: String(name ?? '').trim(), pop: isNaN(pop) ? null : pop };
+  }).filter(r => r.code || r.name);
+
+  const byCode = new Map(rows.map(r => [String(r.code), r]));
+  joined = (geo.features || []).map(f => {
+    const props = f.properties || {}; const code = String(codeFromProps(props));
+    const name = props.NOMBRE || props.NOM_MPIO || props.NOMBRE_MPIO || props.Nombre || props.MUNICIPIO || props.SECTOR || props.COMUNA || props.CORREGIMIENTO || '';
+    const csv = byCode.get(code) || byCode.get(pad5(code));
+    return { code: code || (csv?.code ?? ''), name: String(csv?.name || name || ''), pop: csv?.pop ?? null, feature: f };
+  });
+
+  // Stats (si existen los elementos)
+  const entidades = joined.length; const conDato = joined.filter(j => typeof j.pop === 'number').length; const poblacion = joined.reduce((acc, j) => acc + (j.pop || 0), 0);
+  const entEl = document.getElementById('stat-entidades'); if (entEl) entEl.textContent = entidades;
+  const conDatoEl = document.getElementById('stat-condato'); if (conDatoEl) conDatoEl.textContent = conDato;
+  const pobEl = document.getElementById('stat-poblacion'); if (pobEl) pobEl.textContent = numberFmt(poblacion);
+
+  // Top 5 (si existe el contenedor)
+  const top5 = [...joined].filter(j => j.pop).sort((a,b)=>b.pop - a.pop).slice(0,5);
+  const top5El = document.getElementById('top5');
+  if (top5El) {
+    top5El.innerHTML = '';
+    top5.forEach((t,i)=> {
+      const li = document.createElement('li');
+      li.className = 'flex items-center justify-between gap-2';
+      li.innerHTML = `<span class="inline-flex items-center gap-2"><span class="text-slate-500 w-5">${i+1}.</span> ${t.name}</span><span class="font-medium">${numberFmt(t.pop)}</span>`;
+      top5El.appendChild(li);
+    });
+  }
+
+  // Tabla filtrable (si existe)
+  const searchEl = document.getElementById('search');
+  const tbody = document.getElementById('tbody');
+  const rowsCountEl = document.getElementById('rows-count');
+  const applyFilter = () => {
+    const q = norm(searchEl?.value || '');
+    const filtered = joined.filter(j => !q || norm(j.name).includes(q) || String(j.code).includes(q));
+    if (tbody) {
+      tbody.innerHTML = '';
+      filtered.forEach((r, i) => {
+        const tr = document.createElement('tr'); tr.className = 'border-b border-slate-100 hover:bg-indigo-50/40 cursor-pointer';
+        tr.innerHTML = `<td class="px-3 py-2 text-slate-500">${i+1}</td><td class="px-3 py-2 font-medium">${r.name || '(Sin nombre)'}</td><td class="px-3 py-2 font-mono text-xs text-slate-600">${r.code || '—'}</td><td class="px-3 py-2 text-right">${numberFmt(r.pop)}</td>`;
+        tr.addEventListener('click', ()=>selectFeature(r)); tbody.appendChild(tr);
+      });
+    }
+    if (rowsCountEl) rowsCountEl.textContent = `${filtered.length} filas`;
+  };
+  applyFilter();
+  if (searchEl) searchEl.addEventListener('input', applyFilter);
+
+  // Escala y capas
+  const { scale } = makeBuckets(joined.map(j => j.pop).filter(Boolean));
+
+  // Borde acentuado
+  if (geoBorderLayer) geoBorderLayer.remove();
+  geoBorderLayer = L.geoJSON(geo, { style: () => ({ weight: 2.2, color: conf.accent, fillOpacity: 0, opacity: 0.9 }), interactive: false }).addTo(map);
+
+  // Coropletas
+  if (geoLayer) geoLayer.remove();
+  geoLayer = L.geoJSON(geo, {
+    style: (feat) => {
+      const props = feat.properties || {}; const code = String(codeFromProps(props));
+      const rec = joined.find(j => String(j.code) === code || pad5(String(j.code)) === pad5(code));
+      const fillColor = scale(rec?.pop ?? null);
+      return { weight: 1.5, color: '#334155', fillColor, fillOpacity: 0.87 };
+    },
+    onEachFeature: (feature, layer) => {
+      layer.on('click', () => {
+        const props = feature.properties || {}; const code = String(codeFromProps(props));
+        const rec = joined.find(j => String(j.code) === code || pad5(String(j.code)) === pad5(code)); if (rec) selectFeature(rec);
+      });
+      layer.on('mouseover', (e) => {
+        e.target.setStyle({ weight: 3, color: DATA_SOURCES[currentKey].accent });
+        const el = e.target.getElement ? e.target.getElement() : e.target._path; if (el) el.classList.add('feature-hover');
+      });
+      layer.on('mouseout',  (e) => {
+        e.target.setStyle({ weight: 1.5, color: '#334155' });
+        const el = e.target.getElement ? e.target.getElement() : e.target._path; if (el) el.classList.remove('feature-hover');
+      });
+    }
+  }).addTo(map);
+
+  try { map.fitBounds(geoLayer.getBounds(), { padding: [16,16] }); } catch {}
+}
+
+function selectFeature(rec) {
+  const card = document.getElementById('selectedCard'); if (card) card.classList.remove('hidden');
+  const n = document.getElementById('sel-name'); if (n) n.textContent = rec.name || '—';
+  const c = document.getElementById('sel-code'); if (c) c.textContent = rec.code || '—';
+  const p = document.getElementById('sel-pop'); if (p) p.textContent = numberFmt(rec.pop);
+  if (geoLayer) geoLayer.eachLayer(l => { const props = l.feature?.properties || {}; const code = String(codeFromProps(props)); if (code === String(rec.code) || pad5(code) === pad5(String(rec.code))) { try { map.fitBounds(l.getBounds(), { padding: [20,20] }); } catch {} } });
+}
+
+// Eventos: cambio de capa
+document.querySelectorAll('.layer-btn').forEach(btn => btn.addEventListener('click', async () => {
+  currentKey = btn.dataset.layer;
+  const card = document.getElementById('selectedCard'); card && card.classList.add('hidden');
+  await loadAndRender();
+}));
+
+// Arranque
+initMap();
+loadAndRender().catch(err => {
+  alert('Error cargando datos: ' + err.message + '\n\nRevisa las rutas en DATA_SOURCES.');
+  console.error(err);
+});
+</script>
 
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
@@ -1168,3 +1378,4 @@ async function loadAndRender() {
 </script>
 </body>
 </html>
+
