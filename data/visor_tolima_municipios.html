@@ -1,0 +1,33 @@
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Visor – Tolima Municipios (GeoJSON)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style> html,body{height:100%;} #map{height:calc(100vh - 64px);} </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+<header class="h-16 flex items-center justify-between px-4 border-b bg-white">
+<h1 class="font-black">Tolima — Municipios</h1>
+<a class="text-indigo-600" href="/">Inicio</a>
+</header>
+<main id="map"></main>
+<script>
+(async function(){
+const map = L.map('map').setView([4.4389,-75.2322], 8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
+const capa = L.geoJSON(null, { onEachFeature:(f,l)=>{
+const nom = (f.properties.NOMBRE||f.properties.MPIO_CNMBR||'Municipio').toUpperCase();
+const cod = (f.properties.CODIGO||f.properties.MPIO_CCDGO||'');
+l.bindPopup(`<strong>${nom}</strong><br>Código: ${cod}`);
+}, style:()=>({color:'#1f2937',weight:1,fillColor:'#93c5fd',fillOpacity:.6}) }).addTo(map);
+try{
+const gj = await fetch('/data/tolima_municipios.geojson',{cache:'no-store'}).then(r=>r.json());
+capa.addData(gj); map.fitBounds(capa.getBounds());
+}catch(e){ alert('No se pudo cargar /data/tolima_municipios.geojson'); }
+})();
+</script>
+</body>
+</html>
