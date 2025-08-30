@@ -1,0 +1,39 @@
+<div class="reaching-panel">
+  <button onclick="Censo.cargarTolima()" class="btn">Tolima: Municipios (local/DANE)</button>
+
+  <label>URL Comunas Ibagué</label>
+  <input id="urlComunas" type="url" value="https://fundacionreaching.github.io/data/ibague_comunas.geojson">
+
+  <label>URL Corregimientos Ibagué</label>
+  <input id="urlCorreg" type="url" value="https://fundacionreaching.github.io/data/ibague_corregimientos.geojson">
+
+  <label>URL Veredas Ibagué</label>
+  <input id="urlVeredas" type="url" value="https://fundacionreaching.github.io/data/ibague_veredas.geojson">
+
+  <div class="row">
+    <button onclick="Censo.cargarIbague()" class="btn secondary">Cargar Comunas/Correg./Veredas</button>
+    <button onclick="Censo.cargarPoblacionGit()" class="btn secondary">Población (GitHub)</button>
+  </div>
+
+  <div class="row">
+    <label>Año</label>
+    <select id="anioPob"></select>
+    <label>Métrica</label>
+    <select id="metrica">
+      <option value="total">Población</option>
+      <option value="densidad">Densidad</option>
+    </select>
+  </div>
+
+  <input type="file" id="csvPob" accept=".csv">
+  <div class="row">
+    <button onclick="Censo.exportarTablaCSV()" class="btn secondary">Exportar tabla CSV</button>
+  </div>
+
+  <div id="kpis" class="kpis">
+    <div><small>Municipios</small><strong id="kpiMun">0</strong></div>
+    <div><small>Comunas</small><strong id="kpiCom">0</strong></div>
+    <div><small>Correg.</small><strong id="kpiCor">0</strong></div>
+    <div><small>Población</small><strong id="kpiPob">0</strong></div>
+  </div>
+</div>
