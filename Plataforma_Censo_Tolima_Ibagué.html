@@ -92,14 +92,15 @@
 
       // ==== CSV / Tabla ====
       exportarCSV(){ const head=['nombre','codigo','poblacion','area_km2','densidad']; const rows=[head].concat((this.filas||[]).map(f=>[f.nombre,f.codigo||'',f.poblacion||'',f.area||'',(f.poblacion&&f.area)?(f.poblacion/f.area).toFixed(1):''])); const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('
+'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download=`tabla_${this.nivel}_${this.anioPoblacion}.csv`; a.click(); }"`).join(',')).join('
 '); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download=`tabla_${this.nivel}_${this.anioPoblacion}.csv`; a.click(); },
       descargarPlantilla(){ const csv='divipola,codigo,nombre,poblacion,anio,area_km2
-'; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='plantilla_poblacion.csv'; a.click(); },
+'; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='plantilla_poblacion.csv'; a.click(); })); a.download='plantilla_poblacion.csv'; a.click(); },
       async cargarCSV(e){ const f=e.target.files[0]; if(!f) return; const t=await f.text(); this._ingestarCSV(t); this._actualizarKPIs(); this.reestilizarCapas(); },
       async cargarPoblacionGit(){ const urls=['https://fundacionreaching.github.io/dane_tolima_poblacion.csv','https://fundacionreaching.github.io/ibague_comunas_poblacion.csv','https://fundacionreaching.github.io/ibague_corregimientos_poblacion.csv','https://fundacionreaching.github.io/ibague_veredas_poblacion.csv']; let ok=0; for(const u of urls){ try{ const r=await fetch(u,{cache:'no-store'}); if(r.ok){ const txt=await r.text(); this._ingestarCSV(txt); ok++; } }catch(_){} } this._toast(ok?`Población cargada (${ok})`:'No se pudo cargar población'); this._actualizarKPIs(); this.reestilizarCapas(); },
       _ingestarCSV(text){ const rows=text.trim().split(/
 ?
-/).map(r=>r.split(',')); const head=rows.shift().map(s=>s.trim().toUpperCase()); const iKey=head.indexOf('DIVIPOLA')>-1?head.indexOf('DIVIPOLA'):(head.indexOf('CODIGO')>-1?head.indexOf('CODIGO'):(head.indexOf('MUNICIPIO')>-1?head.indexOf('MUNICIPIO'):head.indexOf('NOMBRE'))); const iAnio=head.indexOf('ANIO')>-1?head.indexOf('ANIO'):head.indexOf('AÑO'); const iPob=head.indexOf('POBLACION')>-1?head.indexOf('POBLACION'):head.indexOf('POBLACIÓN'); const iArea=head.indexOf('AREA_KM2'); if(iKey<0||iPob<0) return; rows.forEach(r=>{ const key=(r[iKey]||'').toUpperCase(); this.poblacionTolima[key]=this.poblacionTolima[key]||{}; const an=iAnio>=0?Number(r[iAnio]):'total'; this.poblacionTolima[key][an]=Number(r[iPob]); if(iArea>=0) this.poblacionTolima[key].area_km2=Number(r[iArea]); }); },
+/).map(r=>r.split(',')); const head=rows.shift().map(s=>s.trim().toUpperCase()); const iKey=head.indexOf('DIVIPOLA')>-1?head.indexOf('DIVIPOLA'):(head.indexOf('CODIGO')>-1?head.indexOf('CODIGO'):(head.indexOf('MUNICIPIO')>-1?head.indexOf('MUNICIPIO'):head.indexOf('NOMBRE'))); const iAnio=head.indexOf('ANIO')>-1?head.indexOf('ANIO'):head.indexOf('AÑO'); const iPob=head.indexOf('POBLACION')>-1?head.indexOf('POBLACION'):head.indexOf('POBLACIÓN'); const iArea=head.indexOf('AREA_KM2'); if(iKey<0||iPob<0) return; rows.forEach(r=>{ const key=(r[iKey]||'').toUpperCase(); this.poblacionTolima[key]=this.poblacionTolima[key]||{}; const an=iAnio>=0?Number(r[iAnio]):'total'; this.poblacionTolima[key][an]=Number(r[iPob]); if(iArea>=0) this.poblacionTolima[key].area_km2=Number(r[iArea]); }); }; const an=iAnio>=0?Number(r[iAnio]):'total'; this.poblacionTolima[key][an]=Number(r[iPob]); if(iArea>=0) this.poblacionTolima[key].area_km2=Number(r[iArea]); }); },
 
       // ==== Helpers ====
       _fmt(n){ if(n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('es-CO'); }, fmt(n){ return this._fmt(n); },
@@ -117,7 +118,6 @@
 </script>
 </body>
 </html>
-
 
 
 
