@@ -1,0 +1,43 @@
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Visor – Población Tolima (CSV DANE/Proyección)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style> html,body{height:100%;} table{border-collapse:collapse} th,td{border-bottom:1px solid #e5e7eb;padding:.5rem .75rem;white-space:nowrap} </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+<header class="h-16 flex items-center justify-between px-4 border-b bg-white">
+<h1 class="font-black">CSV — Población Tolima</h1>
+<div class="flex gap-2 items-center">
+<input id="q" type="search" placeholder="Buscar…" class="border rounded-lg px-3 py-1.5 text-sm">
+<a class="text-indigo-600" href="/">Inicio</a>
+</div>
+</header>
+<main class="p-4 overflow-auto">
+<div class="mb-3 text-sm text-slate-600">Archivo esperado: <code>/data/dane_tolima_poblacion.csv</code> con cabeceras <strong>DIVIPOLA, MUNICIPIO, ANIO, POBLACION, AREA_KM2</strong>.</div>
+<div class="mb-3"><button id="dl" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm">Descargar CSV</button></div>
+<table id="tbl" class="min-w-full text-sm bg-white rounded-xl overflow-hidden shadow">
+<thead class="bg-slate-100">
+<tr><th>DIVIPOLA</th><th>MUNICIPIO</th><th>ANIO</th><th>POBLACION</th><th>AREA_KM2</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+</main>
+<script>
+(async function(){
+const $ = s=>document.querySelector(s);
+function toCSV(rows){ return rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'); }
+function render(rows){ const tb=$('#tbl tbody'); const q=($('#q').value||'').toLowerCase(); const out=rows.filter(r=> r.join(' ').toLowerCase().includes(q)); tb.innerHTML= out.map(r=>`<tr><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${Number(r[3]||'').toLocaleString('es-CO')||''}</td><td>${r[4]||''}</td></tr>`).join(''); }
+try{
+const txt = await fetch('/data/dane_tolima_poblacion.csv',{cache:'no-store'}).then(r=>r.text());
+const rows = txt.trim().split(/\r?\n/).map(r=>r.split(','));
+const head = rows.shift();
+render(rows);
+$('#q').addEventListener('input',()=>render(rows));
+$('#dl').addEventListener('click',()=>{ const csv = toCSV([head,...rows]); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download='dane_tolima_poblacion.csv'; a.click(); });
+}catch(e){ alert('No se pudo cargar /data/dane_tolima_poblacion.csv'); }
+})();
+</script>
+</body>
+</html>
