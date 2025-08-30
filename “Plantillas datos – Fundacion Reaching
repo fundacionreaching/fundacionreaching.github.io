@@ -1,0 +1,73 @@
+{
+  "README": "Plantillas listas para subir a /data/ en fundacionreaching.github.io. Archivos normalizados para que el visor de proyectos funcione sin cambios. Use NOMBRE/CODIGO (o DIVIPOLA) en GeoJSON y DIVIPOLA/MUNICIPIO/ANIO/POBLACION en CSV.",
+  "files": {
+    "data/dane_tolima_poblacion.csv": "DIVIPOLA,MUNICIPIO,ANIO,POBLACION,AREA_KM2\n73001,Ibagué,2020,541101,\n73001,Ibagué,2021,545000,\n73001,Ibagué,2022,548200,\n73268,Espinal,2020,160328,\n73268,Espinal,2021,161200,\n73268,Espinal,2022,162050,\n73168,Chaparral,2020,124321,\n73168,Chaparral,2021,124900,\n73168,Chaparral,2022,125450,\n",
+
+    "data/tolima_municipios.geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "NOMBRE": "Ibagué", "CODIGO": "73001", "AREA_KM2": null },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[ -75.30, 4.40 ], [ -75.18, 4.40 ], [ -75.18, 4.56 ], [ -75.30, 4.56 ], [ -75.30, 4.40 ]]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "NOMBRE": "Espinal", "CODIGO": "73268", "AREA_KM2": null },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[ -74.94, 4.08 ], [ -74.82, 4.08 ], [ -74.82, 4.20 ], [ -74.94, 4.20 ], [ -74.94, 4.08 ]]]
+          }
+        }
+      ]
+    },
+
+    "data/ibague_comunas.geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "NOMBRE": "Comuna 1", "CODIGO": "C01", "AREA_KM2": null },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[ -75.25, 4.44 ], [ -75.24, 4.44 ], [ -75.24, 4.45 ], [ -75.25, 4.45 ], [ -75.25, 4.44 ]]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "NOMBRE": "Comuna 2", "CODIGO": "C02", "AREA_KM2": null },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[ -75.24, 4.44 ], [ -75.23, 4.44 ], [ -75.23, 4.45 ], [ -75.24, 4.45 ], [ -75.24, 4.44 ]]]
+          }
+        }
+      ]
+    },
+
+    "data/ibague_corregimientos.geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "NOMBRE": "Cay", "CODIGO": "COR-01", "AREA_KM2": null },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[ -75.30, 4.40 ], [ -75.28, 4.40 ], [ -75.28, 4.42 ], [ -75.30, 4.42 ], [ -75.30, 4.40 ]]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "NOMBRE": "Buenavista", "CODIGO": "COR-02", "AREA_KM2": null },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[[ -75.28, 4.42 ], [ -75.26, 4.42 ], [ -75.26, 4.44 ], [ -75.28, 4.44 ], [ -75.28, 4.42 ]]]
+          }
+        }
+      ]
+    }
+  }
+}
+
