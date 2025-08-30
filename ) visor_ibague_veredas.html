@@ -1,0 +1,34 @@
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Visor – Ibagué Veredas (GeoJSON)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style> html,body{height:100%;} #map{height:calc(100vh - 64px);} </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+<header class="h-16 flex items-center justify-between px-4 border-b bg-white">
+<h1 class="font-black">Ibagué — Veredas</h1>
+<a class="text-indigo-600" href="/">Inicio</a>
+</header>
+<main id="map"></main>
+<script>
+(async function(){
+const map = L.map('map').setView([4.4389,-75.2322], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
+const col = i => ['#fde68a','#fca5a5','#93c5fd','#86efac','#c4b5fd','#f9a8d4'][i%6];
+const capa = L.geoJSON(null, { onEachFeature:(f,l)=>{
+const nom = (f.properties.NOMBRE||f.properties.VEREDA||f.properties.name||'Vereda').toUpperCase();
+l.bindPopup(`<strong>${nom}</strong>`);
+}, style:(f)=>({color:'#1f2937',weight:1,fillColor: col(Math.floor(Math.random()*6)), fillOpacity:.5}) }).addTo(map);
+try{
+const r = await fetch('/data/ibague_veredas.geojson',{cache:'no-store'});
+if(r.ok){ const gj = await r.json(); capa.addData(gj); map.fitBounds(capa.getBounds()); }
+else{ const m = L.marker([4.4389,-75.2322]).addTo(map).bindPopup('No hay /data/ibague_veredas.geojson todavía.').openPopup(); }
+}catch(e){ alert('No se pudo cargar /data/ibague_veredas.geojson'); }
+})();
+</script>
+</body>
+</html>
