@@ -1,8 +1,0 @@
-{
-  "comunas": [
-    { "id": 1, "nombre": "Comuna 1 - Centro", "lat": 4.4389, "lng": -75.2320, "pob": 31009 }
-  ],
-  "corregimientos": [
-    { "id": 11, "nombre": "San Juan de la China", "lat": 4.53333, "lng": -75.20000, "pob": 2000 }
-  ]
-}
