@@ -1,0 +1,10 @@
+/Plataforma_Proyectos_Censo_v2.html
+/data/
+  dane_tolima_poblacion.csv
+  tolima_municipios.geojson
+  ibague_comunas.geojson
+  ibague_comunas_poblacion.csv
+  ibague_corregimientos.geojson
+  ibague_corregimientos_poblacion.csv
+  ibague_veredas.geojson              (opcional)
+  ibague_veredas_poblacion.csv        (opcional)
