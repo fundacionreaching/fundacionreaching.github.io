@@ -9,6 +9,7 @@
   ibague_corregimientos_poblacion.csv
   ibague_veredas.geojson              (opcional)
   ibague_veredas_poblacion.csv        (opcional)
+
 /data/dane_tolima_poblacion.csv
 DIVIPOLA,MUNICIPIO,ANIO,POBLACION,AREA_KM2
 73001,IBAGUE,2020,541101,
