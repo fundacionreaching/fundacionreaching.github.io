@@ -200,6 +200,39 @@
 </script>
 
 
+  <!-- Leaflet JS (primario) -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin="anonymous"></script>
+
+<!-- Fallback dinámico a jsDelivr si Leaflet no carga -->
+<script>
+  (function(){
+    function ensureLeaflet(cb){
+      if (window.L) { cb && cb(); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
+      s.onload = cb; document.head.appendChild(s);
+    }
+    window.__ensureLeaflet = ensureLeaflet;
+  })();
+</script>
+
+<!-- MarkerCluster (primario) + fallback dinámico -->
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+  (function(){
+    function ensureCluster(cb){
+      if (window.L && L.MarkerClusterGroup) { cb && cb(); return; }
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js';
+      s.onload = cb; document.head.appendChild(s);
+    }
+    window.__ensureCluster = ensureCluster;
+  })();
+</script>
+
+
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
