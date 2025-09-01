@@ -107,6 +107,16 @@
           <label class="badge" title="Escalar por población (tamaño de círculo)">
             <input id="chkPob" type="checkbox" checked> Población
           </label>
+          <div>
+  <label style="display:block;margin-bottom:.35rem;color:var(--muted)">Accesos rápidos</label>
+  <div class="cta-row">
+    <button id="btnComunas" title="Centrar y ver estadísticas de Comunas">📍 Comunas</button>
+    <button id="btnCorreg" title="Centrar y ver estadísticas de Corregimientos">🏞️ Corregimientos</button>
+    <button id="btnDepto" title="Centrar y ver estadísticas del Departamento">🗺️ Departamento</button>
+  </div>/
+
+</div>
+
         </div>
       </div>
 
@@ -122,7 +132,14 @@
     </div>
   </section>
 
-  <div id="map"></div>
+  <div id="map"></div><div id="infobox" class="infobox" hidden>
+  <header>
+    <h4 id="infoTitle">Información</h4>
+    <button id="infoClose" class="close">✕</button>
+  </header>
+  <div class="body" id="infoBody"></div>
+</div>
+
   <footer>
     Ibagué, Tolima · Datos: <code>datos/ibague.json</code> (si existe) o muestra integrada · "Todo lo que hagáis, hacedlo de corazón" (Col 3:23)
   </footer>
@@ -139,6 +156,60 @@
   const $$ = (sel)=>Array.from(document.querySelectorAll(sel));
 
   const initialView = {lat: 4.4389, lng: -75.2320, zoom: 12};
+
+  // ===== Botones de acceso rápido e InfoBox =====
+const infoBox = document.querySelector('#infobox');
+const infoTitle = document.querySelector('#infoTitle');
+const infoBody  = document.querySelector('#infoBody');
+const infoClose = document.querySelector('#infoClose');
+infoClose.addEventListener('click', ()=> infoBox.hidden = true);
+
+function sumPob(items){ return items.reduce((a,b)=> a + (Number(b.pob)||0), 0); }
+function topByPob(items, n=5){ return items.filter(x=>Number(x.pob)).sort((a,b)=>(b.pob||0)-(a.pob||0)).slice(0,n); }
+function boundsFromItems(items){
+  const pts = items.filter(x=>isFinite(x.lat)&&isFinite(x.lng)).map(x=> L.latLng(x.lat,x.lng));
+  if(!pts.length) return null; return L.latLngBounds(pts);
+}
+function showInfo(title, html){ infoTitle.textContent = title; infoBody.innerHTML = html; infoBox.hidden = false; }
+
+function renderStats(label, items){
+  const total = items.length;
+  const pob = sumPob(items);
+  const top = topByPob(items);
+  const list = top.map(x=>`<li>${x.nombre} <span class="muted">(${(x.pob||0).toLocaleString('es-CO')})</span></li>`).join('');
+  return `
+    <p><strong>Total ${label}:</strong> ${total.toLocaleString('es-CO')}</p>
+    <p><strong>Población registrada:</strong> ${pob.toLocaleString('es-CO')}</p>
+    ${top.length? `<p class="muted">Top por población</p><ol>${list}</ol>`: '<p class="muted">Sin datos de población suficientes.</p>'}
+  `;
+}
+
+document.querySelector('#btnComunas')?.addEventListener('click', ()=>{
+  const items = dataset.comunas||[];
+  const b = boundsFromItems(items);
+  if(b) map.fitBounds(b.pad(0.2));
+  showInfo('Comunas de Ibagué', renderStats('comunas', items));
+});
+
+document.querySelector('#btnCorreg')?.addEventListener('click', ()=>{
+  const items = dataset.corregimientos||[];
+  const b = boundsFromItems(items);
+  if(b) map.fitBounds(b.pad(0.2));
+  showInfo('Corregimientos de Ibagué', renderStats('corregimientos', items));
+});
+
+document.querySelector('#btnDepto')?.addEventListener('click', ()=>{
+  const items = [...(dataset.comunas||[]), ...(dataset.corregimientos||[])];
+  if(window.tolimaLayer && tolimaLayer.getBounds){ map.fitBounds(tolimaLayer.getBounds().pad(0.05)); }
+  else { const b = boundsFromItems(items); if(b) map.fitBounds(b.pad(0.3)); }
+  const html = `
+    <p><strong>Departamento del Tolima</strong></p>
+    ${renderStats('unidades (comunas + corregimientos)', items)}
+    <p class="muted">El contorno departamental se carga desde <code>tolima.geojson</code> (si existe) o desde OSM.</p>
+  `;
+  showInfo('Departamento del Tolima', html);
+});
+
 
   // Restore state from URL or localStorage
   function parseStateFromURL(){
