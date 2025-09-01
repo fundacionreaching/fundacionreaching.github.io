@@ -179,6 +179,26 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<script>
+  // Arranque seguro: espera Leaflet + Cluster antes de ejecutar el mapa
+  (function(){
+    function start(){
+      if (!window.L) { showFatal('Leaflet no cargó. Revisa conexión/CDN.'); return; }
+      __main(); // llamará a tu código principal
+    }
+    window.__ensureLeaflet(function(){
+      window.__ensureCluster(start);
+    });
+  })();
+
+  function showFatal(msg){
+    var h = document.getElementById('health');
+    if (!h) { alert(msg); return; }
+    h.hidden = false;
+    h.classList.add('bad');
+    h.innerHTML = '❌ ' + msg + ' · Intenta Ctrl+F5 o abre con ?v=123';
+  }
+</script>
 
 
 <!-- Fallback dinámico a jsDelivr si Leaflet no carga -->
