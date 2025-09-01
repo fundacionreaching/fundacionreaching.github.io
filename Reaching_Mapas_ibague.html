@@ -1,407 +1,358 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Fundación Reaching — Mapas Ibagué: Comunas & Corregimientos</title>
-  <meta name="description" content="Plataforma Fundación Reaching — Ibagué (Colombia). 13 comunas y 17 corregimientos con vista simple/detallada, etiquetas, población, auto‑densidad por zoom, búsqueda, compartir enlace, persistencia local y diseño optimizado para móviles." />
-  <meta name="theme-color" content="#0b1020">
-
-  <!-- Leaflet CSS (local con fallback a CDN) -->
-  <link rel="stylesheet" href="assets/leaflet/leaflet.css" id="leafletCSSLocal"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa de Ibagué – Fundación Reaching</title>
+  <meta name="description" content="Mapa interactivo de Ibagué (comunas y corregimientos) con búsqueda, compartir por enlace y persistencia local." />
+  <link rel="preconnect" href="https://{s}.tile.openstreetmap.org" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous"/>
+  <!-- Leaflet MarkerCluster CSS (opcional para auto-densidad) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
   <style>
     :root{
-      --bg: #0b1020;
-      --panel: #121a33;
-      --panel-2: #0f1730;
-      --line: #1f2a4d;
-      --line-2:#27335f;
-      --text:#e8eef7;
-      --muted:#b6c3e4;
-      --accent:#4cc9f0; /* Reaching azul */
-      --accent-2:#ffd166; /* comunas */
-      --accent-3:#06d6a0; /* corregimientos */
-      --label-font-size: 22px;
-      --radius: 14px;
-      --pad: 12px;
-      --shadow: 0 10px 30px rgba(0,0,0,.45);
+      --brand:#0ea5e9; /* sky-500 */
+      --bg:#0b1220;
+      --panel:#0f172a; /* slate-900 */
+      --text:#e2e8f0; /* slate-200 */
+      --muted:#94a3b8; /* slate-400 */
+      --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
     }
-    @media (min-width:768px){ :root{ --label-font-size: 24px; } }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
+    #app{display:flex;flex-direction:column;height:100%;}
+    header{
+      position:sticky;top:0;z-index:1000;
+      background:linear-gradient( to right, rgba(2,6,23,.9), rgba(2,6,23,.7));
+      border-bottom:1px solid rgba(148,163,184,.2);
+      backdrop-filter: blur(6px);
+    }
+    .wrap{display:flex;gap:.75rem;align-items:center;justify-content:space-between;padding:.6rem .9rem;}
+    .brand{display:flex;align-items:center;gap:.6rem;font-weight:700}
+    .brand .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--brand);box-shadow:0 0 0 .25rem rgba(14,165,233,.25)}
+    .brand a{color:var(--text);text-decoration:none}
+    .controls-toggle{appearance:none;border:1px solid rgba(148,163,184,.3);background:transparent;color:var(--text);padding:.45rem .7rem;border-radius:.75rem;cursor:pointer}
+    .controls-toggle:hover{border-color:var(--brand)}
 
-    html, body { height: 100%; margin: 0; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; background:var(--bg); color:var(--text); }
-    #app { display:flex; flex-direction:column; height:100%; }
+    #main{display:grid;grid-template-rows:auto 1fr;grid-template-columns:1fr;min-height:0}
+    #panel{background:var(--panel);border-bottom:1px solid rgba(148,163,184,.2)}
+    #panel.collapsed{display:none}
+    .panel-inner{display:grid;grid-template-columns:1fr;gap:.75rem;padding:.75rem}
+    .row{display:grid;grid-template-columns:1fr auto;gap:.5rem}
+    .search{position:relative}
+    .search input{width:100%;padding:.6rem .75rem;border-radius:.6rem;background:#0b1220;border:1px solid rgba(148,163,184,.3);color:var(--text)}
+    .suggest{position:absolute;top:100%;left:0;right:0;background:#0b1220;border:1px solid rgba(148,163,184,.3);border-top:none;max-height:240px;overflow:auto;border-bottom-left-radius:.6rem;border-bottom-right-radius:.6rem}
+    .suggest div{padding:.5rem .75rem;cursor:pointer}
+    .suggest div:hover{background:#0f172a}
+    .badges{display:flex;flex-wrap:wrap;gap:.5rem}
+    .badge{display:inline-flex;gap:.4rem;align-items:center;padding:.35rem .55rem;border-radius:999px;border:1px solid rgba(148,163,184,.3);font-size:.85rem;color:var(--muted)}
+    .badge input{accent-color:var(--brand)}
+    .cta-row{display:flex;gap:.5rem;flex-wrap:wrap}
+    button, .link-btn{appearance:none;border:none;background:var(--brand);color:white;padding:.55rem .8rem;border-radius:.7rem;cursor:pointer;font-weight:600}
+    .link-btn{background:#1f2937}
+    .link-btn:hover{background:#111827}
 
-    /* Header */
-    header { position:sticky; top:0; z-index:30; background:linear-gradient(180deg, rgba(18,26,51,.97), rgba(18,26,51,.92)); border-bottom:1px solid var(--line); backdrop-filter:saturate(1.2) blur(6px); }
-    .bar { display:flex; gap:10px; align-items:center; padding:10px var(--pad); flex-wrap:wrap; }
-    .brand { display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.2px; }
-    .brand .logo { width:28px; height:28px; border-radius:8px; background: conic-gradient(from 210deg, var(--accent-2), var(--accent-3), var(--accent)); box-shadow: inset 0 0 0 2px rgba(255,255,255,.12);}    
-    h1 { margin:0; font-size:16px; }
-    .sub { font-size:12px; color:var(--muted); margin-left:6px }
+    #map{flex:1;min-height:calc(100vh - 140px)}
+    footer{font-size:.85rem;color:var(--muted);padding:.5rem .9rem;border-top:1px solid rgba(148,163,184,.2);background:#0b1220}
+    a, a:visited{color:#7dd3fc}
 
-    /* Panel de controles */
-    details.controls { background:var(--panel-2); border-top:1px solid var(--line-2); border-bottom:1px solid var(--line); }
-    details.controls[open] { box-shadow: 0 6px 20px rgba(0,0,0,.25); }
-    summary { list-style:none; cursor:pointer; padding:10px var(--pad); display:flex; align-items:center; gap:10px; }
-    summary::-webkit-details-marker{ display:none; }
-    .kpis { margin-left:auto; display:flex; gap:6px; font-size:12px; color:var(--muted); align-items:center; }
-
-    .pill { background: var(--panel-2); border:1px solid var(--line-2); padding:8px 10px; border-radius: var(--radius); display:flex; gap:8px; align-items:center; }
-    .row { display:grid; gap:10px; grid-template-columns: 1fr; padding: 0 var(--pad) var(--pad); }
-    @media (min-width:560px){ .row{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-    @media (min-width:980px){ .row{ grid-template-columns: repeat(4, minmax(0,1fr)); } }
-
-    label { font-size: 13px; color:var(--muted); }
-    select, input[type="range"], input[type="text"], input[type="checkbox"]{ background:#0a1228; color:var(--text); border:1px solid #283562; border-radius:10px; padding:8px 10px; }
-
-    .btn{ cursor:pointer; border:1px solid var(--line-2); padding:8px 12px; border-radius:12px; background:#0a1228; color:var(--text); font-weight:600; }
-    .btn.active{ background:#13223a; }
-    .btn.icon { display:inline-flex; align-items:center; gap:8px; }
-
-    /* Mapa */
-    #map { flex:1; width:100%; }
-    .leaflet-container { background: #081022; }
-
-    /* Etiquetas */
-    .marker-label { font-size: var(--label-font-size); font-weight: 900; letter-spacing: .3px; color: #fff; text-shadow: 0 0 4px rgba(0,0,0,.7), 0 1px 8px rgba(0,0,0,.9); white-space: nowrap; }
-    .marker-badge { backdrop-filter: blur(2px); background: rgba(2,10,25,.40); color: #fff; border: 1px solid rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 8px; font-weight:800; display:inline-block; margin-left: 6px; }
-
-    /* Conmutadores globales */
-    .labels-off .leaflet-tooltip { display:none !important; }
-    .pop-off .marker-badge { display:none !important; }
-    .compact :root, .compact .marker-label { font-size: calc(var(--label-font-size) * .78); font-weight:800 }
-
-    /* Búsqueda y acciones */
-    .fab { position: absolute; z-index: 900; right: 12px; display:flex; flex-direction:column; gap:8px; }
-    .fab.top { top: 86px; }
-    .chip { background:var(--panel-2); border:1px solid var(--line-2); color:var(--text); padding:8px 10px; border-radius:12px; box-shadow: var(--shadow); display:flex; align-items:center; gap:8px; }
-    .chip input[type="text"]{ width: 180px; max-width: 58vw; }
-
-    /* Leyenda */
-    .legend { position:absolute; z-index:800; bottom:14px; left:14px; background:var(--panel-2); border:1px solid var(--line-2); border-radius:12px; padding:10px 12px; box-shadow: var(--shadow); font-size:13px; color:#c9d6f3; }
-    .legend .row{ display:flex; align-items:center; gap:8px; margin:6px 0; }
-    .dot{ width:12px; height:12px; border-radius:50%; display:inline-block; border:1px solid rgba(255,255,255,.4); }
-    .sep{height:1px;background:#22305c;margin:6px 0}
-
-    /* Accesibilidad */
-    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media(min-width:720px){
+      .panel-inner{grid-template-columns:2fr 1fr 1fr}
+      .row{grid-template-columns:1fr 1fr}
+    }
   </style>
 </head>
 <body>
-<div id="app" class="compact">
+<div id="app">
   <header>
-    <div class="bar">
-      <div class="brand" aria-label="Fundación Reaching — Mapas">
-        <div class="logo" aria-hidden="true"></div>
-        <div>
-          <h1>Fundación Reaching — Ibagué</h1>
-          <div class="sub">Encuentro con Dios & Oración Mundial RTV</div>
-        </div>
+    <div class="wrap">
+      <div class="brand">
+        <span class="dot"></span>
+        <a href="/">Fundación Reaching</a>
+        <span style="opacity:.7">·</span>
+        <span>Mapa de Ibagué (Comunas & Corregimientos)</span>
       </div>
-      <div class="kpis" aria-live="polite">
-        <span id="kpiLayer">Comunas</span>
-        <span>•</span>
-        <span id="kpiCount">13</span>
-      </div>
+      <button id="toggle" class="controls-toggle" aria-expanded="true">Controles</button>
     </div>
-
-    <details class="controls">
-      <summary>
-        <strong>Controles</strong>
-        <span class="kpis"><span id="modeLabel">Simple</span> · <span id="zoomLabel">Z12</span></span>
-      </summary>
-
-      <div class="row" role="group" aria-label="Controles del mapa">
-        <div class="pill" style="gap:6px">
-          <span>Vista:</span>
-          <button class="btn" id="mSimple" aria-pressed="true">Simple</button>
-          <button class="btn" id="mDet" aria-pressed="false">Detallada</button>
-        </div>
-
-        <div class="pill">
-          <label for="viewSel">Capa:</label>
-          <select id="viewSel" aria-label="Seleccionar capa">
-            <option value="comunas" selected>Comunas (13)</option>
-            <option value="corregimientos">Corregimientos (17)</option>
-          </select>
-        </div>
-
-        <div class="pill">
-          <label for="fontSel">Tamaño de letra:</label>
-          <input id="fontSel" type="range" min="16" max="42" step="1" value="22" />
-        </div>
-
-        <div class="pill" style="gap:10px">
-          <label><input type="checkbox" id="cbLabels" checked> Etiquetas</label>
-          <label><input type="checkbox" id="cbPop"> Población</label>
-          <label><input type="checkbox" id="cbAuto" checked> Auto‑densidad</label>
-        </div>
-
-        <div class="pill" style="gap:10px">
-          <button class="btn icon" id="btnShare" title="Compartir vista"><span>🔗</span> Compartir</button>
-          <button class="btn icon" id="btnReset" title="Restablecer"><span>♻️</span> Reset</button>
-        </div>
-      </div>
-    </details>
   </header>
 
-  <div id="map" role="region" aria-label="Mapa principal de Ibagué"></div>
+  <section id="panel">
+    <div class="panel-inner">
+      <div class="row">
+        <div class="search">
+          <label for="q" style="display:block;margin-bottom:.35rem;color:var(--muted)">Búsqueda con autocompletar</label>
+          <input id="q" type="search" placeholder="Comuna, corregimiento o barrio…" autocomplete="off"/>
+          <div id="suggest" class="suggest" hidden></div>
+        </div>
+        <div class="cta-row">
+          <button id="btnShare" title="Compartir estado del mapa (URL)">🔗 Compartir</button>
+          <button id="btnReset" class="link-btn" title="Limpiar estado local">⟳ Restablecer</button>
+        </div>
+      </div>
 
-  <!-- Búsqueda y acciones flotantes -->
-  <div class="fab top" aria-live="polite">
-    <div class="chip" role="search">
-      <span>🔎</span>
-      <input id="searchBox" type="text" placeholder="Buscar comuna/corregimiento…" list="dl-nombres" aria-label="Buscar por nombre" />
-      <datalist id="dl-nombres"></datalist>
+      <div>
+        <div class="badges">
+          <label class="badge" title="Vista simple vs detallada">
+            <input id="chkDetallado" type="checkbox"> Detallada
+          </label>
+          <label class="badge" title="Auto-agrupación por densidad (cluster)">
+            <input id="chkCluster" type="checkbox" checked> Auto‑densidad
+          </label>
+          <label class="badge" title="Escalar por población (tamaño de círculo)">
+            <input id="chkPob" type="checkbox" checked> Población
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label style="display:block;margin-bottom:.35rem;color:var(--muted)">Capa base</label>
+        <div class="badges">
+          <label class="badge"><input type="radio" name="base" value="osm" checked> OSM</label>
+          <label class="badge"><input type="radio" name="base" value="light"> Claro</label>
+          <label class="badge"><input type="radio" name="base" value="sat"> Satélite</label>
+        </div>
+      </div>
+
     </div>
-  </div>
+  </section>
 
-  <div class="legend" aria-label="Leyenda">
-    <div class="row"><span class="dot" style="background:var(--accent-2)"></span> Comunas</div>
-    <div class="row"><span class="dot" style="background:var(--accent-3)"></span> Corregimientos</div>
-    <div class="sep"></div>
-    <div class="row">Arrastra con un dedo • Zoom con dos dedos</div>
-  </div>
+  <div id="map"></div>
+  <footer>
+    Ibagué, Tolima · Datos: <code>datos/ibague.json</code> (si existe) o muestra integrada · "Todo lo que hagáis, hacedlo de corazón" (Col 3:23)
+  </footer>
 </div>
 
-<!-- Leaflet JS (local + fallback) -->
-<script src="assets/leaflet/leaflet.js" id="leafletJSLocal"></script>
-<script>
-  // Fallbacks CSS/JS si no cargan locales
-  (function ensureLeafletAssets(){
-    function add(css){ document.head.appendChild(css); }
-    function addJS(src){ const s=document.createElement('script'); s.src=src; document.body.appendChild(s); }
-    const probe=document.createElement('div'); probe.className='leaflet-container'; probe.style.position='absolute'; probe.style.left='-9999px'; document.body.appendChild(probe);
-    setTimeout(()=>{
-      const cs=getComputedStyle(probe);
-      const cssOK = cs.cursor==='grab' || cs.overflow==='hidden';
-      if(!cssOK){ const cdn=document.createElement('link'); cdn.rel='stylesheet'; cdn.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css'; add(cdn); }
-      probe.remove();
-    }, 200);
-    setTimeout(()=>{ if(!(window.L && L.map)){ addJS('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'); } }, 400);
-  })();
-</script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
-  // === Utilidades ===
-  const $ = sel => document.querySelector(sel);
-  const fmt = n => (n||n===0)? Number(n).toLocaleString('es-CO') : '—';
-  const persist = {
-    get(k, def){ try{ const v=localStorage.getItem('rx_'+k); return v!==null? JSON.parse(v): def; }catch{ return def; } },
-    set(k, v){ try{ localStorage.setItem('rx_'+k, JSON.stringify(v)); }catch{} }
+(function(){
+  const LS_KEY = 'reaching.ibague.state.v1';
+  const $ = (sel)=>document.querySelector(sel);
+  const $$ = (sel)=>Array.from(document.querySelectorAll(sel));
+
+  const initialView = {lat: 4.4389, lng: -75.2320, zoom: 12};
+
+  // Restore state from URL or localStorage
+  function parseStateFromURL(){
+    const p = new URLSearchParams(location.search);
+    const state = {};
+    if(p.has('lat')) state.lat = parseFloat(p.get('lat'));
+    if(p.has('lng')) state.lng = parseFloat(p.get('lng'));
+    if(p.has('z')) state.zoom = parseInt(p.get('z'));
+    if(p.has('det')) state.det = p.get('det') === '1';
+    if(p.has('cl')) state.cluster = p.get('cl') === '1';
+    if(p.has('pop')) state.pop = p.get('pop') === '1';
+    if(p.has('base')) state.base = p.get('base');
+    return state;
+  }
+  function loadState(){
+    try{
+      const urlState = parseStateFromURL();
+      const ls = localStorage.getItem(LS_KEY);
+      const lsState = ls? JSON.parse(ls): {};
+      return Object.assign({}, lsState, urlState);
+    }catch(e){return {}};
+  }
+  function saveState(partial){
+    const current = loadState();
+    const next = Object.assign({}, current, partial);
+    localStorage.setItem(LS_KEY, JSON.stringify(next));
+  }
+
+  const state = Object.assign({}, {det:false, cluster:true, pop:true, base:'osm'}, loadState());
+
+  // Map + baselayers
+  const baseLayers = {
+    osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap'}),
+    light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {maxZoom: 20, attribution: '&copy; Carto, OSM'}),
+    sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 19, attribution: '&copy; Esri, Maxar'})
+  };
+  const map = L.map('map', { zoomControl: true, attributionControl: true });
+  (baseLayers[state.base] || baseLayers.osm).addTo(map);
+  map.setView([state.lat || initialView.lat, state.lng || initialView.lng], state.zoom || initialView.zoom);
+
+  function switchBase(name){
+    Object.values(baseLayers).forEach(l => map.removeLayer(l));
+    (baseLayers[name] || baseLayers.osm).addTo(map);
+    saveState({base: name});
+  }
+
+  // UI bindings
+  $('#toggle').addEventListener('click', ()=>{
+    const p = $('#panel');
+    const exp = p.classList.toggle('collapsed');
+    $('#toggle').setAttribute('aria-expanded', !exp);
+  });
+
+  const chkDet = $('#chkDetallado');
+  const chkClu = $('#chkCluster');
+  const chkPop = $('#chkPob');
+  chkDet.checked = !!state.det;
+  chkClu.checked = state.cluster !== false;
+  chkPop.checked = state.pop !== false;
+
+  $$('input[name="base"]').forEach(r=>{
+    r.checked = (r.value === state.base);
+    r.addEventListener('change', ()=>switchBase(r.value));
+  });
+
+  // Data handling
+  let dataset = { comunas: [], corregimientos: [] };
+
+  async function fetchJSON(url){
+    const res = await fetch(url, {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return await res.json();
+  }
+
+  // Fallback inline sample (minimal)
+  const inlineSample = {
+    comunas: [ {id:1, nombre:'Centro', lat:4.4389, lng:-75.2320, pob:31009} ],
+    corregimientos: [ {id:11, nombre:'San Juan de la China', lat:4.53333, lng:-75.20000, pob:2000} ]
   };
 
-  // Geocodificación (fallback para puntos sin lat/lng)
-  const geoCache = { get: (k)=>{ try{ return JSON.parse(localStorage.getItem('rx_geo_'+k)) }catch{ return null } }, set: (k,v)=>{ try{ localStorage.setItem('rx_geo_'+k, JSON.stringify(v)) }catch{} } };
-  const queue = [];
-  let ticking=false;
-  function geocodeNext(){
-    if(ticking || queue.length===0) return; ticking=true;
-    const job = queue.shift();
-    const q = encodeURIComponent(job.q);
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=co&accept-language=es&q=${q}`;
-    fetch(url, {headers:{'Accept':'application/json'}})
-      .then(r=>r.json())
-      .then(arr=>{ if(arr && arr[0]){ const lat=+arr[0].lat, lng=+arr[0].lon; geoCache.set(job.key,{lat,lng}); job.onDone({lat,lng}); } else job.onDone(null); })
-      .catch(()=>job.onDone(null))
-      .finally(()=>{ setTimeout(()=>{ ticking=false; geocodeNext(); }, 900); }); // 1 req ~ cada 0.9s
-  }
-  function ensureCoords(obj, scope, onReady){
-    if(typeof obj.lat==='number' && typeof obj.lng==='number'){ onReady(obj); return; }
-    const key = `${scope}:${obj.id}:${obj.nombre}`;
-    const cached = geoCache.get(key);
-    if(cached){ obj.lat=cached.lat; obj.lng=cached.lng; onReady(obj); return; }
-    const q = scope==='comuna' ? `Comuna ${obj.id} ${obj.nombre}, Ibagué, Tolima, Colombia` : `${obj.nombre}, Ibagué, Tolima, Colombia`;
-    queue.push({ key, q, onDone: (pt)=>{ if(pt){ obj.lat=pt.lat; obj.lng=pt.lng; } onReady(obj); }});
-    geocodeNext();
-  }
-
-  // === Carga de datos ===
-  async function loadDatos(){
-    // Intenta cargar desde /datos/ibague.json (formato {comunas:[{id,nombre,lat,lng,pob}], corregimientos:[...]})
+  // Geocode missing lat/lng using Nominatim
+  async function geocodeIfMissing(entry, scope){
+    if(typeof entry.lat === 'number' && typeof entry.lng === 'number') return entry;
+    const q = `${entry.nombre}, ${scope}`;
     try{
-      const r = await fetch('datos/ibague.json', {cache:'no-store'});
-      if(r.ok){ return await r.json(); }
-    }catch(e){ /* continua a fallback */ }
-    // Fallback mínimo para asegurar visualización inmediata
-    return {
-      comunas:[
-        { id: 1, nombre:'Centro', pob: 31009 },
-        { id: 2, nombre:'Calambeo', pob: 41219 },
-        { id: 3, nombre:'San Simón', pob: 24603 }
-      ],
-      corregimientos:[
-        { id:11, nombre:'San Juan de la China' },
-        { id:12, nombre:'San Bernardo' },
-        { id:13, nombre:'El Salado' },
-        { id:14, nombre:'Buenos Aires' },
-        { id:15, nombre:'Carmen de Bulira' },
-        { id:16, nombre:'El Totumo' },
-        { id:17, nombre:'La Florida' }
-      ]
-    };
+      const url = new URL('https://nominatim.openstreetmap.org/search');
+      url.searchParams.set('q', q);
+      url.searchParams.set('format','jsonv2');
+      url.searchParams.set('limit','1');
+      const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'es' } });
+      const js = await res.json();
+      if(js && js[0]){
+        entry.lat = parseFloat(js[0].lat); entry.lng = parseFloat(js[0].lon);
+      }
+    }catch(e){ console.warn('Geocode falló', q, e); }
+    return entry;
   }
 
-  // === App ===
-  function initApp(){
-    const qs = new URLSearchParams(location.search);
-    let view   = qs.get('view')|| persist.get('view','comunas');
-    let font   = parseInt(qs.get('font')|| persist.get('font',22),10);
-    let mode   = qs.get('mode')|| persist.get('mode','simple'); // simple|detallado
-    let labels = (qs.get('labels') ?? persist.get('labels','1'))==='1';
-    let pop    = (qs.get('pop')    ?? (mode==='detallado'?'1':persist.get('pop','0')))==='1';
-    let autod  = (qs.get('autod')  ?? persist.get('autod','1'))==='1';
+  // Layers
+  let clusterGroup = L.markerClusterGroup({ disableClusteringAtZoom: 15 });
+  let plainGroup = L.layerGroup();
 
-    const fontSel = $('#fontSel');
-    const viewSel = $('#viewSel');
-    const cbLabels= $('#cbLabels');
-    const cbPop   = $('#cbPop');
-    const cbAuto  = $('#cbAuto');
-    const mSimple = $('#mSimple');
-    const mDet    = $('#mDet');
-    const searchBox = $('#searchBox');
-    const kpiLayer = $('#kpiLayer');
-    const kpiCount = $('#kpiCount');
-    const modeLabel= $('#modeLabel');
-    const zoomLabel= $('#zoomLabel');
+  function radiusByPop(p){
+    if(!p || !chkPop.checked) return 8;
+    // escala suave
+    return Math.max(6, Math.min(30, Math.sqrt(p)/2));
+  }
 
-    // UI inicial
-    document.documentElement.style.setProperty('--label-font-size', font+'px');
-    fontSel.value = font;
-    viewSel.value = view;
-    cbLabels.checked = labels;
-    cbPop.checked    = pop;
-    cbAuto.checked   = autod;
-    (mode==='simple'?mSimple:mDet).classList.add('active');
-    document.body.classList.toggle('labels-off', !labels);
-    document.body.classList.toggle('pop-off', !pop);
-    document.body.classList.toggle('compact', mode==='simple');
-    modeLabel.textContent = mode==='simple'?'Simple':'Detallada';
+  function markerFor(item, type){
+    const color = type==='comuna'? '#22c55e': '#eab308';
+    if(state.det || chkDet.checked){
+      return L.circleMarker([item.lat, item.lng], {
+        radius: radiusByPop(item.pob), color, weight:1, fillColor: color, fillOpacity:.35
+      }).bindPopup(`<strong>${item.nombre}</strong><br>${type}<br>${item.pob?('Pob: '+item.pob.toLocaleString('es-CO')):''}`);
+    }
+    return L.marker([item.lat, item.lng], {
+      title: item.nombre,
+    }).bindPopup(`<strong>${item.nombre}</strong><br>${type}`);
+  }
 
-    const CENTER=[4.4447,-75.2432];
-    const map=L.map('map',{zoomControl:true,minZoom:11,maxZoom:18, tap: true});
-    map.setView(CENTER,12);
+  function buildIndex(){
+    const idx = [];
+    dataset.comunas.forEach(x=>idx.push({tipo:'Comuna', nombre:x.nombre, lat:x.lat, lng:x.lng}));
+    dataset.corregimientos.forEach(x=>idx.push({tipo:'Corregimiento', nombre:x.nombre, lat:x.lat, lng:x.lng}));
+    return idx.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  }
 
-    const base=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-    const fb=['https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png','https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png'];
-    let idx=0;base.on('tileerror',()=>{ if(idx<fb.length){ try{ base.setUrl(fb[idx++]); }catch(e){} } });
+  let searchIndex = [];
 
-    // Cargar datos y construir capas
-    loadDatos().then(data=>{
-      const colorComuna=getComputedStyle(document.documentElement).getPropertyValue('--accent-2').trim()||'#ffd166';
-      const colorCorreg=getComputedStyle(document.documentElement).getPropertyValue('--accent-3').trim()||'#06d6a0';
-      const capCom=L.layerGroup(), capCor=L.layerGroup();
+  function renderLayers(){
+    clusterGroup.clearLayers();
+    plainGroup.clearLayers();
+    const toLayer = chkClu.checked ? clusterGroup : plainGroup;
+    dataset.comunas.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)) toLayer.addLayer(markerFor(x,'Comuna')); });
+    dataset.corregimientos.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)) toLayer.addLayer(markerFor(x,'Corregimiento')); });
+    if(!map.hasLayer(toLayer)) toLayer.addTo(map);
+    if(map.hasLayer(clusterGroup) && !chkClu.checked) map.removeLayer(clusterGroup);
+    if(map.hasLayer(plainGroup) && chkClu.checked) map.removeLayer(plainGroup);
+  }
 
-      // Almacenamos referencias
-      const store={ com:[], cor:[] };
+  function applyStateBindings(){
+    saveState({ det: chkDet.checked, cluster: chkClu.checked, pop: chkPop.checked });
+    renderLayers();
+  }
+  chkDet.addEventListener('change', applyStateBindings);
+  chkClu.addEventListener('change', applyStateBindings);
+  chkPop.addEventListener('change', applyStateBindings);
 
-      function makeCircle(lat,lng,color){ return L.circleMarker([lat,lng],{ radius: 9, color:'rgba(255,255,255,.35)', weight:1, fillColor:color, fillOpacity:.45 }); }
-      function labelHTML(p){ const badge = `<span class="marker-badge">Pobl: ${fmt(p.pob)}</span>`; return `<span>${p.id}. ${p.nombre}</span> ${badge}`; }
-
-      // autocompletar búsqueda
-      const dl=$('#dl-nombres');
-      [...(data.comunas||[]), ...(data.corregimientos||[])].forEach(p=>{ const o=document.createElement('option'); o.value = `${p.id}. ${p.nombre}`; dl.appendChild(o); });
-
-      function addLabel(entry){ if(entry.tooltipAdded) return; entry.m.bindTooltip(labelHTML(entry.data),{permanent:true,direction:'top',className:'marker-label',offset:[0,-6]}); entry.tooltipAdded=true; }
-      function removeLabel(entry){ if(!entry.tooltipAdded) return; entry.m.unbindTooltip(); entry.tooltipAdded=false; }
-
-      function addMarker(scope, obj){
-        const color = scope==='corregimientos'? colorCorreg : colorComuna;
-        const m=makeCircle(obj.lat,obj.lng,color).addTo(scope==='corregimientos'?capCor:capCom);
-        const entry = {m, data:obj, layer: scope==='corregimientos'?capCor:capCom};
-        if(scope==='corregimientos') store.cor.push(entry); else store.com.push(entry);
-        return entry;
-      }
-
-      function build(scope, arr){
-        arr.forEach((c)=>{
-          if(typeof c.lat==='number' && typeof c.lng==='number'){ addMarker(scope,c); }
-          else {
-            ensureCoords(c, scope==='corregimientos'?'corregimiento':'comuna', (obj)=>{ if(obj.lat && obj.lng){ const e=addMarker(scope,obj); if(labels){ addLabel(e); } } });
-          }
-        });
-      }
-
-      build('comunas', data.comunas||[]);
-      build('corregimientos', data.corregimientos||[]);
-
-      function applyDensity(which){
-        const zoom=map.getZoom();
-        const arr = (which==='corregimientos'?store.cor:store.com);
-        zoomLabel.textContent = 'Z'+zoom;
-        // Reglas simples: <12 ninguna etiqueta; 12–13 mitad; >=14 todas
-        let show=0; if(zoom>=14) show=2; else if(zoom>=12) show=1; else show=0;
-        arr.forEach((e,i)=>{
-          if(!autod){ // si auto-densidad OFF, solo respetar labels ON/OFF global
-            if(labels) addLabel(e); else removeLabel(e); return;
-          }
-          if(!labels){ removeLabel(e); return; }
-          if(show===0){ removeLabel(e); }
-          else if(show===1){ (i%2===0)? addLabel(e): removeLabel(e); }
-          else { addLabel(e); }
-        });
-      }
-
-      function showLayer(which){
-        map.eachLayer(l=>{ if(l!==base) map.removeLayer(l); });
-        const g = which==='corregimientos'?capCor:capCom; g.addTo(map);
-        try{ map.fitBounds(g.getBounds().pad(0.18)); }catch(e){ map.setView(CENTER,12); }
-        applyDensity(which);
-        // KPI
-        kpiLayer.textContent = which==='corregimientos'? 'Corregimientos':'Comunas';
-        kpiCount.textContent = (which==='corregimientos'? (data.corregimientos||[]).length : (data.comunas||[]).length);
-      }
-
-      // Inicial
-      showLayer(view);
-
-      // === UI eventos ===
-      viewSel.addEventListener('change', e=>{ view=e.target.value; sync('view',view); persist.set('view',view); showLayer(view); });
-      fontSel.addEventListener('input', e=>{ font=parseInt(e.target.value,10); document.documentElement.style.setProperty('--label-font-size', font+'px'); sync('font',font); persist.set('font',font); });
-
-      cbLabels.addEventListener('change', e=>{ labels=e.target.checked; document.body.classList.toggle('labels-off', !labels); applyDensity(view); sync('labels', labels?1:0); persist.set('labels',labels?1:0); });
-      cbPop.addEventListener('change', e=>{ pop=e.target.checked; document.body.classList.toggle('pop-off', !pop); sync('pop', pop?1:0); persist.set('pop',pop?1:0); });
-      cbAuto.addEventListener('change', e=>{ autod=e.target.checked; applyDensity(view); sync('autod', autod?1:0); persist.set('autod',autod?1:0); });
-
-      mSimple.addEventListener('click', ()=>{ mode='simple'; mSimple.classList.add('active'); mDet.classList.remove('active'); document.body.classList.add('compact'); if(pop){ pop=false; cbPop.checked=false; document.body.classList.add('pop-off'); } sync('mode','simple'); persist.set('mode','simple'); modeLabel.textContent='Simple'; applyDensity(view); });
-      mDet.addEventListener('click', ()=>{ mode='detallado'; mDet.classList.add('active'); mSimple.classList.remove('active'); document.body.classList.remove('compact'); if(!pop){ pop=true; cbPop.checked=true; document.body.classList.remove('pop-off'); } sync('mode','detallado'); persist.set('mode','detallado'); modeLabel.textContent='Detallada'; applyDensity(view); });
-
-      searchBox.addEventListener('keydown', e=>{ if(e.key!=='Enter') return; doSearch(); });
-      searchBox.addEventListener('change', doSearch);
-      function doSearch(){
-        const q=searchBox.value.trim().toLowerCase(); if(!q) return;
-        const ds=view==='corregimientos'?store.cor:store.com;
-        const hit=ds.find(x=> (`${x.data.id}. ${x.data.nombre}`.toLowerCase()).includes(q) || x.data.nombre.toLowerCase().includes(q) );
-        if(hit){ map.flyTo(hit.m.getLatLng(), 14, {duration:.8}); addLabel(hit); }
-      }
-
-      map.on('zoomend moveend', ()=> applyDensity(view));
-
-      // util
-      function sync(k,v){ const u=new URL(location); u.searchParams.set(k,String(v)); history.replaceState({},'',u); }
-
-      // Compartir / Reset
-      $('#btnShare').addEventListener('click', ()=>{
-        try{ navigator.clipboard.writeText(location.href); alert('🔗 Enlace copiado. ¡Compártelo!'); }catch{ prompt('Copia el enlace:', location.href); }
-      });
-      $('#btnReset').addEventListener('click', ()=>{
-        ['view','font','mode','labels','pop','autod'].forEach(k=>localStorage.removeItem('rx_'+k));
-        const u=new URL(location.origin + location.pathname); location.href=u;
-      });
+  // Search + autocomplete
+  const $q = $('#q');
+  const $sg = $('#suggest');
+  function updateSuggest(list){
+    if(!list.length){ $sg.hidden = true; $sg.innerHTML=''; return; }
+    $sg.hidden = false;
+    $sg.innerHTML = list.slice(0,50).map(item=>`<div data-lat="${item.lat}" data-lng="${item.lng}">🔎 ${item.nombre} <small style="opacity:.7">(${item.tipo})</small></div>`).join('');
+    $sg.querySelectorAll('div').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const lat = parseFloat(el.dataset.lat), lng = parseFloat(el.dataset.lng);
+        map.setView([lat,lng], 14);
+        $sg.hidden = true; $q.value='';
+      })
     });
   }
-
-  // Inicializar cuando Leaflet esté listo
-  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  ready(()=>{
-    function waitForLeaflet(retries=20){
-      if(window.L && L.map){ initApp(); }
-      else if(retries>0){ setTimeout(()=>waitForLeaflet(retries-1), 80); }
-      else { document.getElementById('map').innerHTML='<div style="padding:16px">No se pudo cargar Leaflet. Revisa tu conexión o los assets locales.</div>'; }
-    }
-    waitForLeaflet();
+  $q.addEventListener('input', ()=>{
+    const v = $q.value.trim().toLowerCase();
+    if(!v){ updateSuggest([]); return; }
+    const list = searchIndex.filter(x=>x.nombre.toLowerCase().includes(v));
+    updateSuggest(list);
   });
+  document.addEventListener('click', (e)=>{ if(!$('#suggest').contains(e.target) && e.target!==$q){ $sg.hidden = true; }});
+
+  // Share URL
+  $('#btnShare').addEventListener('click', ()=>{
+    const c = map.getCenter();
+    const params = new URLSearchParams({
+      lat: c.lat.toFixed(5), lng: c.lng.toFixed(5), z: map.getZoom(),
+      det: chkDet.checked? '1':'0', cl: chkClu.checked? '1':'0', pop: chkPop.checked? '1':'0', base: state.base || 'osm'
+    });
+    const url = `${location.origin}${location.pathname}?${params.toString()}`;
+    navigator.clipboard?.writeText(url);
+    alert('Enlace copiado al portapapeles:\n'+url);
+  });
+
+  $('#btnReset').addEventListener('click', ()=>{
+    localStorage.removeItem(LS_KEY);
+    location.href = location.pathname; // recargar sin query
+  });
+
+  // Keep view in state
+  map.on('moveend zoomend', ()=>{
+    const c = map.getCenter();
+    saveState({lat: c.lat, lng: c.lng, zoom: map.getZoom()});
+  });
+
+  // Load data: try external JSON then fallback
+  async function loadData(){
+    try{
+      dataset = await fetchJSON('datos/ibague.json');
+    }catch(e){
+      console.warn('No se encontró datos/ibague.json, usando muestra integrada');
+      dataset = inlineSample;
+    }
+
+    // Geocode missing
+    const scopeCity = 'Ibagué, Tolima, Colombia';
+    const enriched = { comunas: [], corregimientos: [] };
+    for(const it of dataset.comunas||[]){ enriched.comunas.push(await geocodeIfMissing(it, scopeCity)); }
+    for(const it of dataset.corregimientos||[]){ enriched.corregimientos.push(await geocodeIfMissing(it, scopeCity)); }
+    dataset = enriched;
+
+    searchIndex = buildIndex();
+    renderLayers();
+  }
+
+  loadData();
+})();
 </script>
 </body>
 </html>
