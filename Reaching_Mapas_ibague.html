@@ -4,464 +4,161 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mapa de Ibagué – Fundación Reaching</title>
-  <meta name="description" content="Mapa interactivo de Ibagué (comunas, corregimientos, municipios y departamento) con búsqueda, censo de población, compartir por enlace y polígono del Tolima." />
+  <meta name="description" content="Mapa interactivo de Ibagué (comunas, corregimientos, municipios y departamento) con búsqueda, censo poblacional, compartir por enlace y polígono del Tolima." />
   <link rel="preconnect" href="https://{s}.tile.openstreetmap.org" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
   <style>
     :root{ --brand:#0ea5e9; --bg:#0b1220; --panel:#0f172a; --text:#e2e8f0; --muted:#94a3b8; }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,sans-serif}
     #app{display:flex;flex-direction:column;height:100%}
     header{position:sticky;top:0;z-index:1000;background:linear-gradient(to right,rgba(2,6,23,.9),rgba(2,6,23,.7));border-bottom:1px solid rgba(148,163,184,.2);backdrop-filter:blur(6px)}
     .wrap{display:flex;gap:.75rem;align-items:center;justify-content:space-between;padding:.6rem .9rem}
     .brand{display:flex;align-items:center;gap:.6rem;font-weight:700}
-    .brand .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--brand);box-shadow:0 0 0 .25rem rgba(14,165,233,.25)}
+    .brand .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--brand)}
     .brand a{color:var(--text);text-decoration:none}
-    .controls-toggle{appearance:none;border:1px solid rgba(148,163,184,.3);background:transparent;color:var(--text);padding:.45rem .7rem;border-radius:.75rem;cursor:pointer}
-    .controls-toggle:hover{border-color:var(--brand)}
     #panel{background:var(--panel);border-bottom:1px solid rgba(148,163,184,.2)}
     #panel.collapsed{display:none}
-    .panel-inner{display:grid;grid-template-columns:1fr;gap:.75rem;padding:.75rem}
-    .row{display:grid;grid-template-columns:1fr auto;gap:.5rem}
+    .panel-inner{display:grid;gap:.75rem;padding:.75rem}
     .search{position:relative}
     .search input{width:100%;padding:.6rem .75rem;border-radius:.6rem;background:#0b1220;border:1px solid rgba(148,163,184,.3);color:var(--text)}
-    .suggest{position:absolute;top:100%;left:0;right:0;background:#0b1220;border:1px solid rgba(148,163,184,.3);border-top:none;max-height:240px;overflow:auto;border-bottom-left-radius:.6rem;border-bottom-right-radius:.6rem}
+    .suggest{position:absolute;top:100%;left:0;right:0;background:#0b1220;border:1px solid rgba(148,163,184,.3);max-height:240px;overflow:auto}
     .suggest div{padding:.5rem .75rem;cursor:pointer}
     .suggest div:hover{background:#0f172a}
-    .badges{display:flex;flex-wrap:wrap;gap:.5rem}
     .badge{display:inline-flex;gap:.4rem;align-items:center;padding:.35rem .55rem;border-radius:999px;border:1px solid rgba(148,163,184,.3);font-size:.85rem;color:var(--muted)}
     .badge input{accent-color:var(--brand)}
     .cta-row{display:flex;gap:.5rem;flex-wrap:wrap}
-    button,.link-btn{appearance:none;border:none;background:var(--brand);color:white;padding:.55rem .8rem;border-radius:.7rem;cursor:pointer;font-weight:600}
-    .link-btn{background:#1f2937}.link-btn:hover{background:#111827}
-    /* Botones transparentes (ghost) */
-    .ghost{background:transparent !important;border:1px solid rgba(148,163,184,.35);color:var(--text)}
-    .ghost:hover{border-color:var(--brand)}
-    #map{flex:1;min-height:calc(100vh - 140px)}
+    button{appearance:none;border:1px solid rgba(148,163,184,.35);background:transparent;color:var(--text);padding:.55rem .8rem;border-radius:.7rem;cursor:pointer;font-weight:600}
+    button:hover{border-color:var(--brand)}
+    #map{flex:1}
     footer{font-size:.85rem;color:var(--muted);padding:.5rem .9rem;border-top:1px solid rgba(148,163,184,.2);background:#0b1220}
-    a,a:visited{color:#7dd3fc}
-    @media(min-width:720px){.panel-inner{grid-template-columns:2fr 1fr 1fr}.row{grid-template-columns:1fr 1fr}}
-
-    /* Overlay de información */
     .infobox{position:fixed;right:12px;bottom:12px;z-index:1200;max-width:360px;background:#0b1220;border:1px solid rgba(148,163,184,.3);border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.35)}
-    .infobox header{display:flex;align-items:center;justify-content:space-between;padding:.6rem .8rem;border-bottom:1px solid rgba(148,163,184,.15);background:#0f172a}
-    .infobox header h4{margin:0;font-size:1rem;color:#e2e8f0}
-    .infobox .body{padding:.75rem .9rem;color:#e2e8f0}
-    .infobox .muted{color:#94a3b8}
-    .infobox .close{background:transparent;border:1px solid rgba(148,163,184,.3);color:#e2e8f0;border-radius:.5rem;padding:.2rem .5rem;cursor:pointer}
+    .infobox header{display:flex;justify-content:space-between;padding:.6rem .8rem;border-bottom:1px solid rgba(148,163,184,.15)}
+    .infobox .body{padding:.75rem .9rem}
+    .muted{color:#94a3b8}
   </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="wrap">
-      <div class="brand">
-        <span class="dot"></span>
-        <a href="/">Fundación Reaching</a>
-        <span style="opacity:.7">·</span>
-        <span>Mapa de Ibagué (Comunas, Corregimientos, Municipios & Departamento)</span>
-      </div>
-      <button id="toggle" class="controls-toggle" aria-expanded="true">Controles</button>
+      <div class="brand"><span class="dot"></span><a href="/">Fundación Reaching</a><span style="opacity:.7">·</span>Mapa de Ibagué</div>
+      <button id="toggle">Controles</button>
     </div>
   </header>
 
   <section id="panel">
     <div class="panel-inner">
-      <div class="row">
-        <div class="search">
-          <label for="q" style="display:block;margin-bottom:.35rem;color:var(--muted)">Búsqueda con autocompletar</label>
-          <input id="q" type="search" placeholder="Comuna, corregimiento, municipio o barrio…" autocomplete="off"/>
-          <div id="suggest" class="suggest" hidden></div>
-        </div>
-        <div class="cta-row">
-          <button id="btnShare" title="Compartir estado del mapa (URL)">🔗 Compartir</button>
-          <button id="btnReset" class="link-btn" title="Limpiar estado local">⟳ Restablecer</button>
-        </div>
+      <div class="search">
+        <label for="q">Búsqueda</label>
+        <input id="q" type="search" placeholder="Comuna, corregimiento, municipio…"/>
+        <div id="suggest" class="suggest" hidden></div>
       </div>
-
-      <div>
-        <label style="display:block;margin-bottom:.35rem;color:var(--muted)">Capas visibles</label>
-        <div class="badges">
-          <label class="badge"><input id="chkComunas" type="checkbox"> Comunas</label>
-          <label class="badge"><input id="chkCorregs" type="checkbox"> Corregimientos</label>
-          <label class="badge"><input id="chkMunicipios" type="checkbox"> Municipios</label>
-          <label class="badge"><input id="chkDepto" type="checkbox"> Departamento</label>
-        </div>
+      <div class="cta-row">
+        <button id="btnComunas">📍 Comunas</button>
+        <button id="btnCorreg">🏞️ Corregimientos</button>
+        <button id="btnMunicipios">🏘️ Municipios</button>
+        <button id="btnDeptoBtn">🗺️ Departamento</button>
+        <button id="btnShare">🔗 Compartir</button>
+        <button id="btnReset">⟳ Restablecer</button>
       </div>
-
-      <div>
-        <label style="display:block;margin-bottom:.35rem;color:var(--muted)">Accesos rápidos</label>
-        <div class="cta-row">
-          <button id="btnComunas" class="ghost" title="Centrar y ver censo de Comunas">📍 Comunas</button>
-          <button id="btnCorreg" class="ghost" title="Centrar y ver censo de Corregimientos">🏞️ Corregimientos</button>
-          <button id="btnMunicipios" class="ghost" title="Centrar y ver censo de Municipios">🏘️ Municipios</button>
-          <button id="btnDeptoBtn" class="ghost" title="Centrar y ver censo del Departamento">🗺️ Departamento</button>
-        </div>
-      </div>
-
-      <div>
-        <label style="display:block;margin-bottom:.35rem;color:var(--muted)">Capa base</label>
-        <div class="badges">
-          <label class="badge"><input type="radio" name="base" value="osm" checked> OSM</label>
-          <label class="badge"><input type="radio" name="base" value="light"> Claro</label>
-          <label class="badge"><input type="radio" name="base" value="sat"> Satélite</label>
-        </div>
-      </div>
-
     </div>
   </section>
 
   <div id="map"></div>
   <div id="infobox" class="infobox" hidden>
-    <header>
-      <h4 id="infoTitle">Información</h4>
-      <button id="infoClose" class="close">✕</button>
-    </header>
+    <header><h4 id="infoTitle">Información</h4><button id="infoClose">✕</button></header>
     <div class="body" id="infoBody"></div>
   </div>
 
-  <footer>
-    Ibagué, Tolima · Datos: <code>datos/*.json</code> o <code>data/*.json</code> (fusión automática) · Polígono Tolima automático · “Todo lo que hagáis, hacedlo de corazón” (Col 3:23)
-  </footer>
+  <footer>Datos desde <code>datos/*.json</code> o <code>data/*.json</code> · “Todo lo que hagáis, hacedlo de corazón” (Col 3:23)</footer>
 </div>
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
 <script>
 (function(){
-  const LS_KEY = 'reaching.ibague.state.v5';
-  const $ = (sel)=>document.querySelector(sel);
-  const $$ = (sel)=>Array.from(document.querySelectorAll(sel));
+  const $ = s=>document.querySelector(s);
+  const initialView={lat:4.4389,lng:-75.2320,zoom:12};
+  const map=L.map('map').setView([initialView.lat,initialView.lng],initialView.zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-  const initialView = {lat: 4.4389, lng: -75.2320, zoom: 12};
+  let dataset={comunas:[],corregimientos:[],municipios:[]};
+  // Campos opcionales por registro: { id, nombre, lat, lng, pob, fuente, anio }
+  // "fuente" puede ser "DANE CNPV 2018", "DANE Proy.", etc.; "anio" numérico
+  async function fetchJSON(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok) throw new Error(r.status);return r.json();}
 
-  // Restore state from URL or localStorage
-  function parseStateFromURL(){
-    const p = new URLSearchParams(location.search);
-    const state = {};
-    if(p.has('lat')) state.lat = parseFloat(p.get('lat'));
-    if(p.has('lng')) state.lng = parseFloat(p.get('lng'));
-    if(p.has('z')) state.zoom = parseInt(p.get('z'));
-    if(p.has('base')) state.base = p.get('base');
-    if(p.has('view')) state.view = p.get('view'); // 'comunas' | 'corregimientos' | 'ambos'
-    return state;
-  }
-  function loadState(){
-    try{
-      const urlState = parseStateFromURL();
-      const ls = localStorage.getItem(LS_KEY);
-      const lsState = ls? JSON.parse(ls): {};
-      return Object.assign({view:'ambos'}, lsState, urlState);
-    }catch(e){return {view:'ambos'}};
-  }
-  function saveState(partial){
-    const current = loadState();
-    const next = Object.assign({}, current, partial);
-    localStorage.setItem(LS_KEY, JSON.stringify(next));
-  }
-
-  const state = loadState();
-
-  // Map + baselayers
-  const baseLayers = {
-    osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap'}),
-    light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {maxZoom: 20, attribution: '&copy; Carto, OSM'}),
-    sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 19, attribution: '&copy; Esri, Maxar'})
-  };
-  const map = L.map('map', { zoomControl: true, attributionControl: true });
-  (baseLayers[state.base] || baseLayers.osm).addTo(map);
-  map.setView([state.lat || initialView.lat, state.lng || initialView.lng], state.zoom || initialView.zoom);
-
-  function switchBase(name){
-    Object.values(baseLayers).forEach(l => map.removeLayer(l));
-    (baseLayers[name] || baseLayers.osm).addTo(map);
-    saveState({base: name});
-  }
-
-  // UI: panel
-  $('#toggle').addEventListener('click', ()=>{
-    const p = $('#panel');
-    const exp = p.classList.toggle('collapsed');
-    $('#toggle').setAttribute('aria-expanded', !exp);
-  });
-
-  const chkComunas = $('#chkComunas');
-  const chkCorregs = $('#chkCorregs');
-  const chkMunicipios = $('#chkMunicipios');
-  const chkDepto   = $('#chkDepto');
-
-  const initialViewFlags = (state.view==='comunas')? {com:true, cor:false} :
-                           (state.view==='corregimientos')? {com:false, cor:true} : {com:true, cor:true};
-  chkComunas.checked = initialViewFlags.com;
-  chkCorregs.checked = initialViewFlags.cor;
-  chkMunicipios.checked = true;
-  chkDepto.checked = true;
-
-  $$('input[name="base"]').forEach(r=>{
-    r.checked = (r.value === (state.base||'osm'));
-    r.addEventListener('change', ()=>switchBase(r.value));
-  });
-
-  // Data handling
-  let dataset = { comunas: [], corregimientos: [], municipios: [] };
-  const candidateJSON = [
-    'datos/ibague.json','datos/comunas.json','datos/corregimientos.json','datos/municipios.json',
-    'data/ibague.json','data/comunas.json','data/corregimientos.json','data/municipios.json'
-  ];
-
-  async function fetchJSON(url){
-    const res = await fetch(url, {cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    return await res.json();
-  }
-
-  const inlineSample = {
-    comunas: [ {id:1, nombre:'Comuna 1 - Centro', lat:4.4389, lng:-75.2320, pob:31009} ],
-    corregimientos: [ {id:11, nombre:'San Juan de la China', lat:4.53333, lng:-75.20000, pob:2000} ],
-    municipios: [ {id:73001, nombre:'Ibagué', lat:4.4389, lng:-75.2320, pob:498401} ]
+  const inlineSample={
+    comunas:[{id:1,nombre:'Comuna 1 - Centro',lat:4.4389,lng:-75.2320,pob:31009,fuente:'DANE Proy. 2019 (Alcaldía)',anio:2019}],
+    corregimientos:[{id:11,nombre:'San Juan de la China',lat:4.53333,lng:-75.20000,pob:2000,fuente:'Proy.',anio:2019}],
+    municipios:[{id:73001,nombre:'Ibagué',lat:4.4389,lng:-75.2320,pob:500686,fuente:'DANE CNPV 2018',anio:2018}]
   };
 
-  // Capa Tolima (polígono)
-  let tolimaLayer = null;
-  async function loadTolimaGeo(){
-    const localOpts = ['datos/tolima.geojson','data/tolima.geojson'];
-    for(const u of localOpts){
-      try{
-        const gj = await fetchJSON(u);
-        tolimaLayer = L.geoJSON(gj, {style: {color:'#38bdf8', weight:2, fillOpacity:0}}).addTo(map);
-        return;
+  function markerFor(item,type){
+    const color=type==='Comuna'?'#22c55e':type==='Corregimiento'?'#f59e0b':'#60a5fa';
+    const fuente = item.fuente? `<br><small class="muted">Fuente: ${item.fuente}${item.anio?(' ('+item.anio+')'):''}</small>`: '';
+    return L.circleMarker([item.lat,item.lng],{
+      radius:Math.max(6,Math.min(30,Math.sqrt(item.pob||0)/2)),color,fillOpacity:.5
+    }).bindPopup(`<b>${item.nombre}</b><br>${type}<br>Población: ${(item.pob||0).toLocaleString('es-CO')}${fuente}`)
+  }
+
+  function render(){
+    L.layerGroup(dataset.comunas.map(x=>markerFor(x,'Comuna'))).addTo(map);
+    L.layerGroup(dataset.corregimientos.map(x=>markerFor(x,'Corregimiento'))).addTo(map);
+    L.layerGroup(dataset.municipios.map(x=>markerFor(x,'Municipio'))).addTo(map);
+  }
+
+  function sumPob(items){return items.reduce((a,b)=>a+(b.pob||0),0)}
+  function dominantFuente(items){
+    const m=new Map();
+    for(const it of items){ const key=(it.fuente||''); m.set(key,(m.get(key)||0)+1); }
+    let best=["",0];
+    for(const [k,v] of m.entries()){ if(v>best[1]) best=[k,v]; }
+    return best[0];
+  }
+  function stats(title,items){
+    const total=items.length,pob=sumPob(items);
+    const fuente=dominantFuente(items);
+    $('#infoTitle').textContent=title;
+    $('#infoBody').innerHTML=`<p><strong>Total unidades:</strong> ${total.toLocaleString('es-CO')}</p>
+      <p><strong>Población (suma):</strong> ${pob.toLocaleString('es-CO')}</p>
+      ${fuente?`<p class="muted">Fuente predominante: ${fuente}</p>`:''}`;
+    $('#infobox').hidden=false;
+  }
+
+  $('#btnComunas').onclick=()=>stats('Comunas de Ibagué',dataset.comunas);
+  $('#btnCorreg').onclick=()=>stats('Corregimientos de Ibagué',dataset.corregimientos);
+  $('#btnMunicipios').onclick=()=>stats('Municipios del Tolima',dataset.municipios);
+  $('#btnDeptoBtn').onclick=()=>stats('Departamento del Tolima',[...dataset.comunas,...dataset.corregimientos,...dataset.municipios]);
+  $('#infoClose').onclick=()=>$('#infobox').hidden=true;
+
+  async function load(){
+    // 1) Intentar cargar DANE municipal primero si existe
+    const sources=[
+      'datos/ibague.json','datos/comunas.json','datos/corregimientos.json','datos/municipios.json','datos/dane_municipios.json',
+      'data/ibague.json','data/comunas.json','data/corregimientos.json','data/municipios.json','data/dane_municipios.json'
+    ];
+    let merged={comunas:[],corregimientos:[],municipios:[]};
+    const found=[];
+    for(const u of sources){
+      try{ const js=await fetchJSON(u);
+        if(js.comunas) merged.comunas=merged.comunas.concat(js.comunas);
+        if(js.corregimientos) merged.corregimientos=merged.corregimientos.concat(js.corregimientos);
+        if(js.municipios) merged.municipios=merged.municipios.concat(js.municipios);
+        found.push(u);
       }catch(e){}
     }
-    // Fallback: Nominatim con polygon_geojson
-    try{
-      const url = new URL('https://nominatim.openstreetmap.org/search');
-      url.searchParams.set('q','Tolima, Colombia');
-      url.searchParams.set('format','jsonv2');
-      url.searchParams.set('polygon_geojson','1');
-      const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'es' } });
-      const js = await res.json();
-      const item = js && js[0];
-      if(item && item.geojson){
-        tolimaLayer = L.geoJSON(item.geojson, {style: {color:'#38bdf8', weight:2, fillOpacity:0}}).addTo(map);
-      }
-    }catch(e){ console.warn('Tolima geo falló', e); }
+    if(found.length===0){ merged=inlineSample; }
+    dataset=merged;
+    render();
+  }catch(e){dataset=inlineSample;}
+    render();
   }
-
-  // Geocode missing lat/lng usando Nominatim
-  async function geocodeIfMissing(entry, scope){
-    if(typeof entry.lat === 'number' && typeof entry.lng === 'number') return entry;
-    const q = `${entry.nombre}, ${scope}`;
-    try{
-      const url = new URL('https://nominatim.openstreetmap.org/search');
-      url.searchParams.set('q', q);
-      url.searchParams.set('format','jsonv2');
-      url.searchParams.set('limit','1');
-      const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'es' } });
-      const js = await res.json();
-      if(js && js[0]){ entry.lat = parseFloat(js[0].lat); entry.lng = parseFloat(js[0].lon); }
-    }catch(e){ console.warn('Geocode falló', q, e); }
-    return entry;
-  }
-
-  // Layers & helpers
-  let clusterGroup = L.markerClusterGroup({ disableClusteringAtZoom: 15 });
-  let plainGroup = L.layerGroup();
-  let deptoGroup = L.layerGroup();
-
-  function radiusByPop(p){
-    return Math.max(6, Math.min(30, Math.sqrt(Number(p)||0)/2));
-  }
-  function markerFor(item, type){
-    let color = '#22c55e';
-    if(type==='Corregimiento') color = '#f59e0b';
-    if(type==='Municipio') color = '#60a5fa';
-    return L.circleMarker([item.lat, item.lng], {
-      radius: radiusByPop(item.pob), color, weight:1, fillColor: color, fillOpacity:.35
-    }).bindPopup(`<strong>${item.nombre}</strong><br>${type}${item.pob?('<br>Población: '+Number(item.pob).toLocaleString('es-CO')):''}`);
-  }
-
-  function boundsFromItems(items){
-    const pts = items.filter(x=>isFinite(x.lat)&&isFinite(x.lng)).map(x=> L.latLng(x.lat,x.lng));
-    if(!pts.length) return null; return L.latLngBounds(pts);
-  }
-
-  function renderLayers(){
-    // Comunas, Corregimientos y Municipios
-    clusterGroup.clearLayers();
-    plainGroup.clearLayers();
-    const toLayer = clusterGroup; // clustering por defecto
-    if(chkComunas.checked) (dataset.comunas||[]).forEach(x=>{ if(isFinite(x.lat)&&isFinite(x.lng)) toLayer.addLayer(markerFor(x,'Comuna')); });
-    if(chkCorregs.checked) (dataset.corregimientos||[]).forEach(x=>{ if(isFinite(x.lat)&&isFinite(x.lng)) toLayer.addLayer(markerFor(x,'Corregimiento')); });
-    if(chkMunicipios.checked) (dataset.municipios||[]).forEach(x=>{ if(isFinite(x.lat)&&isFinite(x.lng)) toLayer.addLayer(markerFor(x,'Municipio')); });
-
-    if(!map.hasLayer(toLayer)) toLayer.addTo(map);
-
-    // Departamento (polígono)
-    deptoGroup.clearLayers();
-    if(chkDepto.checked && tolimaLayer){
-      tolimaLayer.addTo(deptoGroup);
-      if(!map.hasLayer(deptoGroup)) deptoGroup.addTo(map);
-    } else {
-      if(map.hasLayer(deptoGroup)) map.removeLayer(deptoGroup);
-    }
-  }
-
-  // Search + autocomplete
-  let searchIndex = [];
-  const $q = $('#q');
-  const $sg = $('#suggest');
-  function buildIndex(){
-    const idx = [];
-    if(chkComunas.checked) (dataset.comunas||[]).forEach(x=>idx.push({tipo:'Comuna', nombre:x.nombre, lat:x.lat, lng:x.lng}));
-    if(chkCorregs.checked) (dataset.corregimientos||[]).forEach(x=>idx.push({tipo:'Corregimiento', nombre:x.nombre, lat:x.lat, lng:x.lng}));
-    if(chkMunicipios.checked) (dataset.municipios||[]).forEach(x=>idx.push({tipo:'Municipio', nombre:x.nombre, lat:x.lat, lng:x.lng}));
-    return idx.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
-  }
-  function updateSuggest(list){
-    if(!list.length){ $sg.hidden = true; $sg.innerHTML=''; return; }
-    $sg.hidden = false;
-    $sg.innerHTML = list.slice(0,50).map(item=>`<div data-lat="${item.lat}" data-lng="${item.lng}">🔎 ${item.nombre} <small style="opacity:.7">(${item.tipo})</small></div>`).join('');
-    $sg.querySelectorAll('div').forEach(el=>{
-      el.addEventListener('click',()=>{
-        const lat = parseFloat(el.dataset.lat), lng = parseFloat(el.dataset.lng);
-        map.setView([lat,lng], 14);
-        $sg.hidden = true; $q.value='';
-      })
-    });
-  }
-  $q.addEventListener('input', ()=>{
-    const v = $q.value.trim().toLowerCase();
-    if(!v){ updateSuggest([]); return; }
-    const list = searchIndex.filter(x=>x.nombre.toLowerCase().includes(v));
-    updateSuggest(list);
-  });
-  document.addEventListener('click', (e)=>{ if(!$('#suggest').contains(e.target) && e.target!==$q){ $sg.hidden = true; }});
-
-  // InfoBox & Accesos rápidos
-  const infoBox = $('#infobox');
-  const infoTitle = $('#infoTitle');
-  const infoBody = $('#infoBody');
-  $('#infoClose').addEventListener('click', ()=> infoBox.hidden = true);
-  function sumPob(items){ return items.reduce((a,b)=> a + (Number(b.pob)||0), 0); }
-  function topByPob(items, n=5){ return items.filter(x=>Number(x.pob)).sort((a,b)=>(b.pob||0)-(a.pob||0)).slice(0,n); }
-  function showInfo(title, html){ infoTitle.textContent = title; infoBody.innerHTML = html; infoBox.hidden = false; }
-  function statsHTML(label, items){
-    const total = items.length;
-    const pob = sumPob(items);
-    const top = topByPob(items);
-    const list = top.map(x=>`<li>${x.nombre} <span class="muted">(${(x.pob||0).toLocaleString('es-CO')})</span></li>`).join('');
-    return `
-      <p><strong>Total ${label}:</strong> ${total.toLocaleString('es-CO')}</p>
-      <p><strong>Población registrada:</strong> ${pob.toLocaleString('es-CO')}</p>
-      ${top.length? `<p class="muted">Top por población</p><ol>${list}</ol>`: '<p class="muted">Sin datos de población suficientes.</p>'}
-    `;
-  }
-  $('#btnComunas').addEventListener('click', ()=>{
-    const items = dataset.comunas||[];
-    const b = boundsFromItems(items);
-    if(b) map.fitBounds(b.pad(0.2));
-    showInfo('Comunas de Ibagué', statsHTML('comunas', items));
-  });
-  $('#btnCorreg').addEventListener('click', ()=>{
-    const items = dataset.corregimientos||[];
-    const b = boundsFromItems(items);
-    if(b) map.fitBounds(b.pad(0.2));
-    showInfo('Corregimientos de Ibagué', statsHTML('corregimientos', items));
-  });
-  $('#btnMunicipios').addEventListener('click', ()=>{
-    const items = dataset.municipios||[];
-    if(!items.length){
-      showInfo('Municipios del Tolima', '<p class="muted">No hay datos de municipios cargados. Sube <code>datos/municipios.json</code> o <code>data/municipios.json</code>.</p>');
-      return;
-    }
-    const b = boundsFromItems(items);
-    if(b) map.fitBounds(b.pad(0.2));
-    showInfo('Municipios del Tolima', statsHTML('municipios', items));
-  });
-  $('#btnDeptoBtn').addEventListener('click', ()=>{
-    const items = [...(dataset.comunas||[]), ...(dataset.corregimientos||[]), ...(dataset.municipios||[])];
-    if(tolimaLayer && tolimaLayer.getBounds){ map.fitBounds(tolimaLayer.getBounds().pad(0.05)); }
-    else { const b = boundsFromItems(items); if(b) map.fitBounds(b.pad(0.3)); }
-    showInfo('Departamento del Tolima', `
-      <p><strong>Departamento del Tolima</strong></p>
-      ${statsHTML('unidades (comunas + corregimientos + municipios)', items)}
-      <p class="muted">El contorno departamental se carga desde <code>tolima.geojson</code> (si existe) o desde OSM.</p>
-    `);
-  });
-
-  // Share URL
-  $('#btnShare').addEventListener('click', ()=>{
-    const c = map.getCenter();
-    const view = chkComunas.checked && chkCorregs.checked ? 'ambos' : chkComunas.checked ? 'comunas' : 'corregimientos';
-    const params = new URLSearchParams({
-      lat: c.lat.toFixed(5), lng: c.lng.toFixed(5), z: map.getZoom(),
-      base: state.base || 'osm', view
-    });
-    const url = `${location.origin}${location.pathname}?${params.toString()}`;
-    navigator.clipboard?.writeText(url);
-    alert('Enlace copiado al portapapeles:\n'+url);
-  });
-
-  $('#btnReset').addEventListener('click', ()=>{
-    localStorage.removeItem(LS_KEY);
-    location.href = location.pathname; // recargar sin query
-  });
-
-  map.on('moveend zoomend', ()=>{
-    const c = map.getCenter();
-    saveState({lat: c.lat, lng: c.lng, zoom: map.getZoom()});
-  });
-
-  // Cargar datos (fusiona múltiples archivos si existen)
-  async function loadData(){
-    let merged = { comunas: [], corregimientos: [], municipios: [] };
-    const found = [];
-    for(const url of candidateJSON){
-      try{
-        const js = await fetchJSON(url);
-        if(js.comunas) merged.comunas = merged.comunas.concat(js.comunas);
-        if(js.corregimientos) merged.corregimientos = merged.corregimientos.concat(js.corregimientos);
-        if(js.municipios) merged.municipios = merged.municipios.concat(js.municipios);
-        found.push(url);
-      }catch(e){}
-    }
-    if(found.length===0){
-      console.warn('No se encontraron archivos en /datos o /data, usando muestra integrada');
-      merged = inlineSample;
-    }
-
-    // Geocodificar faltantes
-    const enriched = { comunas: [], corregimientos: [], municipios: [] };
-    for(const it of merged.comunas||[]){ enriched.comunas.push(await geocodeIfMissing(it, 'Ibagué, Tolima, Colombia')); }
-    for(const it of merged.corregimientos||[]){ enriched.corregimientos.push(await geocodeIfMissing(it, 'Ibagué, Tolima, Colombia')); }
-    for(const it of merged.municipios||[]){ enriched.municipios.push(await geocodeIfMissing(it, 'Tolima, Colombia')); }
-    dataset = enriched;
-
-    // Índice + capas
-    searchIndex = buildIndex();
-    renderLayers();
-
-    // Si viene ?view=corregimientos y no hay coords previas, centra en un corregimiento
-    const ps = parseStateFromURL();
-    if(ps.view==='corregimientos'){
-      if(!('lat' in ps) || !('lng' in ps)){
-        const any = dataset.corregimientos && dataset.corregimientos[0];
-        if(any && isFinite(any.lat) && isFinite(any.lng)) map.setView([any.lat, any.lng], 11);
-      }
-    }
-
-    // Polígono del Tolima
-    await loadTolimaGeo();
-    renderLayers();
-  }
-
-  loadData();
+  load();
 })();
 </script>
 </body>
