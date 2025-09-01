@@ -439,6 +439,27 @@
 
   // Índices de marcadores para abrir popups desde los botones
   const markerIndex = { comuna:new Map(), correg:new Map(), municipio:new Map() };
+  // Función robusta para abrir popup aunque el marcador aún no esté agregado
+  function openKey(kind, key){
+    const maxTries = 20; let tries = 0;
+    function attempt(){
+      let mk = null, center = null, zoom = 13;
+      if(kind==='comuna'){
+        const it = comunas.find(x=>x.nombre===key);
+        if(it){ mk = markerIndex.comuna.get(it.nombre); center = [it.lat, it.lng]; zoom = 14; }
+      }else if(kind==='correg'){
+        const it = corregs.find(x=>x.nombre===key);
+        if(it){ mk = markerIndex.correg.get(it.nombre); center = [it.lat, it.lng]; zoom = 13; }
+      }else if(kind==='municipio'){
+        const it = municip.find(x=>String(x.cod)===String(key));
+        if(it){ mk = markerIndex.municipio.get(String(it.cod)); center = [it.lat, it.lng]; zoom = 10; }
+      }
+      if(center && isFinite(center[0]) && isFinite(center[1])) map.setView(center, zoom);
+      if(mk && typeof mk.openPopup==='function'){ mk.openPopup(); return; }
+      if(tries++ < maxTries){ setTimeout(attempt, 150); }
+    }
+    attempt();
+  }
 
   function renderLayers(){
     groupComunas.clearLayers(); groupCorregs.clearLayers(); groupMunicip.clearLayers();
@@ -457,6 +478,25 @@
   function updateDeck(){
     const deck = $('#deck'); const v = (state.view||'comunas');
     const asChip = (label, value, onclick)=>`<button class="chip" data-onclick="${onclick}">${label}<small>${value?(' · '+value.toLocaleString('es-CO')+' hab'): ' · sin dato'}</small></button>`;
+    if(v==='comunas'){
+      deck.innerHTML = comunas.map(c=>asChip(c.nombre, c.pob, `comuna:${c.nombre}`)).join('');
+    }else if(v==='corregimientos'){
+      deck.innerHTML = corregs.map(c=>asChip(c.nombre, c.pob, `correg:${c.nombre}`)).join('');
+    }else{
+      deck.innerHTML = [`<button class="chip" data-onclick="dept:tolima">Tolima <small>· ${departTolima.poblacion_2018.toLocaleString('es-CO')} hab (2018)</small></button>`]
+        .concat(municip.map(m=>asChip(m.nombre, m.pob, `mun:${m.cod}`))).join('');
+    }
+    // Delegación de eventos: asegura que siempre funcione aunque se regenere el contenido
+    deck.onclick = (ev)=>{
+      const el = ev.target.closest('.chip'); if(!el) return;
+      const key = el.getAttribute('data-onclick'); if(!key) return;
+      if(key.startsWith('comuna:')){ openKey('comuna', key.split(':')[1]); }
+      else if(key.startsWith('correg:')){ openKey('correg', key.split(':')[1]); }
+      else if(key==='dept:tolima'){
+        if(tolimaLayer){ try{ map.fitBounds(tolimaLayer.getBounds(), { padding:[20,20] }); }catch(e){} }
+      }else if(key.startsWith('mun:')){ openKey('municipio', key.split(':')[1]); }
+    };
+  }">${label}<small>${value?(' · '+value.toLocaleString('es-CO')+' hab'): ' · sin dato'}</small></button>`;
     if(v==='comunas'){
       deck.innerHTML = comunas.map(c=>asChip(c.nombre, c.pob, `comuna:${c.nombre}`)).join('');
     }else if(v==='corregimientos'){
@@ -573,3 +613,4 @@
 </script>
 </body>
 </html>
+
