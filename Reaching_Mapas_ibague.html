@@ -63,6 +63,13 @@
     a, a:visited{color:#7dd3fc}
 
     @media(min-width:920px){.panel-inner{grid-template-columns:2fr 1fr 1.2fr 1fr}}
+    /* Overlay de información */
+    .infobox{position:fixed;right:12px;bottom:12px;z-index:1200;max-width:360px;background:#0b1220;border:1px solid rgba(148,163,184,.3);border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.35)}
+    .infobox header{display:flex;align-items:center;justify-content:space-between;padding:.6rem .8rem;border-bottom:1px solid rgba(148,163,184,.15);background:#0f172a}
+    .infobox header h4{margin:0;font-size:1rem;color:#e2e8f0}
+    .infobox .body{padding:.75rem .9rem;color:#e2e8f0}
+    .infobox .muted{color:#94a3b8}
+    .infobox .close{background:transparent;border:1px solid rgba(148,163,184,.3);color:#e2e8f0;border-radius:.5rem;padding:.2rem .5rem;cursor:pointer}
   </style>
   <noscript>Esta página requiere JavaScript para funcionar.</noscript>
 </head>
@@ -130,12 +137,26 @@
       <div>
         <label style="display:block;margin-bottom:.35rem;color:var(--muted)">Panel rápido (botones transparentes con censo)</label>
         <div class="deck" id="deck"></div>
+        <div class="cta-row" style="margin-top:.5rem">
+          <button id="btnStatsComunas" class="link-btn" title="Ver censo total Comunas">Censo Comunas</button>
+          <button id="btnStatsCorreg" class="link-btn" title="Ver censo total Corregimientos">Censo Corregimientos</button>
+          <button id="btnStatsMunicipios" class="link-btn" title="Ver censo total Municipios">Censo Municipios</button>
+          <button id="btnStatsDepto" class="link-btn" title="Ver censo Tolima">Censo Departamento</button>
+        </div>
       </div>
 
     </div>
   </section>
 
   <div id="map"></div>
+  <!-- InfoBox para estadísticas / censo -->
+  <div id="infobox" class="infobox" hidden>
+    <header>
+      <h4 id="infoTitle">Información</h4>
+      <button id="infoClose" class="close">✕</button>
+    </header>
+    <div class="body" id="infoBody"></div>
+  </div>
   <footer>
     Ibagué, Tolima · Comunas (fuente 2019, Planeación Municipal) · Municipios del Tolima (CNPV 2018, DANE) · Corregimientos (estructura lista, proyecciones 2019 si se cargan) · «Todo lo que hagáis, hacedlo de corazón» (Col 3:23)
   </footer>
@@ -403,11 +424,15 @@
     for(let i=0;i<municip.length;i++){ if(municip[i].lat==null) municip[i] = await geocodeIfMissing(municip[i], 'Tolima, Colombia'); }
   }
 
+  // Índices de marcadores para abrir popups desde los botones
+  const markerIndex = { comuna:new Map(), correg:new Map(), municipio:new Map() };
+
   function renderLayers(){
     groupComunas.clearLayers(); groupCorregs.clearLayers(); groupMunicip.clearLayers();
-    comunas.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)) groupComunas.addLayer(markerComuna(x)); });
-    corregs.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)) groupCorregs.addLayer(markerCorreg(x)); });
-    municip.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)) groupMunicip.addLayer(markerMunicipio(x)); });
+    markerIndex.comuna.clear(); markerIndex.correg.clear(); markerIndex.municipio.clear();
+    comunas.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)) { const m = markerComuna(x); groupComunas.addLayer(m); markerIndex.comuna.set(x.nombre, m);} });
+    corregs.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)) { const m = markerCorreg(x); groupCorregs.addLayer(m); markerIndex.correg.set(x.nombre, m);} });
+    municip.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)) { const m = markerMunicipio(x); groupMunicip.addLayer(m); markerIndex.municipio.set(String(x.cod), m);} });
 
     // Añadir las capas según la vista seleccionada
     const v = (state.view||'comunas');
@@ -427,24 +452,25 @@
       deck.innerHTML = [`<button class="chip" data-onclick="dept:tolima">Tolima <small>· ${departTolima.poblacion_2018.toLocaleString('es-CO')} hab (2018)</small></button>`]
         .concat(municip.map(m=>asChip(m.nombre, m.pob, `mun:${m.cod}`))).join('');
     }
-    // Bind clicks
+    // Bind clicks: centra y abre popup
     deck.querySelectorAll('.chip').forEach(el=>{
       el.addEventListener('click', ()=>{
         const key = el.getAttribute('data-onclick');
         if(key.startsWith('comuna:')){
           const name = key.split(':')[1]; const it = comunas.find(x=>x.nombre===name);
-          if(it && isFinite(it.lat)) map.setView([it.lat,it.lng], 14);
+          if(it && isFinite(it.lat)) { map.setView([it.lat,it.lng], 14); const mk = markerIndex.comuna.get(it.nombre); mk?.openPopup(); }
         }else if(key.startsWith('correg:')){
           const name = key.split(':')[1]; const it = corregs.find(x=>x.nombre===name);
-          if(it && isFinite(it.lat)) map.setView([it.lat,it.lng], 13);
+          if(it && isFinite(it.lat)) { map.setView([it.lat,it.lng], 13); const mk = markerIndex.correg.get(it.nombre); mk?.openPopup(); }
         }else if(key==='dept:tolima'){
           if(tolimaLayer){ try{ map.fitBounds(tolimaLayer.getBounds(), { padding:[20,20] }); }catch(e){} }
         }else if(key.startsWith('mun:')){
-          const code = parseInt(key.split(':')[1],10); const it = municip.find(x=>x.cod===code);
-          if(it && isFinite(it.lat)) map.setView([it.lat,it.lng], 10);
+          const code = String(key.split(':')[1]); const it = municip.find(x=>String(x.cod)===code);
+          if(it && isFinite(it.lat)) { map.setView([it.lat,it.lng], 10); const mk = markerIndex.municipio.get(String(it.cod)); mk?.openPopup(); }
         }
       });
     });
+  });
   }
 
   // ===== Búsqueda =====
@@ -494,7 +520,28 @@
     if(e.key==='3') setView('municipios');
   });
 
-  init();
+    init();
+
+  // ====== InfoBox de Censos (totales) ======
+  function sum(items){ return items.reduce((a,b)=> a + (Number(b.pob)||0), 0); }
+  function topBy(items,n=5){ return items.filter(x=>Number(x.pob)).sort((a,b)=> (b.pob||0)-(a.pob||0)).slice(0,n); }
+  function showInfo(title, html){ $('#infoTitle').textContent = title; $('#infoBody').innerHTML = html; $('#infobox').hidden = false; }
+  $('#infoClose').addEventListener('click', ()=> $('#infobox').hidden = true);
+
+  function statsHTML(label, items){
+    const total = items.length; const pob = sum(items); const top = topBy(items);
+    const list = top.map(x=>`<li>${x.nombre} <span class="muted">(${(x.pob||0).toLocaleString('es-CO')})</span></li>`).join('');
+    return `
+      <p><strong>Total ${label}:</strong> ${total.toLocaleString('es-CO')}</p>
+      <p><strong>Población registrada:</strong> ${pob.toLocaleString('es-CO')}</p>
+      ${top.length? `<p class="muted">Top por población</p><ol>${list}</ol>`: '<p class="muted">Sin datos de población suficientes.</p>'}
+    `;
+  }
+  $('#btnStatsComunas')?.addEventListener('click', ()=> showInfo('Censo · Comunas de Ibagué', statsHTML('comunas', comunas)) );
+  $('#btnStatsCorreg')?.addEventListener('click', ()=> showInfo('Censo · Corregimientos de Ibagué', statsHTML('corregimientos', corregs)) );
+  $('#btnStatsMunicipios')?.addEventListener('click', ()=> showInfo('Censo · Municipios del Tolima', statsHTML('municipios', municip)) );
+  $('#btnStatsDepto')?.addEventListener('click', ()=> showInfo('Censo · Departamento del Tolima', `<p><strong>Tolima</strong> · Población (CNPV 2018): ${departTolima.poblacion_2018.toLocaleString('es-CO')}</p>`) );
+
 })();
 </script>
 </body>
