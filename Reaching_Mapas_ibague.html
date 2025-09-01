@@ -70,6 +70,10 @@
     .infobox .body{padding:.75rem .9rem;color:#e2e8f0}
     .infobox .muted{color:#94a3b8}
     .infobox .close{background:transparent;border:1px solid rgba(148,163,184,.3);color:#e2e8f0;border-radius:.5rem;padding:.2rem .5rem;cursor:pointer}
+      /* Diagnóstico */
+    .health{background:#1e293b;color:#e2e8f0;border-top:1px solid rgba(148,163,184,.25);border-bottom:1px solid rgba(148,163,184,.25);padding:.5rem .75rem;font-size:.875rem}
+    .health b{color:#7dd3fc}
+    .health.bad{background:#3f1d20}
   </style>
   <noscript>Esta página requiere JavaScript para funcionar.</noscript>
 </head>
@@ -89,6 +93,7 @@
 
   <section id="panel">
     <div class="panel-inner">
+      <div id="health" class="health" hidden>Diagnóstico…</div>
       <!-- Búsqueda y acciones -->
       <div class="row">
         <div class="search">
@@ -395,7 +400,15 @@
     { url:'DATA/municipios_tolima.json', apply:(js)=>{ if(Array.isArray(js.municipios)) municip = js.municipios; } }
   ];
   async function tryOverrides(){
-    for(const c of candidateJSON){ try{ const res = await fetch(c.url,{cache:'no-store'}); if(res.ok){ const js = await res.json(); c.apply(js); console.log('Override desde', c.url); } }catch(e){}
+    window.__foundSources = [];
+    for(const c of candidateJSON){
+      try{
+        const res = await fetch(c.url,{cache:'no-store'});
+        if(res.ok){ const js = await res.json(); c.apply(js); window.__foundSources.push({url:c.url, ok:true, count:(js.comunas?.length||js.corregimientos?.length||js.municipios?.length||0)}); }
+        else { window.__foundSources.push({url:c.url, ok:false}); }
+      }catch(e){ window.__foundSources.push({url:c.url, ok:false, err:String(e)}); }
+    }
+  }); if(res.ok){ const js = await res.json(); c.apply(js); console.log('Override desde', c.url); } }catch(e){}
     }
   }
 
@@ -505,6 +518,20 @@
     await loadTolimaGeo();
     renderLayers();
     updateDeck();
+
+    // Mostrar diagnóstico
+    const h = document.getElementById('health');
+    const c1 = comunas.length, c2 = corregs.length, c3 = municip.length;
+    const found = (window.__foundSources||[]).filter(x=>x.ok);
+    const urls = found.map(x=>x.url).join(', ');
+    h.hidden = false;
+    if((c1+c2+c3)===0){ h.classList.add('bad'); h.innerHTML = `⚠️ No se cargaron datos. Busqué en <b>data/</b>, <b>datos/</b>, <b>DATA/</b>, <b>DATOS/</b> y no encontré JSONs válidos. Verifica nombres exactos (p.ej. <code>DATA/ibague.json</code>, <code>DATA/municipios_tolima.json</code>).`; }
+    else{ h.innerHTML = `✅ Datos cargados: Comunas <b>${c1}</b>, Corregimientos <b>${c2}</b>, Municipios <b>${c3}</b>${found.length? ' · fuentes: '+urls:''}`; }
+
+    // Selección inicial por ?view=
+    const viewParam = (qs('view')||'comunas');
+    setView(viewParam);
+  }
 
     // Selección inicial por ?view=
     const viewParam = (qs('view')||'comunas');
