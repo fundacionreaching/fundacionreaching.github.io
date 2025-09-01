@@ -1,0 +1,36 @@
+{
+  "comunas": [
+    { "id": 1, "nombre": "Centro", "pob": 31009 },
+    { "id": 2, "nombre": "Calambeo", "pob": 41219 },
+    { "id": 3, "nombre": "San Simón", "pob": 24603 },
+    { "id": 4, "nombre": "Piedrapintada", "pob": 44077 },
+    { "id": 5, "nombre": "Jordán", "pob": 30549 },
+    { "id": 6, "nombre": "Vergel", "pob": 50477 },
+    { "id": 7, "nombre": "Salado", "pob": 44219 },
+    { "id": 8, "nombre": "Simón Bolívar", "pob": 77421 },
+    { "id": 9, "nombre": "Picaleña - Mirolindo", "pob": 64235 },
+    { "id": 10, "nombre": "Estadio", "pob": 45149 },
+    { "id": 11, "nombre": "Ferias", "pob": 31383 },
+    { "id": 12, "nombre": "Ricaurte", "pob": 43130 },
+    { "id": 13, "nombre": "Boquerón", "pob": 16086 }
+  ],
+  "corregimientos": [
+    { "id": 1, "nombre": "Dantas", "pob": null },
+    { "id": 2, "nombre": "Laureles", "pob": null },
+    { "id": 3, "nombre": "Coello – Cocora", "pob": null },
+    { "id": 4, "nombre": "Gamboa", "pob": null },
+    { "id": 5, "nombre": "Cay", "pob": null },
+    { "id": 6, "nombre": "Toche", "pob": null },
+    { "id": 7, "nombre": "Juntas", "pob": null },
+    { "id": 8, "nombre": "Villa Restrepo", "pob": null },
+    { "id": 9, "nombre": "La China", "pob": null },
+    { "id": 10, "nombre": "Doima / Buenos Aires", "pob": null },
+    { "id": 11, "nombre": "El Totumo / Llano del Combeima", "pob": null },
+    { "id": 12, "nombre": "San Juan de la China", "pob": null },
+    { "id": 13, "nombre": "El Salado (rural)", "pob": null },
+    { "id": 14, "nombre": "San Bernardo", "pob": null },
+    { "id": 15, "nombre": "Tapias", "pob": null },
+    { "id": 16, "nombre": "Tochecito", "pob": null },
+    { "id": 17, "nombre": "La Florida", "pob": null }
+  ]
+}
