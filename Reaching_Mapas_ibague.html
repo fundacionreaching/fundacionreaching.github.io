@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -64,7 +63,10 @@
       .panel-inner{grid-template-columns:2fr 1fr 1fr}
       .row{grid-template-columns:1fr 1fr}
     }
+    <style>
+    /* existing styles above */
   </style>
+  <noscript>Esta página requiere JavaScript para funcionar.</noscript>
 </head>
 <body>
 <div id="app">
@@ -204,6 +206,15 @@
 
   // Data handling
   let dataset = { comunas: [], corregimientos: [] };
+  // Extra datasets (opcional, si existen en /datos o /data)
+  const candidateJSON = [
+    'datos/ibague.json',
+    'datos/comunas.json',
+    'datos/corregimientos.json',
+    'data/ibague.json',
+    'data/comunas.json',
+    'data/corregimientos.json'
+  ];
 
   async function fetchJSON(url){
     const res = await fetch(url, {cache:'no-store'});
@@ -216,6 +227,33 @@
     comunas: [ {id:1, nombre:'Centro', lat:4.4389, lng:-75.2320, pob:31009} ],
     corregimientos: [ {id:11, nombre:'San Juan de la China', lat:4.53333, lng:-75.20000, pob:2000} ]
   };
+
+  // Capa Tolima (polígono)
+  let tolimaLayer = null;
+  async function loadTolimaGeo(){
+    // 1) intenta archivo local si existe
+    const localOpts = ['datos/tolima.geojson','data/tolima.geojson'];
+    for(const u of localOpts){
+      try{
+        const gj = await fetchJSON(u);
+        tolimaLayer = L.geoJSON(gj, {style: {color:'#38bdf8', weight:2, fillOpacity:0}}).addTo(map);
+        return;
+      }catch(e){}
+    }
+    // 2) fallback: Nominatim con polygon_geojson
+    try{
+      const url = new URL('https://nominatim.openstreetmap.org/search');
+      url.searchParams.set('q','Tolima, Colombia');
+      url.searchParams.set('format','jsonv2');
+      url.searchParams.set('polygon_geojson','1');
+      const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'es' } });
+      const js = await res.json();
+      const item = js && js[0];
+      if(item && item.geojson){
+        tolimaLayer = L.geoJSON(item.geojson, {style: {color:'#38bdf8', weight:2, fillOpacity:0}}).addTo(map);
+      }
+    }catch(e){ console.warn('Tolima geo falló', e); }
+  }
 
   // Geocode missing lat/lng using Nominatim
   async function geocodeIfMissing(entry, scope){
@@ -333,22 +371,35 @@
 
   // Load data: try external JSON then fallback
   async function loadData(){
-    try{
-      dataset = await fetchJSON('datos/ibague.json');
-    }catch(e){
-      console.warn('No se encontró datos/ibague.json, usando muestra integrada');
-      dataset = inlineSample;
+    // 1) Intentar cargar desde varias fuentes conocidas
+    let merged = { comunas: [], corregimientos: [] };
+    const found = [];
+    for(const url of candidateJSON){
+      try{
+        const js = await fetchJSON(url);
+        if(js.comunas) merged.comunas = merged.comunas.concat(js.comunas);
+        if(js.corregimientos) merged.corregimientos = merged.corregimientos.concat(js.corregimientos);
+        found.push(url);
+      }catch(e){}
+    }
+    if(found.length===0){
+      console.warn('No se encontraron archivos en /datos o /data, usando muestra integrada');
+      merged = inlineSample;
     }
 
-    // Geocode missing
+    // 2) Geocodificar faltantes
     const scopeCity = 'Ibagué, Tolima, Colombia';
     const enriched = { comunas: [], corregimientos: [] };
-    for(const it of dataset.comunas||[]){ enriched.comunas.push(await geocodeIfMissing(it, scopeCity)); }
-    for(const it of dataset.corregimientos||[]){ enriched.corregimientos.push(await geocodeIfMissing(it, scopeCity)); }
+    for(const it of merged.comunas||[]){ enriched.comunas.push(await geocodeIfMissing(it, scopeCity)); }
+    for(const it of merged.corregimientos||[]){ enriched.corregimientos.push(await geocodeIfMissing(it, scopeCity)); }
     dataset = enriched;
 
+    // 3) Índice y capas
     searchIndex = buildIndex();
     renderLayers();
+
+    // 4) Cargar polígono del Tolima
+    loadTolimaGeo();
   }
 
   loadData();
@@ -356,3 +407,5 @@
 </script>
 </body>
 </html>
+
+
