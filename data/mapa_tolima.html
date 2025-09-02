@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Mapa del Tolima – Fundación Reaching</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin>
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .leaflet-container { font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .hud { position:absolute; z-index:1000; left:8px; top:8px; background:#fff; padding:8px 10px; border-radius:12px;
+           box-shadow:0 2px 10px rgba(0,0,0,.15); max-width:min(92vw,460px); font-size:12px; }
+    .ok { color:#0a7a3d; } .err { color:#b00020; } .key { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; }
+    .legend { background:#fff; padding:8px 10px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.15); line-height:1.3; }
+    .legend i { display:inline-block; width:12px; height:12px; margin-right:6px; border-radius:3px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="hud" id="hud">
+    <b>Fundación Reaching · Mapa del Tolima (CNPV 2018)</b>
+    <div id="status">Inicializando…</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin></script>
+  <script>
+  (async () => {
+    // === Configuración de rutas (datos en /data, este HTML en la raíz) ===
+    const BASE = './data/';
+    const AVOID_CACHE = () => `?v=${Date.now()}`; // útil en pruebas, puedes quitarlo luego
+
+    // === Utilidades ===
+    const setHUD = (html) => document.getElementById('status').innerHTML = html;
+    const logs = [];
+    async function getJSON(url, etiqueta){
+      try {
+        const r = await fetch(url + AVOID_CACHE(), {cache:'no-store'});
+        if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+        const j = await r.json();
+        logs.push(`<div class=ok>✔ ${etiqueta}: <span class=key>${url}</span></div>`);
+        return j;
+      } catch(e){
+        logs.push(`<div class=err>✖ ${etiqueta}: <span class=key>${url}</span> — ${e.message}</div>`);
+        return null;
+      }
+    }
+
+    // === Mapa base ===
+    const map = L.map('map');
+    const ibague = [4.4389, -75.2322];
+    map.setView(ibague, 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap contrib.'
+    }).addTo(map);
+
+    // === Cargar datos ===
+    const geoMunis = await getJSON(BASE + 'tolima_municipios.geojson', 'Municipios (GeoJSON)');
+    const censoDept = await getJSON(BASE + 'tolima_censo.json', 'Censo Dept.');
+    const censoMun  = await getJSON(BASE + 'municipios_censo.json', 'Censo por municipio');
+
+    // Si no hay geometría, mostramos log y salimos
+    if (!geoMunis){ setHUD(logs.join('')); return; }
+
+    // === Índice por código DANE ===
+    const byCod = new Map();
+    if (Array.isArray(censoMun)) {
+      for (const r of censoMun){
+        const cod = +r.cod; const pob = +r.poblacion; const nom = (r.nombre||'').trim();
+        if (!Number.isNaN(cod)) byCod.set(cod, { nombre: nom, poblacion: pob });
+      }
+    }
+
+    // === Escala de colores (coropleta por población) ===
+    function colorFor(p){
+      if (p == null || isNaN(p)) return '#dadada';
+      return p > 150000 ? '#08306b' :
+             p >  80000 ? '#08519c' :
+             p >  40000 ? '#2171b5' :
+             p >  20000 ? '#4292c6' :
+             p >  10000 ? '#6baed6' :
+             p >   5000 ? '#9ecae1' :
+                           '#c6dbef';
+    }
+
+    function style(f){
+      const cod = +(f.properties?.DANE || f.properties?.COD_DANE || f.properties?.cod || 0);
+      const pobl = byCod.get(cod)?.poblacion;
+      return { color:'#19446b', weight:0.8, fillColor: colorFor(pobl), fillOpacity: 0.75 };
+    }
+
+    function onEach(f, layer){
+      const cod = +(f.properties?.DANE || f.properties?.COD_DANE || f.properties?.cod || 0);
+      const nombreGeo = f.properties?.NOMBRE || f.properties?.Nombre || f.properties?.nombre || 'Municipio';
+      const reg = byCod.get(cod);
+      const nombre = reg?.nombre || nombreGeo;
+      const pob = reg?.poblacion;
+      layer.bindPopup(
+        `<b>${nombre}</b>` +
+        (cod ? `<br><span class=key>COD DANE: ${cod}</span>` : '') +
+        `<br>Población 2018: <b>${(pob!=null? pob.toLocaleString('es-CO') : 's/d')}</b>`
+      );
+    }
+
+    const capaMunis = L.geoJSON(geoMunis, { style, onEachFeature: onEach }).addTo(map);
+
+    // Fit a todo Tolima
+    try { map.fitBounds(capaMunis.getBounds().pad(0.04)); } catch {}
+
+    // === Leyenda ===
+    const legend = L.control({position:'bottomright'});
+    legend.onAdd = function(){
+      const d = L.DomUtil.create('div','legend');
+      const breaks = [0, 5000, 10000, 20000, 40000, 80000, 150000];
+      let html = '<b>Población 2018</b><br>';
+      for (let i=0;i<breaks.length;i++){
+        const from = breaks[i], to = breaks[i+1];
+        const val = (to??from+1);
+        html += `<i style="background:${colorFor(val)}"></i>` +
+                (to? `${from.toLocaleString('es-CO')}–${to.toLocaleString('es-CO')}` : `>${from.toLocaleString('es-CO')}`) + '<br>';
+      }
+      d.innerHTML = html; return d;
+    };
+    legend.addTo(map);
+
+    // === Panel HUD con diagnóstico y totales ===
+    let extra = '';
+    if (censoDept?.censo_2018?.poblacion_total){
+      extra = `<div class=ok>✔ Tolima total CNPV2018: <b>${censoDept.censo_2018.poblacion_total.toLocaleString('es-CO')}</b></div>`;
+    }
+    setHUD((logs.join('')||'') + extra);
+  })();
+  </script>
+</body>
+</html>
