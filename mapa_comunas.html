@@ -1,63 +1,66 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mapa Comunas Ibagué</title>
-
-  <!-- CDN (no cambian) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Tus estilos en la raíz del repo -->
-  <link rel="stylesheet" href="../styles.css">
-  <style>html,body,#map{height:100%;margin:0}</style>
-</head>
-<body>
-  <div id="map"></div>
-  <!-- Tu JS en la raíz -->
-  <script src="../app.js"></script>
-  <script>
-    const map = L.map('map').setView([4.4389, -75.2322], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
-
-    // Datos ya dentro de /data
-    fetch('./ibague_urbano.geojson')
-      .then(r=>r.json())
-      .then(geo => L.geoJSON(geo, {style:{color:'#0a6dc2',weight:1,fillOpacity:.15}}).addTo(map))
-      .catch(err => console.error('Error comunas:', err));
-  </script>
-</body>
-</html>
-
-
-
-
-
-
-
-
-<!doctype html>
-<html lang="es"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ibagué — Comunas</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<style>html,body,#map{height:100%}body{margin:0;font:12px system-ui,sans-serif}</style>
-</head><body>
-<div id="map"></div>
+<script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-const conf={center:[4.4389,-75.2322],zoom:12,accent:'#D97706',geojson:'/ibague_comunas.geojson',csv:'/ibague_comunas_poblacion.csv'};
-const map=L.map('map').setView(conf.center,conf.zoom);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap'}).addTo(map);
-const pad5=v=>String(v??'').replace(/\D/g,'').padStart(5,'0');const PALETTE=['#fff7ed','#ffedd5','#fed7aa','#fdba74','#fb923c','#ea580c'];
-function detectColumns(keys){const L=keys.map(k=>(k||'').toLowerCase());const f=a=>{const i=L.findIndex(k=>a.some(x=>k.includes(x)));return i>=0?keys[i]:null};return{codeKey:f(['codigo','dane','id']),nameKey:f(['comuna','nombre']),popKey:f(['pobl','habit'])}};
-function codeFromProps(p){const c=[p?.COD_DANE,p?.Codigo,p?.ID,p?.id,p?.COMUNA];for(const x of c){const n=pad5(x);if(n)return n}return''}
-(async()=>{let geo;try{const r=await fetch(conf.geojson);if(!r.ok)throw new Error('GeoJSON '+r.status);geo=await r.json()}catch(e){alert('Error GeoJSON: '+e.message);return}
-let rows=[];try{const r=await fetch(conf.csv);if(!r.ok)throw new Error('CSV '+r.status);const t=await r.text();const p=Papa.parse(t,{header:true,skipEmptyLines:true});const f=p.meta?.fields??Object.keys(p.data[0]??{});const {codeKey,nameKey,popKey}=detectColumns(f);rows=p.data.map(x=>({code:pad5(x[codeKey]),name:String(x[nameKey]??'').trim(),pop:Number(String(x[popKey]??'').replace(/[^0-9.-]/g,''))||null}))}catch{rows=[]}
-const by=new Map(rows.map(r=>[r.code,r]));const joined=(geo.features||[]).map(ft=>{const pr=ft.properties||{};const code=codeFromProps(pr);const csv=by.get(code)||by.get(pad5(code));return{code,name:csv?.name||pr.NOMBRE||pr.COMUNA||'',pop:csv?.pop??null,feature:ft}});
-const vals=joined.map(j=>j.pop).filter(v=>typeof v==='number').sort((a,b)=>a-b);const breaks=[1,2,3,4,5].map(i=>vals[Math.floor((vals.length-1)*i/6)]||0);const scale=v=>{if(v==null)return'#ccc';let idx=breaks.findIndex(b=>v<=b);if(idx===-1)idx=5;return PALETTE[idx]};
-const layer=L.geoJSON(geo,{style:ft=>{const pr=ft.properties||{};const code=codeFromProps(pr);const r=joined.find(j=>pad5(j.code)===pad5(code));return{weight:1.2,color:'#7c2d12',fillColor:scale(r?.pop??null),fillOpacity:.9}}});layer.addTo(map);try{map.fitBounds(layer.getBounds(),{padding:[16,16]})}catch{}}
-)();
+(async () => {
+  // 1) Cargar datos
+  const barriosGeo = await fetch('./data/ibague_barrios.geojson').then(r=>r.json());
+  const poblacion = await d3.csv('./data/ibague_barrios_poblacion.csv', d => ({
+    barrio: (d.barrio || '').trim().toUpperCase(),     // normaliza nombres
+    poblacion: +d.poblacion || 0,
+    comuna: (d.comuna || '').trim()
+  }));
+
+  // 2) Indexar CSV por nombre de barrio
+  const byBarrio = new Map(poblacion.map(d => [d.barrio, d]));
+
+  // 3) Enriquecer features con población
+  barriosGeo.features.forEach(f => {
+    const nombre = ((f.properties.BARRIO || f.properties.nombre || '') + '').trim().toUpperCase();
+    const match = byBarrio.get(nombre);
+    f.properties.poblacion = match ? match.poblacion : null;
+    f.properties.comuna = match ? match.comuna : null;
+  });
+
+  // 4) Pintar en Leaflet con coropletas simples
+  function color(p) {
+    if (p == null) return '#cccccc';
+    return p > 15000 ? '#084081' :
+           p > 10000 ? '#0868ac' :
+           p >  6000 ? '#2b8cbe' :
+           p >  3000 ? '#4eb3d3' :
+           p >  1500 ? '#7bccc4' : '#a8ddb5';
+  }
+
+  const capa = L.geoJSON(barriosGeo, {
+    style: f => ({
+      color: '#1d3557',
+      weight: 0.7,
+      fillColor: color(f.properties.poblacion),
+      fillOpacity: 0.6
+    }),
+    onEachFeature: (f, layer) => {
+      const n = f.properties.BARRIO || f.properties.nombre || 'Barrio';
+      const p = f.properties.poblacion ?? 's/d';
+      const c = f.properties.comuna ?? '—';
+      layer.bindPopup(`<b>${n}</b><br/>Población: ${p.toLocaleString('es-CO')}<br/>Comuna: ${c}`);
+    }
+  }).addTo(map);
+
+  // 5) Leyenda rápida (opcional)
+  const legend = L.control({position:'bottomright'});
+  legend.onAdd = function() {
+    const div = L.DomUtil.create('div','legend');
+    const breaks = [0,1500,3000,6000,10000,15000];
+    let html = '<div style="background:#fff;padding:8px 10px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.15);font:12px system-ui">';
+    html += '<b>Población</b><br>';
+    for (let i=0;i<breaks.length;i++){
+      const from = breaks[i], to = breaks[i+1];
+      html += `<i style="display:inline-block;width:12px;height:12px;margin-right:6px;background:${color(to||from+1)}"></i>`;
+      html += to ? `${from.toLocaleString('es-CO')}–${to.toLocaleString('es-CO')}<br>` : `>${from.toLocaleString('es-CO')}<br>`;
+    }
+    html += '</div>';
+    div.innerHTML = html;
+    return div;
+  };
+  legend.addTo(map);
+})();
 </script>
-</body></html>
