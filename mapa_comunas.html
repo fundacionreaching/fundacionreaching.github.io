@@ -1,4 +1,43 @@
 <!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa Comunas Ibagué</title>
+
+  <!-- CDN (no cambian) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Tus estilos en la raíz del repo -->
+  <link rel="stylesheet" href="../styles.css">
+  <style>html,body,#map{height:100%;margin:0}</style>
+</head>
+<body>
+  <div id="map"></div>
+  <!-- Tu JS en la raíz -->
+  <script src="../app.js"></script>
+  <script>
+    const map = L.map('map').setView([4.4389, -75.2322], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
+
+    // Datos ya dentro de /data
+    fetch('./ibague_urbano.geojson')
+      .then(r=>r.json())
+      .then(geo => L.geoJSON(geo, {style:{color:'#0a6dc2',weight:1,fillOpacity:.15}}).addTo(map))
+      .catch(err => console.error('Error comunas:', err));
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+<!doctype html>
 <html lang="es"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ibagué — Comunas</title>
