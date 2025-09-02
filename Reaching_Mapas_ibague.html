@@ -14,9 +14,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
   <style>
-    :root{
-      --brand:#0ea5e9; --bg:#0b1220; --panel:#0f172a; --text:#e2e8f0; --muted:#94a3b8;
-    }
+    :root{ --brand:#0ea5e9; --bg:#0b1220; --panel:#0f172a; --text:#e2e8f0; --muted:#94a3b8 }
     html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
     #app{display:flex;flex-direction:column;height:100%}
     header{position:sticky;top:0;z-index:1000;background:linear-gradient(to right, rgba(2,6,23,.9), rgba(2,6,23,.7));border-bottom:1px solid rgba(148,163,184,.2);backdrop-filter: blur(6px)}
@@ -35,7 +33,7 @@
     .suggest div{padding:.5rem .75rem;cursor:pointer}
     .suggest div:hover{background:#0f172a}
     .badges{display:flex;flex-wrap:wrap;gap:.5rem}
-    .badge{display:inline-flex;gap:.4rem;align-items:center;padding:.35rem .55rem;border-radius:999px;border:1px solid rgba(148,163,184,.3);font-size:.85rem;color:#a8b1c0}
+    .badge{display:inline-flex;gap:.4rem;align-items:center;padding:.35rem .55rem;border-radius:999px;border:1px solid rgba(148,163,184,.3);font-size:.85rem;color:var(--muted)}
     .badge input{accent-color:var(--brand)}
     .cta-row{display:flex;gap:.5rem;flex-wrap:wrap}
     button,.link-btn{appearance:none;border:none;background:var(--brand);color:white;padding:.55rem .8rem;border-radius:.7rem;cursor:pointer;font-weight:600}
@@ -218,18 +216,7 @@
 
   // ===== Estado =====
   const initialView = {lat: 4.4389, lng: -75.2320, zoom: 12};
-  function parseStateFromURL(){
-    const p = new URLSearchParams(location.search); const s={};
-    if(p.has('lat')) s.lat = parseFloat(p.get('lat'));
-    if(p.has('lng')) s.lng = parseFloat(p.get('lng'));
-    if(p.has('z')) s.zoom = parseInt(p.get('z'));
-    if(p.has('det')) s.det = p.get('det') === '1';
-    if(p.has('cl')) s.cluster = p.get('cl') === '1';
-    if(p.has('pop')) s.pop = p.get('pop') === '1';
-    if(p.has('base')) s.base = p.get('base');
-    if(p.has('view')) s.view = p.get('view');
-    return s;
-  }
+  function parseStateFromURL(){ const p=new URLSearchParams(location.search); const s={}; if(p.has('lat')) s.lat=parseFloat(p.get('lat')); if(p.has('lng')) s.lng=parseFloat(p.get('lng')); if(p.has('z')) s.zoom=parseInt(p.get('z')); if(p.has('det')) s.det=p.get('det')==='1'; if(p.has('cl')) s.cluster=p.get('cl')==='1'; if(p.has('pop')) s.pop=p.get('pop')==='1'; if(p.has('base')) s.base=p.get('base'); if(p.has('view')) s.view=p.get('view'); return s; }
   function loadState(){ try{ const a=parseStateFromURL(); const b=localStorage.getItem(LS_KEY); return Object.assign({}, (b?JSON.parse(b):{}), a); }catch(e){ return {}; } }
   function saveState(partial){ const cur=loadState(); const next=Object.assign({},cur,partial); localStorage.setItem(LS_KEY, JSON.stringify(next)); }
   const state = Object.assign({}, {det:false, cluster:true, pop:true, base:'osm', view:(qs('view')||'comunas')}, loadState());
@@ -324,9 +311,7 @@
         }else{
           window.__foundSources.push({url:c.url, ok:false});
         }
-      }catch(e){
-        window.__foundSources.push({url:c.url, ok:false, err:String(e)});
-      }
+      }catch(e){ window.__foundSources.push({url:c.url, ok:false, err:String(e)}); }
     }
   }
 
@@ -334,7 +319,9 @@
     try{
       const resp=await fetch('https://www.datos.gov.co/api/views/gdxc-w37w/rows.csv?accessType=DOWNLOAD');
       const txt=await resp.text();
-      const rows=txt.split(/\r?\n/).slice(1).map(r=>r.split(','));
+      const rows=txt.split(/
+?
+/).slice(1).map(r=>r.split(','));
       const tol=rows.filter(r=>r && r[0]==='73');
       const byCode=new Map();
       tol.forEach(r=>{ const cod=r[2]; const lat=parseFloat((r[6]||'').replace(',','.')); const lng=parseFloat((r[5]||'').replace(',','.')); if(cod && !Number.isNaN(lat) && !Number.isNaN(lng)) byCode.set(parseInt(cod,10),{lat,lng}); });
@@ -403,7 +390,8 @@
   document.addEventListener('click',(e)=>{ if(!$sg.contains(e.target) && e.target!==$q){ $sg.hidden=true; }});
 
   // Compartir / Reset
-  $('#btnShare').addEventListener('click',()=>{ const c=map.getCenter(); const params=new URLSearchParams({lat:c.lat.toFixed(5),lng:c.lng.toFixed(5),z:map.getZoom(),det:chkDet.checked?'1':'0',cl:chkClu.checked?'1':'0',pop:chkPop.checked?'1':'0',base:state.base||'osm',view:state.view||'comunas'}); const url=`${location.origin}${location.pathname}?${params.toString()}`; navigator.clipboard?.writeText(url); alert('Enlace copiado al portapapeles:\n'+url); });
+  $('#btnShare').addEventListener('click',()=>{ const c=map.getCenter(); const params=new URLSearchParams({lat:c.lat.toFixed(5),lng:c.lng.toFixed(5),z:map.getZoom(),det:chkDet.checked?'1':'0',cl:chkClu.checked?'1':'0',pop:chkPop.checked?'1':'0',base:state.base||'osm',view:state.view||'comunas'}); const url=`${location.origin}${location.pathname}?${params.toString()}`; navigator.clipboard?.writeText(url); alert('Enlace copiado al portapapeles:
+'+url); });
   $('#btnReset').addEventListener('click',()=>{ localStorage.removeItem(LS_KEY); location.href=location.pathname; });
 
   function setView(v){ state.view=v; saveState({view:v}); renderLayers(); updateDeck(); }
