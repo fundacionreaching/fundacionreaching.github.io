@@ -1,0 +1,13 @@
+Diagnóstico…
+✖ Corregimientos (GeoJSON): ./data/ibague_corregimientos.geojson — 404
+✔ Municipios Tolima (GeoJSON): ./data/tolima_municipios.geojson
+✔ Comunas (GeoJSON): ./data/ibague_urbano.geojson
+✖ Corregimientos (GeoJSON): ./ibague_corregimientos.geojson — Unexpected end of JSON input
+✖ Censo Comunas (JSON): ./data/comunas_ibague.json — Expected ',' or ']' after array element in JSON at position 539 (line 16 column 1)
+✖ Censo Municipios (JSON): ./data/municipios_censo.json — 404
+✖ Censo Corregimientos (JSON): ./data/corregimientos_ibague.json — 404
+✖ Censo Depto (JSON): ./data/tolima_censo.json — 404
+✖ Censo Depto (JSON): ./tolima_censo.json — Unexpected end of JSON input
+✖ Censo Municipios (JSON): ./municipios_censo.json — Unexpected end of JSON input
+✔ Censo Corregimientos (JSON): ./corregimientos_ibague.json
+✖ Censo Comunas (JSON): ./comunas_ibague.json — 404
