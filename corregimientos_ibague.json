@@ -1,0 +1,19 @@
+[
+  { "id": 1, "nombre": "Dantas", "pob_2019": null },
+  { "id": 2, "nombre": "Laureles", "pob_2019": null },
+  { "id": 3, "nombre": "Coello – Cocora", "pob_2019": null },
+  { "id": 4, "nombre": "Gamboa", "pob_2019": null },
+  { "id": 5, "nombre": "Cay", "pob_2019": null },
+  { "id": 6, "nombre": "Toche", "pob_2019": null },
+  { "id": 7, "nombre": "Juntas", "pob_2019": null },
+  { "id": 8, "nombre": "Villa Restrepo", "pob_2019": null },
+  { "id": 9, "nombre": "La China", "pob_2019": null },
+  { "id": 10, "nombre": "Doima / Buenos Aires", "pob_2019": null },
+  { "id": 11, "nombre": "El Totumo / Llano del Combeima", "pob_2019": null },
+  { "id": 12, "nombre": "San Juan de la China", "pob_2019": null },
+  { "id": 13, "nombre": "El Salado (rural)", "pob_2019": null },
+  { "id": 14, "nombre": "San Bernardo", "pob_2019": null },
+  { "id": 15, "nombre": "Tapias", "pob_2019": null },
+  { "id": 16, "nombre": "Tochecito", "pob_2019": null },
+  { "id": 17, "nombre": "La Florida", "pob_2019": null }
+]
