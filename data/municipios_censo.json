@@ -46,4 +46,7 @@
   {"cod":73861,"nombre":"Venadillo","poblacion":null},
   {"cod":73870,"nombre":"Villahermosa","poblacion":null},
   {"cod":73873,"nombre":"Villarrica","poblacion":null}
-]
+]const geoMunis = await getJSON(BASE + 'tolima_municipios.geojson', 'Municipios (GeoJSON)');
+const censoDept = await getJSON(BASE + 'tolima_censo.json', 'Censo Dept.');
+const censoMun  = await getJSON(BASE + 'municipios_censo.json', 'Censo por municipio');
+
