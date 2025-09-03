@@ -1,1 +1,7 @@
+{
+  "files": {
+    "ibague_urbano.geojson": {"bytes": 123456, "sha256": "…"},
+    "ibague_corregimientos.geojson": {"bytes": 78910, "sha256": "…"}
+  }
+}
 
