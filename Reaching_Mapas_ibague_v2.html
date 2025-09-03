@@ -158,6 +158,12 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   
 <script>
+// ✅ Comunas:
+const geoComunas = await fetch('./ibague_urbano.geojson').then(r=>r.json());
+// ✅ Corregimientos:
+const geoCorreg  = await fetch('./ibague_corregimientos.geojson').then(r=>r.json());
+
+  
 (function(){
   const LS_KEY = 'reaching.ibague.state.v2';
   const $ = (sel)=>document.querySelector(sel);
