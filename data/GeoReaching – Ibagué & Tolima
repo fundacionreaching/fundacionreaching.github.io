@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa Ibagué & Tolima – Fundación Reaching</title>
+  <meta name="description" content="Comunas y Corregimientos de Ibagué + Municipios del Tolima con censo (CNPV 2018). Búsqueda, estadísticas y diagnóstico de carga.">
+  <!-- Leaflet & MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <style>
+    :root{ --brand:#0ea5e9; --bg:#0b1220; --panel:#0f172a; --text:#e2e8f0; --muted:#94a3b8; }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
+    #app{display:flex;flex-direction:column;height:100%}
+    header{position:sticky;top:0;z-index:1000;background:linear-gradient(to right, rgba(2,6,23,.9), rgba(2,6,23,.7));border-bottom:1px solid rgba(148,163,184,.2);backdrop-filter: blur(6px)}
+    .wrap{display:flex;gap:.75rem;align-items:center;justify-content:space-between;padding:.6rem .9rem}
+    .brand{display:flex;align-items:center;gap:.6rem;font-weight:700}
+    .brand .dot{width:.9rem;height:.9rem;border-radius:999px;background:var(--brand);box-shadow:0 0 0 .25rem rgba(14,165,233,.25)}
+    .brand a{color:var(--text);text-decoration:none}
+    .controls-toggle{appearance:none;border:1px solid rgba(148,163,184,.3);background:transparent;color:var(--text);padding:.45rem .7rem;border-radius:.75rem;cursor:pointer}
+    .controls-toggle:hover{border-color:var(--brand)}
+    #panel{background:var(--panel);border-bottom:1px solid rgba(148,163,184,.2)}
+    .panel-inner{display:grid;grid-template-columns:1fr;gap:.75rem;padding:.75rem}
+    .row{display:grid;grid-template-columns:1fr auto;gap:.5rem}
+    .search{position:relative}
+    .search input{width:100%;padding:.6rem .75rem;border-radius:.6rem;background:#0b1220;border:1px solid rgba(148,163,184,.3);color:var(--text)}
+    .suggest{position:absolute;top:100%;left:0;right:0;background:#0b1220;border:1px solid rgba(148,163,184,.3);border-top:none;max-height:240px;overflow:auto;border-bottom-left-radius:.6rem;border-bottom-right-radius:.6rem}
+    .suggest div{padding:.5rem .75rem;cursor:pointer}
+    .suggest div:hover{background:#0f172a}
+    .badges{display:flex;flex-wrap:wrap;gap:.5rem}
+    .badge{display:inline-flex;gap:.4rem;align-items:center;padding:.35rem .55rem;border-radius:999px;border:1px solid rgba(148,163,184,.3);font-size:.85rem;color:#a8b1c0}
+    .badge input{accent-color:var(--brand)}
+    .legend{display:flex;gap:.5rem;flex-wrap:wrap;font-size:.85rem;color:#94a3b8}
+    .legend .sw{width:.85rem;height:.85rem;border-radius:999px;display:inline-block}
+    #map{flex:1;min-height:calc(100vh - 160px)}
+    footer{font-size:.85rem;color:#94a3b8;padding:.5rem .9rem;border-top:1px solid rgba(148,163,184,.2);background:#0b1220}
+    a, a:visited{color:#7dd3fc}
+    @media(min-width:920px){.panel-inner{grid-template-columns:2fr 1fr 1.2fr 1fr}}
+    .infobox{position:fixed;right:12px;bottom:12px;z-index:1200;max-width:360px;background:#0b1220;border:1px solid rgba(148,163,184,.3);border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.35)}
+    .infobox header{display:flex;align-items:center;justify-content:space-between;padding:.6rem .8rem;border-bottom:1px solid rgba(148,163,184,.15);background:#0f172a}
+    .infobox header h4{margin:0;font-size:1rem;color:#e2e8f0}
+    .infobox .body{padding:.75rem .9rem;color:#e2e8f0}
+    .infobox .muted{color:#94a3b8}
+    .infobox .close{background:transparent;border:1px solid rgba(148,163,184,.3);color:#e2e8f0;border-radius:.5rem;padding:.2rem .5rem;cursor:pointer}
+    .health{background:#1e293b;color:#e2e8f0;border-top:1px solid rgba(148,163,184,.25);border-bottom:1px solid rgba(148,163,184,.25);padding:.5rem .75rem;font-size:.875rem}
+    .health b{color:#7dd3fc}
+    .health.bad{background:#3f1d20}
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <span class="dot"></span>
+        <a href="/">Fundación Reaching</a>
+        <span style="opacity:.7">·</span>
+        <span>Ibagué: Comunas & Corregimientos · Tolima: Municipios (CNPV 2018)</span>
+      </div>
+      <button id="toggle" class="controls-toggle" aria-expanded="true">Controles</button>
+    </div>
+  </header>
+
+  <section id="panel">
+    <div class="panel-inner">
+      <div id="health" class="health" hidden>Diagnóstico…</div>
+
+      <div class="row">
+        <div class="search">
+          <label for="q" style="display:block;margin-bottom:.35rem;color:#94a3b8">Búsqueda con autocompletar</label>
+          <input id="q" type="search" placeholder="Comuna, corregimiento o municipio…" autocomplete="off"/>
+          <div id="suggest" class="suggest" hidden></div>
+        </div>
+        <div>
+          <div class="badges" style="justify-content:flex-end">
+            <label class="badge"><input type="radio" name="base" value="osm" checked> OSM</label>
+            <label class="badge"><input type="radio" name="base" value="light"> Claro</label>
+            <label class="badge"><input type="radio" name="base" value="sat"> Satélite</label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="legend">
+          <span class="sw" style="background:#22c55e"></span> Comunas
+          <span class="sw" style="background:#eab308"></span> Corregimientos
+          <span class="sw" style="background:#38bdf8"></span> Municipios de Tolima
+        </div>
+      </div>
+
+      <div>
+        <div class="badges">
+          <button id="btnStatsComunas" class="badge" title="Censo total Comunas">Censo Comunas</button>
+          <button id="btnStatsCorreg" class="badge" title="Censo total Corregimientos">Censo Corregimientos</button>
+          <button id="btnStatsMunicipios" class="badge" title="Censo total Municipios">Censo Municipios</button>
+          <button id="btnStatsDepto" class="badge" title="Censo Tolima (total)">Censo Departamento</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div id="map"></div>
+
+  <div id="infobox" class="infobox" hidden>
+    <header>
+      <h4 id="infoTitle">Información</h4>
+      <button id="infoClose" class="close">✕</button>
+    </header>
+    <div class="body" id="infoBody"></div>
+  </div>
+
+  <footer>
+    Ibagué (comunas y corregimientos) · Tolima (municipios). CNPV 2018. «Todo lo que hagáis, hacedlo de corazón» (Col 3:23)
+  </footer>
+</div>
+
+<!-- Leaflet & MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<script>
+(async () => {
+  // ===== Utilidades =====
+  const $ = (sel)=>document.querySelector(sel);
+  const $$ = (sel)=>Array.from(document.querySelectorAll(sel));
+  const health = $('#health');
+  const log = (html)=>{ health.hidden=false; health.innerHTML += html; };
+  const CANDIDATAS = (n)=>[`./data/${n}`, `./${n}`];
+  const nombreProp = (f)=> ((f?.properties?.nombre ?? f?.properties?.NOMBRE ?? f?.properties?.Nombre ?? '')+'').trim();
+
+  async function getJSON(cands,label){
+    for (const url of cands){
+      try{
+        const r = await fetch(url, {cache:'no-store'});
+        if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+        const j = await r.json();
+        log(`<div class="ok">✔ ${label}: <b>${url}</b></div>`);
+        return j;
+      }catch(e){
+        log(`<div class="err">✖ ${label}: <b>${url}</b> — ${e.message}</div>`);
+      }
+    }
+    return null;
+  }
+
+  // ===== Mapa y bases =====
+  const baseLayers = {
+    osm:   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap'}),
+    light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:20, attribution:'&copy; Carto, OSM'}),
+    sat:   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19, attribution:'&copy; Esri, Maxar'})
+  };
+  const map = L.map('map',{zoomControl:true, attributionControl:true}).setView([4.4389,-75.2322], 12);
+  baseLayers.osm.addTo(map);
+  $$('input[name="base"]').forEach(r=>r.addEventListener('change',()=> {
+    Object.values(baseLayers).forEach(l=>map.removeLayer(l));
+    (baseLayers[r.value]||baseLayers.osm).addTo(map);
+  }));
+
+  // ===== Cargar GeoJSON + Censo =====
+  const [geoComunas, geoCorreg, geoMunTol] = await Promise.all([
+    getJSON(CANDIDATAS('ibague_urbano.geojson'), 'Comunas (GeoJSON)'),
+    getJSON(CANDIDATAS('ibague_corregimientos.geojson'), 'Corregimientos (GeoJSON)'),
+    getJSON(CANDIDATAS('tolima_municipios.geojson'), 'Municipios Tolima (GeoJSON)')
+  ]);
+
+  const [censoComunas, censoCorreg, censoMunis, censoDept] = await Promise.all([
+    getJSON(CANDIDATAS('comunas_ibague.json'), 'Censo Comunas (JSON)'),
+    getJSON(CANDIDATAS('corregimientos_ibague.json'), 'Censo Corregimientos (JSON)'),
+    getJSON(CANDIDATAS('municipios_censo.json'), 'Censo Municipios (JSON)'),
+    getJSON(CANDIDATAS('tolima_censo.json'), 'Censo Depto (JSON)')
+  ]);
+
+  // Índices de censo
+  const idxCom = new Map((Array.isArray(censoComunas)?censoComunas:[]).map(d => [String((d.nombre||'').trim().toUpperCase()), d.pob_2019 ?? d.pob_2018 ?? d.pob ?? null]));
+  const idxCor = new Map((Array.isArray(censoCorreg)?censoCorreg:[]).map(d => [String((d.nombre||'').trim().toUpperCase()), d.pob_2019 ?? d.pob_2018 ?? d.pob ?? null]));
+  const idxMun = new Map((Array.isArray(censoMunis)?censoMunis:[]).map(d => [Number(d.cod), Number(d.poblacion)||null]));
+
+  // Estilos
+  const colorMunicipio = (p)=> p>150000?'#08306b':p>80000?'#08519c':p>40000?'#2171b5':p>20000?'#4292c6':p>10000?'#6baed6':p>5000?'#9ecae1':'#c6dbef';
+
+  // Capas
+  let capaComunas=null, capaCorreg=null, capaMunis=null;
+
+  if (geoComunas){
+    capaComunas = L.geoJSON(geoComunas, {
+      style:{ color:'#22c55e', weight:1, fillOpacity:.20 },
+      onEachFeature:(f,lyr)=>{
+        const n = nombreProp(f);
+        const pob = idxCom.get(n.toUpperCase());
+        lyr.bindPopup(`<b>Comuna:</b> ${n || 's/d'}<br><b>Población:</b> ${pob!=null ? pob.toLocaleString('es-CO') : 's/d'}`);
+      }
+    }).addTo(map);
+  }
+
+  if (geoCorreg){
+    capaCorreg = L.geoJSON(geoCorreg, {
+      style:{ color:'#eab308', weight:1, fillOpacity:.15 },
+      onEachFeature:(f,lyr)=>{
+        const n = nombreProp(f);
+        const pob = idxCor.get(n.toUpperCase());
+        lyr.bindPopup(`<b>Corregimiento:</b> ${n || 's/d'}<br><b>Población:</b> ${pob!=null ? pob.toLocaleString('es-CO') : 's/d'}`);
+      }
+    }).addTo(map);
+  }
+
+  if (geoMunTol){
+    capaMunis = L.geoJSON(geoMunTol, {
+      style:(f)=>{
+        const cod = Number(f.properties?.DANE ?? f.properties?.COD_DANE ?? f.properties?.cod ?? 0);
+        const p = idxMun.get(cod);
+        return { color:'#19446b', weight:.8, fillColor: colorMunicipio(p), fillOpacity:.72 };
+      },
+      onEachFeature:(f,lyr)=>{
+        const cod = Number(f.properties?.DANE ?? f.properties?.COD_DANE ?? f.properties?.cod ?? 0);
+        const n = (f.properties?.NOMBRE ?? f.properties?.Nombre ?? f.properties?.nombre ?? 'Municipio');
+        const p = idxMun.get(cod);
+        lyr.bindPopup(`<b>${n}</b><br>COD DANE: ${cod || 's/d'}<br><b>Población 2018:</b> ${p!=null ? p.toLocaleString('es-CO') : 's/d'}`);
+      }
+    });
+  }
+
+  // Control de capas
+  const overlays = {};
+  if (capaComunas) overlays['Comunas'] = capaComunas;
+  if (capaCorreg)  overlays['Corregimientos'] = capaCorreg;
+  if (capaMunis)   overlays['Municipios Tolima'] = capaMunis;
+
+  if (Object.keys(overlays).length){
+    L.control.layers(null, overlays, {collapsed:false}).addTo(map);
+    const inicio = capaComunas || capaCorreg || capaMunis;
+    if (inicio){
+      try { map.fitBounds(inicio.getBounds().pad(0.05)); } catch {}
+    }
+  }
+
+  // Búsqueda simple (nombres de features visibles)
+  const $q=$('#q'), $sg=$('#suggest');
+  const items = [];
+  function collect(layer, tipo){
+    if(!layer) return;
+    layer.eachLayer(l=>{
+      try{
+        const n = l.feature? nombreProp(l.feature) : (l.options?.title||'');
+        const c = l.getBounds? l.getBounds().getCenter() : (l.getLatLng?.()||null);
+        if(n && c) items.push({tipo, nombre:n, lat:c.lat, lng:c.lng});
+      }catch{}
+    });
+  }
+  collect(capaComunas,'Comuna'); collect(capaCorreg,'Corregimiento'); collect(capaMunis,'Municipio');
+
+  function updateSuggest(list){
+    if(!list.length){ $sg.hidden=true; $sg.innerHTML=''; return; }
+    $sg.hidden=false;
+    $sg.innerHTML=list.slice(0,60).map(it=>`<div data-lat="${it.lat}" data-lng="${it.lng}">🔎 ${it.nombre} <small style="opacity:.7">(${it.tipo})</small></div>`).join('');
+    $sg.querySelectorAll('div').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const lat=parseFloat(el.dataset.lat), lng=parseFloat(el.dataset.lng);
+        map.setView([lat,lng], 13); $sg.hidden=true; $q.value='';
+      });
+    });
+  }
+  $q.addEventListener('input',()=>{
+    const v=$q.value.trim().toLowerCase();
+    if(!v){ updateSuggest([]); return; }
+    const list=items.filter(x=>x.nombre.toLowerCase().includes(v));
+    updateSuggest(list);
+  });
+  document.addEventListener('click',(e)=>{ if(!$sg.contains(e.target) && e.target!==$q){ $sg.hidden=true; }});
+
+  // Estadísticas
+  const departTolima = (censoDept && censoDept.censo_2018) ? censoDept.censo_2018 : { poblacion_total: null };
+
+  function sum(arr){ return arr.reduce((a,b)=>a+(Number(b)||0),0); }
+  function showInfo(title,html){ $('#infoTitle').textContent=title; $('#infoBody').innerHTML=html; $('#infobox').hidden=false; }
+  $('#infoClose').addEventListener('click',()=>$('#infobox').hidden=true);
+
+  $('#btnStatsComunas')?.addEventListener('click',()=>{
+    const nombres = [];
+    let total = 0;
+    (Array.isArray(censoComunas)?censoComunas:[]).forEach(d=>{
+      nombres.push(`${d.nombre} <span class="muted">(${d.pob_2019??d.pob_2018??d.pob??'s/d'})</span>`);
+      total += Number(d.pob_2019??d.pob_2018??d.pob??0);
+    });
+    showInfo('Censo · Comunas de Ibagué',
+      `<p><b>Total comunas:</b> ${nombres.length}</p>
+       <p><b>Población reportada:</b> ${total? total.toLocaleString('es-CO') : 's/d'}</p>
+       <div class="muted">${nombres.join(' · ')}</div>`);
+  });
+
+  $('#btnStatsCorreg')?.addEventListener('click',()=>{
+    const nombres = [];
+    let total = 0;
+    (Array.isArray(censoCorreg)?censoCorreg:[]).forEach(d=>{
+      nombres.push(`${d.nombre} <span class="muted">(${d.pob_2019??d.pob_2018??d.pob??'s/d'})</span>`);
+      total += Number(d.pob_2019??d.pob_2018??d.pob??0);
+    });
+    showInfo('Censo · Corregimientos de Ibagué',
+      `<p><b>Total corregimientos:</b> ${nombres.length}</p>
+       <p><b>Población reportada:</b> ${total? total.toLocaleString('es-CO') : 's/d'}</p>
+       <div class="muted">${nombres.join(' · ')}</div>`);
+  });
+
+  $('#btnStatsMunicipios')?.addEventListener('click',()=>{
+    const lista = Array.isArray(censoMunis)?censoMunis:[];
+    const total = sum(lista.map(x=>x.poblacion));
+    showInfo('Censo · Municipios del Tolima (CNPV 2018)',
+      `<p><b>Municipios:</b> ${lista.length}</p>
+       <p><b>Población total (suma):</b> ${total? total.toLocaleString('es-CO') : 's/d'}</p>`);
+  });
+
+  $('#btnStatsDepto')?.addEventListener('click',()=>{
+    showInfo('Censo · Departamento del Tolima',
+      `<p><b>Población total (CNPV 2018):</b> ${departTolima.poblacion_total? departTolima.poblacion_total.toLocaleString('es-CO') : 's/d'}</p>`);
+  });
+
+})();
+</script>
+</body>
+</html>
