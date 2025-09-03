@@ -1,0 +1,7 @@
+[
+  { "cod": 73001, "nombre": "Ibagué", "poblacion": 529635 },
+  { "cod": 73024, "nombre": "Alpujarra", "poblacion": 3089 },
+  { "cod": 73026, "nombre": "Alvarado", "poblacion": 8241 },
+  { "cod": 73030, "nombre": "Ambalema", "poblacion": 6813 }
+  // ... los 47 municipios
+]
