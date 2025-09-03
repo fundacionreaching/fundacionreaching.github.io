@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Mapa Ibagué – Comunas, Corregimientos y Veredas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .leaflet-container { font: 14px system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+  (async () => {
+    const map = L.map('map').setView([4.4389, -75.2322], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // ===== Comunas =====
+    const [geoCom, censoCom] = await Promise.all([
+      fetch('./data/ibague_urbano.geojson').then(r=>r.json()),
+      fetch('./data/comunas_ibague.json').then(r=>r.json())
+    ]);
+    const idxCom = new Map(censoCom.map(d => [(d.nombre||'').toUpperCase(), d.pob_2018]));
+    L.geoJSON(geoCom, {
+      style:{color:'#0a6dc2',weight:1,fillOpacity:.20},
+      onEachFeature:(f,lyr)=>{
+        const n=(f.properties?.nombre||f.properties?.NOMBRE||'').toUpperCase();
+        const pob=idxCom.get(n)??'s/d';
+        lyr.bindPopup(`<b>Comuna:</b> ${n}<br>Población 2018: ${pob}`);
+      }
+    }).addTo(map);
+
+    // ===== Corregimientos =====
+    const [geoCorr, censoCorr] = await Promise.all([
+      fetch('./data/ibague_corregimientos.geojson').then(r=>r.json()),
+      fetch('./data/corregimientos_ibague.json').then(r=>r.json())
+    ]);
+    const idxCorr = new Map(censoCorr.map(d => [(d.nombre||'').toUpperCase(), d.pob_2018]));
+    L.geoJSON(geoCorr, {
+      style:{color:'#ff8800',weight:1,fillOpacity:.15},
+      onEachFeature:(f,lyr)=>{
+        const n=(f.properties?.nombre||f.properties?.NOMBRE||'').toUpperCase();
+        const pob=idxCorr.get(n)??'s/d';
+        lyr.bindPopup(`<b>Corregimiento:</b> ${n}<br>Población 2018: ${pob}`);
+      }
+    }).addTo(map);
+
+    // ===== Veredas =====
+    try {
+      const [geoVer, censoVer] = await Promise.all([
+        fetch('./data/ibague_veredas.geojson').then(r=>r.json()),
+        fetch('./data/veredas_ibague.json').then(r=>r.json())
+      ]);
+      const idxVer = new Map(censoVer.map(d => [(d.nombre||'').toUpperCase(), d.pob_2018]));
+      L.geoJSON(geoVer, {
+        style:{color:'#2e7d32',weight:0.7,fillOpacity:.10},
+        onEachFeature:(f,lyr)=>{
+          const n=(f.properties?.nombre||f.properties?.NOMBRE||'').toUpperCase();
+          const pob=idxVer.get(n)??'s/d';
+          lyr.bindPopup(`<b>Vereda:</b> ${n}<br>Población 2018: ${pob}`);
+        }
+      }).addTo(map);
+    } catch(e) {
+      console.warn("No se cargaron veredas:", e);
+    }
+  })();
+  </script>
+</body>
+</html>
