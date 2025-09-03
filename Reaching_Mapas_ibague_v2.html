@@ -158,6 +158,75 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   
 <script>
+  <script>
+(async () => {
+  const hud = document.getElementById('status') || { innerHTML:'' };
+  const log = (html) => hud.innerHTML += html;
+
+  const map = window._map || L.map('map').setView([4.4389, -75.2322], 12);
+  if (!window._map) {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19, attribution:'© OpenStreetMap'
+    }).addTo(map);
+    window._map = map;
+  }
+
+  // Rutas candidatas (primero /data, luego raíz)
+  const CANDIDATAS = (n) => [`./data/${n}`, `./${n}`];
+  async function getJSON(cands, label){
+    for (const url of cands){
+      try {
+        const r = await fetch(url, {cache:'no-store'});
+        if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+        const j = await r.json();
+        log(`<div style="color:#0a7a3d">✔ ${label}: ${url}</div>`);
+        return j;
+      } catch(e){
+        log(`<div style="color:#b00020">✖ ${label}: ${url} — ${e.message}</div>`);
+      }
+    }
+    return null;
+  }
+  const nombre = f => ((f?.properties?.nombre ?? f?.properties?.NOMBRE ?? f?.properties?.Nombre ?? '')+'').trim();
+
+  // ------- COMUNAS -------
+  const comunasGeo = await getJSON(CANDIDATAS('ibague_urbano.geojson'), 'Comunas (GeoJSON)');
+  let capaComunas = null;
+  if (comunasGeo){
+    capaComunas = L.geoJSON(comunasGeo, {
+      style:{ color:'#0a6dc2', weight:1, fillOpacity:.20 },
+      onEachFeature:(f,lyr)=>{
+        const n = nombre(f) || 'Comuna';
+        lyr.bindPopup(`<b>Comuna</b><br>${n}`);
+      }
+    }).addTo(map);
+  }
+
+  // ------- CORREGIMIENTOS -------
+  const corregGeo = await getJSON(CANDIDATAS('ibague_corregimientos.geojson'), 'Corregimientos (GeoJSON)');
+  let capaCorreg = null;
+  if (corregGeo){
+    capaCorreg = L.geoJSON(corregGeo, {
+      style:{ color:'#ff8800', weight:1, fillOpacity:.15 },
+      onEachFeature:(f,lyr)=>{
+        const n = nombre(f) || 'Corregimiento';
+        lyr.bindPopup(`<b>Corregimiento</b><br>${n}`);
+      }
+    }).addTo(map);
+  }
+
+  // ------- CONTROL Y ENFOQUE -------
+  const overlays = {};
+  if (capaComunas) overlays['Comunas'] = capaComunas;
+  if (capaCorreg)  overlays['Corregimientos'] = capaCorreg;
+  if (Object.keys(overlays).length){
+    L.control.layers(null, overlays, {collapsed:false}).addTo(map);
+    const fg = L.featureGroup(Object.values(overlays));
+    try { map.fitBounds(fg.getBounds().pad(0.05)); } catch {}
+  }
+})();
+</script>
+
   (function(){
 // ✅ Comunas:
 const geoComunas = await fetch('./ibague_urbano.geojson').then(r=>r.json());
