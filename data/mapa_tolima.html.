@@ -1,0 +1,31 @@
+// Comunas (unir por nombre):
+const [geoComunas, censoComunas] = await Promise.all([
+  fetch('./data/ibague_urbano.geojson').then(r=>r.json()),
+  fetch('./data/comunas_ibague.json').then(r=>r.json())
+]);
+const idxCom = new Map(censoComunas.map(d => [(d.nombre||'').trim().toUpperCase(), d.pob_2018]));
+L.geoJSON(geoComunas, {
+  style:{color:'#0a6dc2',weight:1,fillOpacity:.20},
+  onEachFeature:(f,lyr)=>{
+    const n = ((f.properties?.nombre||f.properties?.NOMBRE||'')+'').trim().toUpperCase();
+    const pob = idxCom.get(n) ?? 's/d';
+    lyr.bindPopup(`<b>Comuna:</b> ${n}<br>Población 2018: <b>${pob}</b>`);
+  }
+}).addTo(map);
+
+// Corregimientos:
+const [geoCorr, censoCorr] = await Promise.all([
+  fetch('./data/ibague_corregimientos.geojson').then(r=>r.json()),
+  fetch('./data/corregimientos_ibague.json').then(r=>r.json())
+]);
+const idxCor = new Map(censoCorr.map(d => [(d.nombre||'').trim().toUpperCase(), d.pob_2018]));
+L.geoJSON(geoCorr, {
+  style:{color:'#ff8800',weight:1,fillOpacity:.15},
+  onEachFeature:(f,lyr)=>{
+    const n = ((f.properties?.nombre||f.properties?.NOMBRE||'')+'').trim().toUpperCase();
+    const pob = idxCor.get(n) ?? 's/d';
+    lyr.bindPopup(`<b>Corregimiento:</b> ${n}<br>Población 2018: <b>${pob}</b>`);
+  }
+}).addTo(map);
+
+// Veredas (idéntico patrón: unir por nombre y/o corregimiento)
