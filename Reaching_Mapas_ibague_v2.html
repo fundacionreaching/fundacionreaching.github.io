@@ -3,8 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mapa de Ibagué y Tolima – Fundación Reaching</title>
+  <title>Reaching · Mapas Ibagué v2 (Tolima)</title>
   <meta name="description" content="Mapa interactivo de Ibagué (comunas y corregimientos) y municipios del Tolima con población DANE 2018/2019, búsqueda, compartir por enlace y persistencia local." />
+  <link rel="canonical" href="/Reaching_Mapas_Ibague_v2.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Reaching · Mapas Ibagué v2 (Tolima)" />
+  <meta property="og:description" content="Explora comunas y corregimientos de Ibagué, y municipios del Tolima. Búsqueda, capas, estilo y estadísticas." />
+  <meta property="og:image" content="/assets/og-mapas-ibague.png" />
+  <meta name="theme-color" content="#0ea5e9" />
+
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://{s}.tile.openstreetmap.org" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
@@ -47,7 +55,7 @@
     .chip:hover{background:rgba(125,211,252,.1)}
     .legend{display:flex;gap:.5rem;flex-wrap:wrap;font-size:.85rem;color:#94a3b8}
     .legend .sw{width:.85rem;height:.85rem;border-radius:999px;display:inline-block}
-    #map{flex:1;min-height:calc(100vh - 160px)}
+    #map{flex:1;min-height:calc(100vh - 176px)}
     footer{font-size:.85rem;color:#94a3b8;padding:.5rem .9rem;border-top:1px solid rgba(148,163,184,.2);background:#0b1220}
     a, a:visited{color:#7dd3fc}
     @media(min-width:920px){.panel-inner{grid-template-columns:2fr 1fr 1.2fr 1fr}}
@@ -62,6 +70,11 @@
     .health{background:#1e293b;color:#e2e8f0;border-top:1px solid rgba(148,163,184,.25);border-bottom:1px solid rgba(148,163,184,.25);padding:.5rem .75rem;font-size:.875rem}
     .health b{color:#7dd3fc}
     .health.bad{background:#3f1d20}
+    /* Toggle de vista */
+    .seg{display:inline-flex;border:1px solid rgba(148,163,184,.3);border-radius:.65rem;overflow:hidden}
+    .seg button{background:transparent;color:#e2e8f0;padding:.4rem .7rem;border-right:1px solid rgba(148,163,184,.2)}
+    .seg button:last-child{border-right:none}
+    .seg button.active{background:#0b1220;color:#7dd3fc;font-weight:700}
   </style>
   <noscript>Esta página requiere JavaScript para funcionar.</noscript>
 </head>
@@ -70,12 +83,19 @@
   <header>
     <div class="wrap">
       <div class="brand">
-        <span class="dot"></span>
+        <span class="dot" aria-hidden="true"></span>
         <a href="/">Fundación Reaching</a>
         <span style="opacity:.7">·</span>
-        <span>Mapa de Ibagué (Comunas & Corregimientos) + Municipios de Tolima (CNPV 2018)</span>
+        <span>Mapas de Ibagué & Tolima (CNPV 2018)</span>
       </div>
-      <button id="toggle" class="controls-toggle" aria-expanded="true">Controles</button>
+      <div class="cta-row">
+        <div class="seg" role="tablist" aria-label="Cambiar vista">
+          <button id="tabCom" class="active" role="tab" aria-selected="true" title="1">Comunas</button>
+          <button id="tabCor" role="tab" aria-selected="false" title="2">Corregimientos</button>
+          <button id="tabMun" role="tab" aria-selected="false" title="3">Municipios</button>
+        </div>
+        <button id="toggle" class="controls-toggle" aria-expanded="true">Controles</button>
+      </div>
     </div>
   </header>
 
@@ -138,12 +158,12 @@
     </div>
   </section>
 
-  <div id="map"></div>
+  <div id="map" aria-label="Mapa principal"></div>
 
   <div id="infobox" class="infobox" hidden>
     <header>
       <h4 id="infoTitle">Información</h4>
-      <button id="infoClose" class="close">✕</button>
+      <button id="infoClose" class="close" aria-label="Cerrar">✕</button>
     </header>
     <div class="body" id="infoBody"></div>
   </div>
@@ -159,7 +179,7 @@
   
 <script>
 (function(){
-  const LS_KEY = 'reaching.ibague.state.v2';
+  const LS_KEY = 'Reaching_Mapas_Ibague_v2';
   const $ = (sel)=>document.querySelector(sel);
   const $$ = (sel)=>Array.from(document.querySelectorAll(sel));
   const qs = (name)=>new URLSearchParams(location.search).get(name);
@@ -268,10 +288,24 @@
     }catch(e){ console.warn('Tolima geo falló',e); }
   }
 
-  // Capas
-  const groupComunas=L.markerClusterGroup({disableClusteringAtZoom:15});
-  const groupCorregs=L.markerClusterGroup({disableClusteringAtZoom:15});
-  const groupMunicip=L.markerClusterGroup({disableClusteringAtZoom:8});
+  // ===== Capas (conmutables cluster/no-cluster) =====
+  let groupComunas, groupCorregs, groupMunicip;
+  const markerIndex={comuna:new Map(),correg:new Map(),municipio:new Map()};
+
+  function buildGroups(){
+    // Eliminar grupos anteriores del mapa
+    [groupComunas, groupCorregs, groupMunicip].forEach(g=>{ if(g && map.hasLayer(g)) map.removeLayer(g); });
+
+    if(chkClu.checked){
+      groupComunas=L.markerClusterGroup({disableClusteringAtZoom:15});
+      groupCorregs=L.markerClusterGroup({disableClusteringAtZoom:15});
+      groupMunicip=L.markerClusterGroup({disableClusteringAtZoom:8});
+    }else{
+      groupComunas=L.layerGroup();
+      groupCorregs=L.layerGroup();
+      groupMunicip=L.layerGroup();
+    }
+  }
 
   function markerComuna(it){ const c='#22c55e';
     if(state.det||chkDet.checked) return L.circleMarker([it.lat,it.lng],{radius:radiusByPop(it.pob),color:c,weight:1,fillColor:c,fillOpacity:.35}).bindPopup(`<strong>${it.nombre}</strong><br>Comuna<br>Población (2019): ${fmt(it.pob)}`);
@@ -284,6 +318,11 @@
   function markerMunicipio(it){ const c='#38bdf8';
     if(state.det||chkDet.checked) return L.circleMarker([it.lat,it.lng],{radius:radiusByPop(it.pob),color:c,weight:1,fillColor:c,fillOpacity:.35}).bindPopup(`<strong>${it.nombre}</strong><br>Municipio · Tolima<br>Población (Censo 2018): ${fmt(it.pob)}`);
     return L.marker([it.lat,it.lng],{title:it.nombre}).bindPopup(`<strong>${it.nombre}</strong><br>Municipio · Población 2018: ${fmt(it.pob)}`);
+  }
+
+  function clearGroups(){
+    [groupComunas, groupCorregs, groupMunicip].forEach(g=>g && g.clearLayers && g.clearLayers());
+    markerIndex.comuna.clear(); markerIndex.correg.clear(); markerIndex.municipio.clear();
   }
 
   // Búsqueda
@@ -350,8 +389,6 @@
     for(let i=0;i<municip.length;i++){ if(municip[i].lat==null) municip[i]=await geocodeIfMissing(municip[i],'Tolima, Colombia'); }
   }
 
-  // Índices para abrir popups
-  const markerIndex={comuna:new Map(),correg:new Map(),municipio:new Map()};
   function openKey(kind,key){
     const maxTries=20; let tries=0;
     function attempt(){
@@ -366,9 +403,8 @@
     attempt();
   }
 
-  function renderLayers(){
-    groupComunas.clearLayers(); groupCorregs.clearLayers(); groupMunicip.clearLayers();
-    markerIndex.comuna.clear(); markerIndex.correg.clear(); markerIndex.municipio.clear();
+  function addLayers(){
+    clearGroups();
 
     comunas.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)){ const m=markerComuna(x); groupComunas.addLayer(m); markerIndex.comuna.set(x.nombre,m);} });
     corregs.forEach(x=>{ if(isFinite(x.lat) && isFinite(x.lng)){ const m=markerCorreg(x); groupCorregs.addLayer(m); markerIndex.correg.set(x.nombre,m);} });
@@ -378,6 +414,11 @@
     if(v==='comunas'){ if(!map.hasLayer(groupComunas)) groupComunas.addTo(map); map.removeLayer(groupCorregs); map.removeLayer(groupMunicip); }
     if(v==='corregimientos'){ if(!map.hasLayer(groupCorregs)) groupCorregs.addTo(map); map.removeLayer(groupComunas); map.removeLayer(groupMunicip); }
     if(v==='municipios'){ if(!map.hasLayer(groupMunicip)) groupMunicip.addTo(map); map.removeLayer(groupComunas); map.removeLayer(groupCorregs); }
+  }
+
+  function renderLayers(){
+    buildGroups();
+    addLayers();
   }
 
   function updateDeck(){
@@ -394,7 +435,7 @@
     };
   }
 
-  // Búsqueda
+  // Búsqueda UI
   const $q=$('#q'), $sg=$('#suggest');
   function updateSuggest(list){ if(!list.length){ $sg.hidden=true; $sg.innerHTML=''; return; }
     $sg.hidden=false; $sg.innerHTML=list.slice(0,60).map(it=>`<div data-lat="${it.lat}" data-lng="${it.lng}">🔎 ${it.nombre} <small style="opacity:.7">(${it.tipo})</small></div>`).join('');
@@ -407,7 +448,13 @@
   $('#btnShare').addEventListener('click',()=>{ const c=map.getCenter(); const params=new URLSearchParams({lat:c.lat.toFixed(5),lng:c.lng.toFixed(5),z:map.getZoom(),det:chkDet.checked?'1':'0',cl:chkClu.checked?'1':'0',pop:chkPop.checked?'1':'0',base:state.base||'osm',view:state.view||'comunas'}); const url=`${location.origin}${location.pathname}?${params.toString()}`; navigator.clipboard?.writeText(url); alert('Enlace copiado al portapapeles:\n'+url); });
   $('#btnReset').addEventListener('click',()=>{ localStorage.removeItem(LS_KEY); location.href=location.pathname; });
 
-  function setView(v){ state.view=v; saveState({view:v}); renderLayers(); updateDeck(); }
+  function setView(v){ state.view=v; saveState({view:v}); renderLayers(); updateDeck(); updateTabs(); }
+
+  function updateTabs(){
+    const mapSel = {comunas:'#tabCom', corregimientos:'#tabCor', municipios:'#tabMun'};
+    ['#tabCom','#tabCor','#tabMun'].forEach((sel)=>{ const el=$(sel); el.classList.remove('active'); el.setAttribute('aria-selected','false'); });
+    const el=$(mapSel[state.view]||'#tabCom'); el.classList.add('active'); el.setAttribute('aria-selected','true');
+  }
 
   // Inicialización
   async function init(){
@@ -427,6 +474,15 @@
     else{ h.innerHTML=`✅ Datos cargados: Comunas <b>${c1}</b>, Corregimientos <b>${c2}</b>, Municipios <b>${c3}</b>${found.length? ' · fuentes: '+urls:''}`; }
 
     const viewParam=(qs('view')||'comunas'); setView(viewParam);
+
+    // Eventos de conmutación
+    chkDet.addEventListener('change',()=>{ saveState({det:chkDet.checked}); renderLayers(); });
+    chkClu.addEventListener('change',()=>{ saveState({cluster:chkClu.checked}); renderLayers(); });
+    chkPop.addEventListener('change',()=>{ saveState({pop:chkPop.checked}); renderLayers(); });
+
+    $('#tabCom').addEventListener('click',()=>setView('comunas'));
+    $('#tabCor').addEventListener('click',()=>setView('corregimientos'));
+    $('#tabMun').addEventListener('click',()=>setView('municipios'));
   }
 
   document.addEventListener('keydown',(e)=>{ if(e.key==='1') setView('comunas'); if(e.key==='2') setView('corregimientos'); if(e.key==='3') setView('municipios'); });
@@ -448,4 +504,3 @@
 </script>
 </body>
 </html>
-
