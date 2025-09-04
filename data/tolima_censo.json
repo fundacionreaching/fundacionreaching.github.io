@@ -1,3 +1,0 @@
-const geoMunis = await getJSON(BASE + 'tolima_municipios.geojson', 'Municipios (GeoJSON)');
-const censoDept = await getJSON(BASE + 'tolima_censo.json', 'Censo Dept.');
-const censoMun  = await getJSON(BASE + 'municipios_censo.json', 'Censo por municipio');
