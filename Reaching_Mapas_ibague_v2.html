@@ -390,7 +390,9 @@
     try{
       const resp=await fetch('https://www.datos.gov.co/api/views/gdxc-w37w/rows.csv?accessType=DOWNLOAD');
       const txt=await resp.text();
-      const rows=txt.split(/\r?\n/).slice(1).map(r=>r.split(','));
+      const rows=txt.split(/
+?
+/).slice(1).map(r=>r.split(','));
       const tol=rows.filter(r=>r && r[0]==='73');
       const byCode=new Map();
       tol.forEach(r=>{ const cod=r[2]; const lat=parseFloat((r[6]||'').replace(',','.')); const lng=parseFloat((r[5]||'').replace(',','.')); if(cod && !Number.isNaN(lat) && !Number.isNaN(lng)) byCode.set(parseInt(cod,10),{lat,lng}); });
@@ -467,7 +469,8 @@
   document.addEventListener('click',(e)=>{ if(!$sg.contains(e.target) && e.target!==$q){ $sg.hidden=true; }});
 
   // Compartir / Reset
-  $('#btnShare').addEventListener('click',()=>{ const c=map.getCenter(); const params=new URLSearchParams({lat:c.lat.toFixed(5),lng:c.lng.toFixed(5),z:map.getZoom(),det:chkDet.checked?'1':'0',cl:chkClu.checked?'1':'0',pop:chkPop.checked?'1':'0',base:state.base||'osm',view:state.view||'comunas'}); const url=`${location.origin}${location.pathname}?${params.toString()}`; navigator.clipboard?.writeText(url); alert('Enlace copiado al portapapeles:\n'+url); });
+  $('#btnShare').addEventListener('click',()=>{ const c=map.getCenter(); const params=new URLSearchParams({lat:c.lat.toFixed(5),lng:c.lng.toFixed(5),z:map.getZoom(),det:chkDet.checked?'1':'0',cl:chkClu.checked?'1':'0',pop:chkPop.checked?'1':'0',base:state.base||'osm',view:state.view||'comunas'}); const url=`${location.origin}${location.pathname}?${params.toString()}`; navigator.clipboard?.writeText(url); alert('Enlace copiado al portapapeles:
+'+url); });
   $('#btnReset').addEventListener('click',()=>{ localStorage.removeItem(LS_KEY); location.href=location.pathname; });
 
   function setView(v){ state.view=v; saveState({view:v}); renderLayers(); updateDeck(); updateTabs(); }
