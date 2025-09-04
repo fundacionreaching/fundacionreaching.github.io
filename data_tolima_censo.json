@@ -1,0 +1,18 @@
+ "version": 1,
+  "actualizado": "2025-09-04",
+  "departamento": { "nombre": "Tolima", "poblacion_2018": 1330187 },
+
+  "municipios": [
+    { "cod": 73001, "nombre": "Ibagué", "pob": 529635, "lat": 4.4389, "lng": -75.2320 }
+    // ... resto de municipios
+  ],
+
+  "comunas": [
+    { "id": 1, "nombre": "Centro", "pob": 31009, "lat": 4.44, "lng": -75.24 }
+    // ... opcional
+  ],
+
+  "corregimientos": [
+    { "id": 1, "nombre": "Dantas", "pob": null, "lat": 4.62, "lng": -75.30 }
+    // ... opcional
+  ]
