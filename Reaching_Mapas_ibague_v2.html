@@ -99,38 +99,7 @@
 window.onerror = function(msg, src, line, col){
   const el=document.getElementById('jsErr');
   el.textContent = "⚠️ Error de script: "+msg+" ("+src+":"+line+":"+col+")";
-};// --- LIMPIEZA DE HANDLERS VIEJOS Y SILENCIADOR DE ALERTAS DE DEBUG ---
-// 1) Silencia solo los alerts de "OCULTANDO …" que hayan quedado en el sitio
-(function patchLegacyAlerts(){
-  const _alert = window.alert;
-  window.alert = function(msg){
-    if (typeof msg === 'string' && /OCULTANDO\\s+(COMUNAS|CORREGIMIENTOS|MUNICIPIOS)/i.test(msg)) {
-      console.info('[silenciado]', msg);
-      return; // no mostrar modal
-    }
-    return _alert.apply(this, arguments);
-  };
-})();
-
-// 2) Quita cualquier atributo inline onclick heredado que dispare esos alerts
-(function removeInlineOnClicks(){
-  document.querySelectorAll('[onclick]').forEach(el=>{
-    const h = (el.getAttribute('onclick')||'');
-    if (/OCULTANDO|ocultar|mostrar/i.test(h)) {
-      el.removeAttribute('onclick');
-    }
-  });
-})();
-
-// 3) Invalida posibles funciones globales antiguas usadas por esos botones
-['ocultarComunas','ocultarCorregimientos','ocultarMunicipios','toggleComunas','toggleCorreg','toggleMunicipios']
-  .forEach(fn=>{
-    if (typeof window[fn] === 'function') {
-      window[fn] = ()=>{}; // noop
-    }
-  });
-// --- FIN PARCHE ---
-
+};
 
 /* ===== CONFIG ===== */
 const CONFIG = {
@@ -316,4 +285,3 @@ document.getElementById("btnCollapse").onclick=()=>{ const lay=document.getEleme
 </script>
 </body>
 </html>
-
