@@ -21,6 +21,7 @@
   .chip{border:1px solid #ffffff26;background:#121a45;color:var(--fg);padding:.45rem .7rem;border-radius:999px;cursor:pointer;font-weight:600}
   .btn-row{display:flex;flex-wrap:wrap;gap:.4rem}
   #mapWrap{position:relative} #map{height:100%;min-height:520px;border:1px solid #ffffff16;border-radius:12px;overflow:hidden}
+  input[type="search"}{width:100%;border:1px solid #ffffff26;background:#0e1433;color:#fff;border-radius:10px;padding:.55rem .7rem}
   input[type="search"]{width:100%;border:1px solid #ffffff26;background:#0e1433;color:#fff;border-radius:10px;padding:.55rem .7rem}
   small{color:var(--mut)}
   .legend{position:absolute;bottom:12px;left:12px;background:#121a45cc;border:1px solid #ffffff26;border-radius:10px;padding:.5rem .6rem;font-size:.85rem}
@@ -93,9 +94,16 @@
 <!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Script único -->
+<!-- Script único (incluye verificación “JS listo ✔”) -->
 <script>
-/* ===== Captura de errores al panel ===== */
+/* ===== Captura errores y OK de JS ===== */
+const Diag = { el:null,
+  log(msg, ok=true){ const d=document.createElement("div"); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el&&this.el.appendChild(d); }
+};
+window.addEventListener("DOMContentLoaded", ()=>{
+  Diag.el=document.getElementById("diag");
+  Diag.log("JS listo ✔");
+});
 window.onerror = function(msg, src, line, col){
   const el=document.getElementById('jsErr');
   el.textContent = "⚠️ Error de script: "+msg+" ("+src+":"+line+":"+col+")";
@@ -123,9 +131,6 @@ function toast(msg, ms=2400){
   t.style.cssText="position:fixed;right:12px;bottom:12px;background:#16204a;color:#fff;border:1px solid #ffffff33;border-radius:12px;padding:.55rem .75rem;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,.35)";
   document.body.appendChild(t); setTimeout(()=>t.remove(),ms);
 }
-const Diag={ el:document.getElementById("diag"),
-  log(msg, ok=true){ const d=document.createElement("div"); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el.appendChild(d); }
-};
 function guessKey(obj, arr){
   for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k;
   for(const k in obj) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k;
