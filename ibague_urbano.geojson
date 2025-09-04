@@ -1,1 +1,73 @@
+{
+  "type": "FeatureCollection",
+  "name": "ibague_urbano_comunas_placeholder",
+  "crs": { "type": "name", "properties": { "name": "EPSG:4326" } },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 1 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 1", "CODIGO": "IBG-C01", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.27, 4.38], [-75.239, 4.38], [-75.239, 4.408], [-75.27, 4.408], [-75.27, 4.38]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 2 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 2", "CODIGO": "IBG-C02", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.24, 4.38], [-75.209, 4.38], [-75.209, 4.408], [-75.24, 4.408], [-75.24, 4.38]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 3 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 3", "CODIGO": "IBG-C03", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.21, 4.38], [-75.179, 4.38], [-75.179, 4.408], [-75.21, 4.408], [-75.21, 4.38]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 4 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 4", "CODIGO": "IBG-C04", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.18, 4.38], [-75.149, 4.38], [-75.149, 4.408], [-75.18, 4.408], [-75.18, 4.38]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 5 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 5", "CODIGO": "IBG-C05", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.27, 4.41], [-75.239, 4.41], [-75.239, 4.438], [-75.27, 4.438], [-75.27, 4.41]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 6 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 6", "CODIGO": "IBG-C06", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.24, 4.41], [-75.209, 4.41], [-75.209, 4.438], [-75.24, 4.438], [-75.24, 4.41]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 7 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 7", "CODIGO": "IBG-C07", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.21, 4.41], [-75.179, 4.41], [-75.179, 4.438], [-75.21, 4.438], [-75.21, 4.41]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 8 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 8", "CODIGO": "IBG-C08", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.18, 4.41], [-75.149, 4.41], [-75.149, 4.438], [-75.18, 4.438], [-75.18, 4.41]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 9 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 9", "CODIGO": "IBG-C09", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.27, 4.44], [-75.239, 4.44], [-75.239, 4.468], [-75.27, 4.468], [-75.27, 4.44]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 10 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 10", "CODIGO": "IBG-C10", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.24, 4.44], [-75.209, 4.44], [-75.209, 4.468], [-75.24, 4.468], [-75.24, 4.44]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 11 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 11", "CODIGO": "IBG-C11", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.21, 4.44], [-75.179, 4.44], [-75.179, 4.468], [-75.21, 4.468], [-75.21, 4.44]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 12 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 12", "CODIGO": "IBG-C12", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.18, 4.44], [-75.149, 4.44], [-75.149, 4.468], [-75.18, 4.468], [-75.18, 4.44]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "NOMBRE": "Comuna 13 (PLACEHOLDER)", "NOM_COMUNA": "Comuna 13", "CODIGO": "IBG-C13", "FUENTE": "PLACEHOLDER — reemplazar por geometría oficial" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-75.27, 4.47], [-75.239, 4.47], [-75.239, 4.497], [-75.27, 4.497], [-75.27, 4.47]]] }
+    }
+  ]
+}
 
