@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Fundación Reaching — Mapas Ibagué & Tolima (v2)</title>
+<title>Fundación Reaching — Mapas Ibagué & Tolima (v2 failsafe)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  :root{--bg:#0b1020;--fg:#eef3ff;--mut:#9aa3b2;--ok:#43d17a;--warn:#ffe08a;--info:#6bd1ff}
+  :root{--bg:#0b1020;--fg:#eef3ff;--mut:#9aa3b2}
   *{box-sizing:border-box}html,body{height:100%}body{margin:0;background:#0b1020;color:var(--fg);font-family:system-ui,Inter,Arial,sans-serif}
   header{position:sticky;top:0;background:#0d1430cc;backdrop-filter:blur(6px);padding:.6rem .8rem;border-bottom:1px solid #ffffff14;z-index:10}
   h1{font-size:1.06rem;margin:.1rem 0}.sub{color:var(--mut);font-size:.86rem}
@@ -21,6 +21,7 @@
   .legend{position:absolute;bottom:12px;left:12px;background:#121a45cc;border:1px solid #ffffff26;border-radius:10px;padding:.5rem .6rem;font-size:.85rem}
   .sw{display:inline-block;width:14px;height:10px;margin-right:6px;border:1px solid #ffffff26;border-radius:3px}
   footer{color:var(--mut);text-align:center;padding:.8rem}
+  .error{margin-top:.4rem;color:#ffb3b3;font-size:.9rem}
 </style>
 </head>
 <body>
@@ -48,6 +49,7 @@
       <small>Busca una comuna/corregimiento/municipio por nombre.</small>
       <div style="font-weight:700;margin:.7rem 0 .2rem">Diagnóstico</div>
       <div id="diag" style="font-size:.92rem;line-height:1.25;color:#dbe5ff"></div>
+      <div id="jsErr" class="error"></div>
     </aside>
 
     <section style="position:relative">
@@ -62,9 +64,15 @@
 <!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Script único (reemplaza todo lo previo) -->
+<!-- Script ÚNICO (con captura de errores) -->
 <script>
-// ===== CONFIG (v2 estable) =====
+/* ===== Captura de errores JS al panel ===== */
+window.onerror = function(msg, src, line, col, err){
+  const el=document.getElementById('jsErr');
+  el.textContent = "⚠️ Error de script: "+msg+" ("+src+":"+line+":"+col+")";
+};
+
+/* ===== CONFIG ===== */
 const CONFIG = {
   boundsTolima: [[3.2,-75.7],[5.7,-74.6]],
   data: {
@@ -78,7 +86,7 @@ const CONFIG = {
   popKeys : ["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total"]
 };
 
-// ===== util UI =====
+/* ===== Util ===== */
 function toast(msg, ms=2600){
   const t = document.createElement("div");
   t.textContent = msg;
@@ -96,7 +104,7 @@ function guessKey(obj, arr){
 function getName(p){ const k=guessKey(p,CONFIG.nameKeys)||Object.keys(p||{})[0]; return p&&p[k]?String(p[k]):"Sin nombre"; }
 function getCode(p){ const k=guessKey(p,CONFIG.codeKeys); return k&&p[k]!=null?String(p[k]).padStart(5,"0"):null; }
 
-// ===== mapa base =====
+/* ===== Mapa ===== */
 const map = L.map("map",{preferCanvas:true});
 const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:"© OSM"});
 const sat = L.tileLayer('https://{s}.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{subdomains:['server','services'],maxZoom:19,attribution:"© Esri"});
@@ -105,7 +113,7 @@ osm.addTo(map); map.fitBounds(CONFIG.boundsTolima); L.control.layers({"OSM":osm,
 const layers = {comunas:null,correg:null,mpios:null};
 const cache  = {census:null,popKey:null,codeKey:null};
 
-// estilos y leyenda
+/* ===== Estilos & leyenda ===== */
 function baseStyle(c){return{color:c||'#69d1ff',weight:1,fillOpacity:.15}}
 function hoverStyle(){return{weight:3,fillOpacity:.3}}
 function attachInteractive(group,label){
@@ -140,7 +148,7 @@ function styleBy(mapVals){
   };
 }
 
-// ===== fetch helpers =====
+/* ===== Fetch helpers ===== */
 async function fetchJson(u){
   const r = await fetch(u,{cache:"no-store"}); if(!r.ok) throw new Error(r.status+" "+r.statusText);
   const txt = await r.text(); return JSON.parse(txt);
@@ -150,47 +158,47 @@ async function trySources(urls, label){
     try{ const data = await fetchJson(u); Diag.log(`${label}: ${u} ✔ OK`); return data; }
     catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false); }
   }
-  return null; // NO lanzar: el mapa sigue vivo aunque falte una capa
+  return null; // seguimos aunque falte
 }
 
-// ===== carga =====
+/* ===== Carga ===== */
 async function loadAll(){
-  // capas (se cargan independientemente)
-  const comunas = await trySources(CONFIG.data.comunas,"Comunas (GeoJSON)");
-  if(comunas){ layers.comunas=L.geoJSON(comunas,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,"Comuna"); }
-  const correg  = await trySources(CONFIG.data.correg,"Corregimientos (GeoJSON)");
-  if(correg){ layers.correg=L.geoJSON(correg,{style:baseStyle('#ffe08a')}).addTo(map); attachInteractive(layers.correg,"Correg."); }
-  const mpios   = await trySources(CONFIG.data.mpios,"Municipios (GeoJSON)");
-  if(mpios){ layers.mpios=L.geoJSON(mpios,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,"Municipio"); }
+  try{
+    const comunas = await trySources(CONFIG.data.comunas,"Comunas (GeoJSON)");
+    if(comunas){ layers.comunas=L.geoJSON(comunas,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,"Comuna"); }
+    const correg  = await trySources(CONFIG.data.correg,"Corregimientos (GeoJSON)");
+    if(correg){ layers.correg=L.geoJSON(correg,{style:baseStyle('#ffe08a')}).addTo(map); attachInteractive(layers.correg,"Correg."); }
+    const mpios   = await trySources(CONFIG.data.mpios,"Municipios (GeoJSON)");
+    if(mpios){ layers.mpios=L.geoJSON(mpios,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,"Municipio"); }
 
-  // índice de búsqueda (solo de lo que exista)
-  window._idx=[];
-  [layers.comunas,layers.correg,layers.mpios].forEach(g=>g&&g.eachLayer(l=>{
-    window._idx.push({name:getName(l.feature.properties||{}), bounds:l.getBounds()});
-  }));
-  Diag.log(`Índice de búsqueda: ${_idx.length} elementos ✔`);
+    window._idx=[]; [layers.comunas,layers.correg,layers.mpios].forEach(g=>g&&g.eachLayer(l=>{
+      window._idx.push({name:getName(l.feature.properties||{}), bounds:l.getBounds()});
+    }));
+    Diag.log(`Índice de búsqueda: ${_idx.length} elementos ✔`);
 
-  // censo opcional
-  for(const u of CONFIG.census){
-    try{
-      const data=await fetchJson(u);
-      const sample=Array.isArray(data)?data[0]:Object.values(data)[0];
-      cache.codeKey=guessKey(sample||data,CONFIG.codeKeys); cache.popKey=guessKey(sample||data,CONFIG.popKeys);
-      if(!cache.codeKey||!cache.popKey) throw new Error("no llaves (código/población)");
-      const M=new Map(); const push=row=>{
-        const code=String(row[cache.codeKey]).padStart(5,"0");
-        const val=Number(String(row[cache.popKey]).replace(/[^\d.]/g,''));
-        if(code && Number.isFinite(val)) M.set(code,val);
-      };
-      if(Array.isArray(data)) data.forEach(push); else Object.values(data).forEach(push);
-      cache.census=M; Diag.log(`Censo: ${u} ✔ (${M.size} municipios)`);
-      break;
-    }catch(e){ Diag.log(`Censo: ${u} — ${e.message}`, false); }
+    for(const u of CONFIG.census){
+      try{
+        const data=await fetchJson(u);
+        const sample=Array.isArray(data)?data[0]:Object.values(data)[0];
+        cache.codeKey=guessKey(sample||data,CONFIG.codeKeys); cache.popKey=guessKey(sample||data,CONFIG.popKeys);
+        if(!cache.codeKey||!cache.popKey) throw new Error("no llaves (código/población)");
+        const M=new Map(); const push=row=>{
+          const code=String(row[cache.codeKey]).padStart(5,"0");
+          const val=Number(String(row[cache.popKey]).replace(/[^\d.]/g,''));
+          if(code && Number.isFinite(val)) M.set(code,val);
+        };
+        if(Array.isArray(data)) data.forEach(push); else Object.values(data).forEach(push);
+        cache.census=M; Diag.log(`Censo: ${u} ✔ (${M.size} municipios)`);
+        break;
+      }catch(e){ Diag.log(`Censo: ${u} — ${e.message}`, false); }
+    }
+  }catch(e){
+    Diag.log("Fallo general de carga: "+e.message, false);
   }
 }
 loadAll();
 
-// ===== UI (botones) =====
+/* ===== UI ===== */
 function safeToggle(layer, nombre){
   if(!layer){ toast(`La capa “${nombre}” aún no está cargada`); return; }
   if(map.hasLayer(layer)){ map.removeLayer(layer); toast(`Ocultando ${nombre}`); }
@@ -226,4 +234,3 @@ document.getElementById("q").addEventListener("keydown",(e)=>{
 </script>
 </body>
 </html>
-
