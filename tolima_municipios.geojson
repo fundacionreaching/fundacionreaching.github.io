@@ -1,1 +1,1668 @@
-
+{
+  "type": "FeatureCollection",
+  "name": "tolima_municipios_placeholder",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Ibagué",
+        "NOM_MPIO": "Ibagué",
+        "MPIO_CCDGO": "73001",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.7,
+              3.2
+            ],
+            [
+              -75.55857142857143,
+              3.2
+            ],
+            [
+              -75.55857142857143,
+              3.508571428571429
+            ],
+            [
+              -75.7,
+              3.508571428571429
+            ],
+            [
+              -75.7,
+              3.2
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Alpujarra",
+        "NOM_MPIO": "Alpujarra",
+        "MPIO_CCDGO": "73024",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.54285714285714,
+              3.2
+            ],
+            [
+              -75.40142857142857,
+              3.2
+            ],
+            [
+              -75.40142857142857,
+              3.508571428571429
+            ],
+            [
+              -75.54285714285714,
+              3.508571428571429
+            ],
+            [
+              -75.54285714285714,
+              3.2
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Alvarado",
+        "NOM_MPIO": "Alvarado",
+        "MPIO_CCDGO": "73026",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.38571428571429,
+              3.2
+            ],
+            [
+              -75.24428571428571,
+              3.2
+            ],
+            [
+              -75.24428571428571,
+              3.508571428571429
+            ],
+            [
+              -75.38571428571429,
+              3.508571428571429
+            ],
+            [
+              -75.38571428571429,
+              3.2
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Ambalema",
+        "NOM_MPIO": "Ambalema",
+        "MPIO_CCDGO": "73030",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.22857142857143,
+              3.2
+            ],
+            [
+              -75.08714285714285,
+              3.2
+            ],
+            [
+              -75.08714285714285,
+              3.508571428571429
+            ],
+            [
+              -75.22857142857143,
+              3.508571428571429
+            ],
+            [
+              -75.22857142857143,
+              3.2
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Anzoátegui",
+        "NOM_MPIO": "Anzoátegui",
+        "MPIO_CCDGO": "73043",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.07142857142857,
+              3.2
+            ],
+            [
+              -74.92999999999999,
+              3.2
+            ],
+            [
+              -74.92999999999999,
+              3.508571428571429
+            ],
+            [
+              -75.07142857142857,
+              3.508571428571429
+            ],
+            [
+              -75.07142857142857,
+              3.2
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Armero (Guayabal)",
+        "NOM_MPIO": "Armero (Guayabal)",
+        "MPIO_CCDGO": "73055",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.91428571428571,
+              3.2
+            ],
+            [
+              -74.77285714285713,
+              3.2
+            ],
+            [
+              -74.77285714285713,
+              3.508571428571429
+            ],
+            [
+              -74.91428571428571,
+              3.508571428571429
+            ],
+            [
+              -74.91428571428571,
+              3.2
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Ataco",
+        "NOM_MPIO": "Ataco",
+        "MPIO_CCDGO": "73067",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.75714285714285,
+              3.2
+            ],
+            [
+              -74.61571428571428,
+              3.2
+            ],
+            [
+              -74.61571428571428,
+              3.508571428571429
+            ],
+            [
+              -74.75714285714285,
+              3.508571428571429
+            ],
+            [
+              -74.75714285714285,
+              3.2
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Cajamarca",
+        "NOM_MPIO": "Cajamarca",
+        "MPIO_CCDGO": "73124",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.7,
+              3.542857142857143
+            ],
+            [
+              -75.55857142857143,
+              3.542857142857143
+            ],
+            [
+              -75.55857142857143,
+              3.851428571428572
+            ],
+            [
+              -75.7,
+              3.851428571428572
+            ],
+            [
+              -75.7,
+              3.542857142857143
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Carmen de Apicalá",
+        "NOM_MPIO": "Carmen de Apicalá",
+        "MPIO_CCDGO": "73148",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.54285714285714,
+              3.542857142857143
+            ],
+            [
+              -75.40142857142857,
+              3.542857142857143
+            ],
+            [
+              -75.40142857142857,
+              3.851428571428572
+            ],
+            [
+              -75.54285714285714,
+              3.851428571428572
+            ],
+            [
+              -75.54285714285714,
+              3.542857142857143
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Chaparral",
+        "NOM_MPIO": "Chaparral",
+        "MPIO_CCDGO": "73168",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.38571428571429,
+              3.542857142857143
+            ],
+            [
+              -75.24428571428571,
+              3.542857142857143
+            ],
+            [
+              -75.24428571428571,
+              3.851428571428572
+            ],
+            [
+              -75.38571428571429,
+              3.851428571428572
+            ],
+            [
+              -75.38571428571429,
+              3.542857142857143
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Coello",
+        "NOM_MPIO": "Coello",
+        "MPIO_CCDGO": "73200",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.22857142857143,
+              3.542857142857143
+            ],
+            [
+              -75.08714285714285,
+              3.542857142857143
+            ],
+            [
+              -75.08714285714285,
+              3.851428571428572
+            ],
+            [
+              -75.22857142857143,
+              3.851428571428572
+            ],
+            [
+              -75.22857142857143,
+              3.542857142857143
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Coyaima",
+        "NOM_MPIO": "Coyaima",
+        "MPIO_CCDGO": "73217",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.07142857142857,
+              3.542857142857143
+            ],
+            [
+              -74.92999999999999,
+              3.542857142857143
+            ],
+            [
+              -74.92999999999999,
+              3.851428571428572
+            ],
+            [
+              -75.07142857142857,
+              3.851428571428572
+            ],
+            [
+              -75.07142857142857,
+              3.542857142857143
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Cunday",
+        "NOM_MPIO": "Cunday",
+        "MPIO_CCDGO": "73226",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.91428571428571,
+              3.542857142857143
+            ],
+            [
+              -74.77285714285713,
+              3.542857142857143
+            ],
+            [
+              -74.77285714285713,
+              3.851428571428572
+            ],
+            [
+              -74.91428571428571,
+              3.851428571428572
+            ],
+            [
+              -74.91428571428571,
+              3.542857142857143
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Dolores",
+        "NOM_MPIO": "Dolores",
+        "MPIO_CCDGO": "73236",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.75714285714285,
+              3.542857142857143
+            ],
+            [
+              -74.61571428571428,
+              3.542857142857143
+            ],
+            [
+              -74.61571428571428,
+              3.851428571428572
+            ],
+            [
+              -74.75714285714285,
+              3.851428571428572
+            ],
+            [
+              -74.75714285714285,
+              3.542857142857143
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "El Espinal",
+        "NOM_MPIO": "El Espinal",
+        "MPIO_CCDGO": "73268",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.7,
+              3.8857142857142857
+            ],
+            [
+              -75.55857142857143,
+              3.8857142857142857
+            ],
+            [
+              -75.55857142857143,
+              4.194285714285714
+            ],
+            [
+              -75.7,
+              4.194285714285714
+            ],
+            [
+              -75.7,
+              3.8857142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Falan",
+        "NOM_MPIO": "Falan",
+        "MPIO_CCDGO": "73270",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.54285714285714,
+              3.8857142857142857
+            ],
+            [
+              -75.40142857142857,
+              3.8857142857142857
+            ],
+            [
+              -75.40142857142857,
+              4.194285714285714
+            ],
+            [
+              -75.54285714285714,
+              4.194285714285714
+            ],
+            [
+              -75.54285714285714,
+              3.8857142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Flandes",
+        "NOM_MPIO": "Flandes",
+        "MPIO_CCDGO": "73275",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.38571428571429,
+              3.8857142857142857
+            ],
+            [
+              -75.24428571428571,
+              3.8857142857142857
+            ],
+            [
+              -75.24428571428571,
+              4.194285714285714
+            ],
+            [
+              -75.38571428571429,
+              4.194285714285714
+            ],
+            [
+              -75.38571428571429,
+              3.8857142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Fresno",
+        "NOM_MPIO": "Fresno",
+        "MPIO_CCDGO": "73283",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.22857142857143,
+              3.8857142857142857
+            ],
+            [
+              -75.08714285714285,
+              3.8857142857142857
+            ],
+            [
+              -75.08714285714285,
+              4.194285714285714
+            ],
+            [
+              -75.22857142857143,
+              4.194285714285714
+            ],
+            [
+              -75.22857142857143,
+              3.8857142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Guamo",
+        "NOM_MPIO": "Guamo",
+        "MPIO_CCDGO": "73319",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.07142857142857,
+              3.8857142857142857
+            ],
+            [
+              -74.92999999999999,
+              3.8857142857142857
+            ],
+            [
+              -74.92999999999999,
+              4.194285714285714
+            ],
+            [
+              -75.07142857142857,
+              4.194285714285714
+            ],
+            [
+              -75.07142857142857,
+              3.8857142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Herveo",
+        "NOM_MPIO": "Herveo",
+        "MPIO_CCDGO": "73347",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.91428571428571,
+              3.8857142857142857
+            ],
+            [
+              -74.77285714285713,
+              3.8857142857142857
+            ],
+            [
+              -74.77285714285713,
+              4.194285714285714
+            ],
+            [
+              -74.91428571428571,
+              4.194285714285714
+            ],
+            [
+              -74.91428571428571,
+              3.8857142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Honda",
+        "NOM_MPIO": "Honda",
+        "MPIO_CCDGO": "73349",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.75714285714285,
+              3.8857142857142857
+            ],
+            [
+              -74.61571428571428,
+              3.8857142857142857
+            ],
+            [
+              -74.61571428571428,
+              4.194285714285714
+            ],
+            [
+              -74.75714285714285,
+              4.194285714285714
+            ],
+            [
+              -74.75714285714285,
+              3.8857142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Icononzo",
+        "NOM_MPIO": "Icononzo",
+        "MPIO_CCDGO": "73352",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.7,
+              4.228571428571429
+            ],
+            [
+              -75.55857142857143,
+              4.228571428571429
+            ],
+            [
+              -75.55857142857143,
+              4.537142857142857
+            ],
+            [
+              -75.7,
+              4.537142857142857
+            ],
+            [
+              -75.7,
+              4.228571428571429
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Lérida",
+        "NOM_MPIO": "Lérida",
+        "MPIO_CCDGO": "73408",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.54285714285714,
+              4.228571428571429
+            ],
+            [
+              -75.40142857142857,
+              4.228571428571429
+            ],
+            [
+              -75.40142857142857,
+              4.537142857142857
+            ],
+            [
+              -75.54285714285714,
+              4.537142857142857
+            ],
+            [
+              -75.54285714285714,
+              4.228571428571429
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Líbano",
+        "NOM_MPIO": "Líbano",
+        "MPIO_CCDGO": "73411",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.38571428571429,
+              4.228571428571429
+            ],
+            [
+              -75.24428571428571,
+              4.228571428571429
+            ],
+            [
+              -75.24428571428571,
+              4.537142857142857
+            ],
+            [
+              -75.38571428571429,
+              4.537142857142857
+            ],
+            [
+              -75.38571428571429,
+              4.228571428571429
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "San Sebastián de Mariquita",
+        "NOM_MPIO": "San Sebastián de Mariquita",
+        "MPIO_CCDGO": "73443",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.22857142857143,
+              4.228571428571429
+            ],
+            [
+              -75.08714285714285,
+              4.228571428571429
+            ],
+            [
+              -75.08714285714285,
+              4.537142857142857
+            ],
+            [
+              -75.22857142857143,
+              4.537142857142857
+            ],
+            [
+              -75.22857142857143,
+              4.228571428571429
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Melgar",
+        "NOM_MPIO": "Melgar",
+        "MPIO_CCDGO": "73449",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.07142857142857,
+              4.228571428571429
+            ],
+            [
+              -74.92999999999999,
+              4.228571428571429
+            ],
+            [
+              -74.92999999999999,
+              4.537142857142857
+            ],
+            [
+              -75.07142857142857,
+              4.537142857142857
+            ],
+            [
+              -75.07142857142857,
+              4.228571428571429
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Murillo",
+        "NOM_MPIO": "Murillo",
+        "MPIO_CCDGO": "73461",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.91428571428571,
+              4.228571428571429
+            ],
+            [
+              -74.77285714285713,
+              4.228571428571429
+            ],
+            [
+              -74.77285714285713,
+              4.537142857142857
+            ],
+            [
+              -74.91428571428571,
+              4.537142857142857
+            ],
+            [
+              -74.91428571428571,
+              4.228571428571429
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Natagaima",
+        "NOM_MPIO": "Natagaima",
+        "MPIO_CCDGO": "73483",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.75714285714285,
+              4.228571428571429
+            ],
+            [
+              -74.61571428571428,
+              4.228571428571429
+            ],
+            [
+              -74.61571428571428,
+              4.537142857142857
+            ],
+            [
+              -74.75714285714285,
+              4.537142857142857
+            ],
+            [
+              -74.75714285714285,
+              4.228571428571429
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Ortega",
+        "NOM_MPIO": "Ortega",
+        "MPIO_CCDGO": "73504",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.7,
+              4.571428571428571
+            ],
+            [
+              -75.55857142857143,
+              4.571428571428571
+            ],
+            [
+              -75.55857142857143,
+              4.88
+            ],
+            [
+              -75.7,
+              4.88
+            ],
+            [
+              -75.7,
+              4.571428571428571
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Palocabildo",
+        "NOM_MPIO": "Palocabildo",
+        "MPIO_CCDGO": "73520",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.54285714285714,
+              4.571428571428571
+            ],
+            [
+              -75.40142857142857,
+              4.571428571428571
+            ],
+            [
+              -75.40142857142857,
+              4.88
+            ],
+            [
+              -75.54285714285714,
+              4.88
+            ],
+            [
+              -75.54285714285714,
+              4.571428571428571
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Piedras",
+        "NOM_MPIO": "Piedras",
+        "MPIO_CCDGO": "73547",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.38571428571429,
+              4.571428571428571
+            ],
+            [
+              -75.24428571428571,
+              4.571428571428571
+            ],
+            [
+              -75.24428571428571,
+              4.88
+            ],
+            [
+              -75.38571428571429,
+              4.88
+            ],
+            [
+              -75.38571428571429,
+              4.571428571428571
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Planadas",
+        "NOM_MPIO": "Planadas",
+        "MPIO_CCDGO": "73555",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.22857142857143,
+              4.571428571428571
+            ],
+            [
+              -75.08714285714285,
+              4.571428571428571
+            ],
+            [
+              -75.08714285714285,
+              4.88
+            ],
+            [
+              -75.22857142857143,
+              4.88
+            ],
+            [
+              -75.22857142857143,
+              4.571428571428571
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Prado",
+        "NOM_MPIO": "Prado",
+        "MPIO_CCDGO": "73563",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.07142857142857,
+              4.571428571428571
+            ],
+            [
+              -74.92999999999999,
+              4.571428571428571
+            ],
+            [
+              -74.92999999999999,
+              4.88
+            ],
+            [
+              -75.07142857142857,
+              4.88
+            ],
+            [
+              -75.07142857142857,
+              4.571428571428571
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Purificación",
+        "NOM_MPIO": "Purificación",
+        "MPIO_CCDGO": "73585",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.91428571428571,
+              4.571428571428571
+            ],
+            [
+              -74.77285714285713,
+              4.571428571428571
+            ],
+            [
+              -74.77285714285713,
+              4.88
+            ],
+            [
+              -74.91428571428571,
+              4.88
+            ],
+            [
+              -74.91428571428571,
+              4.571428571428571
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Rioblanco",
+        "NOM_MPIO": "Rioblanco",
+        "MPIO_CCDGO": "73616",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.75714285714285,
+              4.571428571428571
+            ],
+            [
+              -74.61571428571428,
+              4.571428571428571
+            ],
+            [
+              -74.61571428571428,
+              4.88
+            ],
+            [
+              -74.75714285714285,
+              4.88
+            ],
+            [
+              -74.75714285714285,
+              4.571428571428571
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Roncesvalles",
+        "NOM_MPIO": "Roncesvalles",
+        "MPIO_CCDGO": "73622",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.7,
+              4.914285714285715
+            ],
+            [
+              -75.55857142857143,
+              4.914285714285715
+            ],
+            [
+              -75.55857142857143,
+              5.222857142857143
+            ],
+            [
+              -75.7,
+              5.222857142857143
+            ],
+            [
+              -75.7,
+              4.914285714285715
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Rovira",
+        "NOM_MPIO": "Rovira",
+        "MPIO_CCDGO": "73624",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.54285714285714,
+              4.914285714285715
+            ],
+            [
+              -75.40142857142857,
+              4.914285714285715
+            ],
+            [
+              -75.40142857142857,
+              5.222857142857143
+            ],
+            [
+              -75.54285714285714,
+              5.222857142857143
+            ],
+            [
+              -75.54285714285714,
+              4.914285714285715
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Saldaña",
+        "NOM_MPIO": "Saldaña",
+        "MPIO_CCDGO": "73671",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.38571428571429,
+              4.914285714285715
+            ],
+            [
+              -75.24428571428571,
+              4.914285714285715
+            ],
+            [
+              -75.24428571428571,
+              5.222857142857143
+            ],
+            [
+              -75.38571428571429,
+              5.222857142857143
+            ],
+            [
+              -75.38571428571429,
+              4.914285714285715
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "San Antonio",
+        "NOM_MPIO": "San Antonio",
+        "MPIO_CCDGO": "73675",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.22857142857143,
+              4.914285714285715
+            ],
+            [
+              -75.08714285714285,
+              4.914285714285715
+            ],
+            [
+              -75.08714285714285,
+              5.222857142857143
+            ],
+            [
+              -75.22857142857143,
+              5.222857142857143
+            ],
+            [
+              -75.22857142857143,
+              4.914285714285715
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "San Luis",
+        "NOM_MPIO": "San Luis",
+        "MPIO_CCDGO": "73678",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.07142857142857,
+              4.914285714285715
+            ],
+            [
+              -74.92999999999999,
+              4.914285714285715
+            ],
+            [
+              -74.92999999999999,
+              5.222857142857143
+            ],
+            [
+              -75.07142857142857,
+              5.222857142857143
+            ],
+            [
+              -75.07142857142857,
+              4.914285714285715
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Santa Isabel",
+        "NOM_MPIO": "Santa Isabel",
+        "MPIO_CCDGO": "73686",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.91428571428571,
+              4.914285714285715
+            ],
+            [
+              -74.77285714285713,
+              4.914285714285715
+            ],
+            [
+              -74.77285714285713,
+              5.222857142857143
+            ],
+            [
+              -74.91428571428571,
+              5.222857142857143
+            ],
+            [
+              -74.91428571428571,
+              4.914285714285715
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Suárez",
+        "NOM_MPIO": "Suárez",
+        "MPIO_CCDGO": "73770",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -74.75714285714285,
+              4.914285714285715
+            ],
+            [
+              -74.61571428571428,
+              4.914285714285715
+            ],
+            [
+              -74.61571428571428,
+              5.222857142857143
+            ],
+            [
+              -74.75714285714285,
+              5.222857142857143
+            ],
+            [
+              -74.75714285714285,
+              4.914285714285715
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Valle de San Juan",
+        "NOM_MPIO": "Valle de San Juan",
+        "MPIO_CCDGO": "73854",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.7,
+              5.257142857142857
+            ],
+            [
+              -75.55857142857143,
+              5.257142857142857
+            ],
+            [
+              -75.55857142857143,
+              5.565714285714286
+            ],
+            [
+              -75.7,
+              5.565714285714286
+            ],
+            [
+              -75.7,
+              5.257142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Venadillo",
+        "NOM_MPIO": "Venadillo",
+        "MPIO_CCDGO": "73861",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.54285714285714,
+              5.257142857142857
+            ],
+            [
+              -75.40142857142857,
+              5.257142857142857
+            ],
+            [
+              -75.40142857142857,
+              5.565714285714286
+            ],
+            [
+              -75.54285714285714,
+              5.565714285714286
+            ],
+            [
+              -75.54285714285714,
+              5.257142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Villahermosa",
+        "NOM_MPIO": "Villahermosa",
+        "MPIO_CCDGO": "73870",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.38571428571429,
+              5.257142857142857
+            ],
+            [
+              -75.24428571428571,
+              5.257142857142857
+            ],
+            [
+              -75.24428571428571,
+              5.565714285714286
+            ],
+            [
+              -75.38571428571429,
+              5.565714285714286
+            ],
+            [
+              -75.38571428571429,
+              5.257142857142857
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "NOMBRE": "Villarrica",
+        "NOM_MPIO": "Villarrica",
+        "MPIO_CCDGO": "73873",
+        "FUENTE": "PLACEHOLDER — geometría sintética para pruebas; reemplace por polígonos oficiales (EPSG:4326)"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -75.22857142857143,
+              5.257142857142857
+            ],
+            [
+              -75.08714285714285,
+              5.257142857142857
+            ],
+            [
+              -75.08714285714285,
+              5.565714285714286
+            ],
+            [
+              -75.22857142857143,
+              5.565714285714286
+            ],
+            [
+              -75.22857142857143,
+              5.257142857142857
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
