@@ -120,276 +120,185 @@
 /* =========================
    CONFIG — edita rutas aquí
    ========================= */
+<script>
+// ============ CONFIG (v2 estable) ============
 const CONFIG = {
-  boundsTolima: [[-4.4,-76.3], [5.0,-73.5]], // aprox
+  boundsTolima: [[3.2,-75.7],[5.7,-74.6]],
   data: {
     comunas: ["./ibague_urbano.geojson","./data/ibague_urbano.geojson"],
     correg:  ["./ibague_corregimientos.geojson","./data/ibague_corregimientos.geojson"],
     mpios:   ["./tolima_municipios.geojson","./data/tolima_municipios.geojson"]
   },
-  censusCandidates: ["./municipios_censo.json","./tolima_censo.json","./data/municipios_censo.json","./data/tolima_censo.json"],
-  nameKeys: ["NOMBRE","NOM_MPIO","NOMBRE_MPIO","nombre","comuna","COMUNA","NOM_COMUNA","corregimien","CORREGIMIENTO","MPIO_CNMBR","mpio","MPIO"],
-  codeKeys: ["COD_DANE","cod_dane","MPIO_CCDGO","codigo","codigo_dane","CODIGO","DANE","mpio_cod","codmpio"],
-  popKeys:  ["POB_TOTAL","pob_total","poblacion","población","total","TOTAL","POB","POB_2018","pob2018"]
+  census: ["./municipios_censo.json","./tolima_censo.json","./data/municipios_censo.json","./data/tolima_censo.json"],
+  nameKeys: ["NOMBRE","NOM_MPIO","NOMBRE_MPIO","MPIO_CNMBR","COMUNA","NOM_COMUNA","CORREGIMIENTO","NOM_CORR","nombre"],
+  codeKeys: ["MPIO_CCDGO","COD_DANE","cod_dane","MPIO","CODIGO","codigo","DANE","mpio_cod","codmpio"],
+  popKeys : ["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total"]
 };
 
-const Diag = {
-  el: document.getElementById("diag"),
-  log(msg, ok=true){
-    const row = document.createElement("div");
-    row.innerHTML = ok ? `✅ ${msg}` : `❌ ${msg}`;
-    this.el.appendChild(row);
-  }
-};
-
-function toast(msg, ms=3200){
+// ============ util UI ============
+function toast(msg, ms=2600){
   const t = document.createElement("div");
-  t.className = "toast"; t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(), ms);
+  t.textContent = msg;
+  t.style.cssText = "position:fixed;right:12px;bottom:12px;background:#16204a;color:#fff;border:1px solid #ffffff33;border-radius:12px;padding:.55rem .75rem;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,.35)";
+  document.body.appendChild(t); setTimeout(()=>t.remove(),ms);
 }
-
-/* ================
-   MAPA y capas
-   ================ */
-const map = L.map("map",{zoomControl:true, preferCanvas:true});
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:"© OSM"});
-const sat = L.tileLayer('https://{s}.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
-  subdomains:['server','services'], maxZoom:19, attribution:"© Esri"
-});
-osm.addTo(map);
-map.fitBounds(CONFIG.boundsTolima);
-L.control.layers({"OSM":osm,"Satélite":sat},{}).addTo(map);
-
-const layers = { comunas:null, correg:null, mpios:null };
-const cache = { census:null, censusKey:null, censusPopKey:null };
-
+const Diag = { el: document.getElementById("diag"),
+  log(msg, ok=true){ const d=document.createElement("div"); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el.appendChild(d); }
+};
+function guessKey(obj, arr){
+  for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k;
+  for(const k in obj) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k;
+  return null;
+}
+function getName(p){ const k=guessKey(p,CONFIG.nameKeys)||Object.keys(p||{})[0]; return p&&p[k]?String(p[k]):"Sin nombre"; }
+function getCode(p){ const k=guessKey(p,CONFIG.codeKeys); return k&&p[k]!=null?String(p[k]).padStart(5,"0"):null; }
 async function fetchFirstOk(urls, label){
   for(const u of urls){
     try{
-      const res = await fetch(u, {cache:"no-store"});
-      if(!res.ok) throw new Error(res.status+" "+res.statusText);
-      const txt = await res.text();
-      // sanity: JSON parse
+      const r = await fetch(u,{cache:"no-store"});
+      if(!r.ok) throw new Error(r.status+" "+r.statusText);
+      const txt = await r.text();
       const data = JSON.parse(txt);
-      Diag.log(`${label}: ${u} ✔ OK`);
-      return data;
-    }catch(e){
-      Diag.log(`${label}: ${u} — ${e.message}`, false);
-    }
+      Diag.log(`${label}: ${u} ✔ OK`); return data;
+    }catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false); }
   }
   throw new Error(`No se pudo cargar ${label}`);
 }
 
-function guessKey(obj, candidates){
-  for(const k of candidates){ if(obj && Object.hasOwn(obj,k)) return k; }
-  // busca por includes para casos raros
-  for(const k in obj){ if(candidates.some(c=>k.toLowerCase().includes(c.toLowerCase()))) return k; }
-  return null;
-}
-function getName(p){
-  let k = guessKey(p, CONFIG.nameKeys) || Object.keys(p)[0];
-  return (p && p[k]) ? String(p[k]) : "Sin nombre";
-}
-function getCode(p){
-  let k = guessKey(p, CONFIG.codeKeys);
-  return (k && p[k]!=null) ? String(p[k]).padStart(5,"0") : null;
-}
+// ============ mapa ============
+const map = L.map("map",{preferCanvas:true});
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:"© OSM"});
+const sat = L.tileLayer('https://{s}.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{subdomains:['server','services'],maxZoom:19,attribution:"© Esri"});
+osm.addTo(map); map.fitBounds(CONFIG.boundsTolima); L.control.layers({"OSM":osm,"Satélite":sat},{}).addTo(map);
 
-/* =====================
-   Carga de capas
-   ===================== */
-function baseStyle(color="#6bd1ff"){ return { color, weight:1, fillOpacity:.15 }; }
-function hoverStyle(){ return { weight:3, fillOpacity:.3 }; }
+const layers = {comunas:null,correg:null,mpios:null};
+const cache  = {census:null,popKey:null,codeKey:null};
 
-function attachInteractive(layerGroup, label){
-  layerGroup.eachLayer(l=>{
-    const name = getName(l.feature.properties||{});
-    l.bindTooltip(`${label}: <b>${name}</b>`);
+// estilos
+function baseStyle(c){return{color:c||'#69d1ff',weight:1,fillOpacity:.15}}
+function hoverStyle(){return{weight:3,fillOpacity:.3}}
+function attachInteractive(group,label){
+  if(!group) return;
+  group.eachLayer(l=>{
+    l.bindTooltip(`${label}: <b>${getName(l.feature.properties||{})}</b>`);
     l.on("mouseover",()=>l.setStyle(hoverStyle()));
     l.on("mouseout",()=>l.setStyle(baseStyle()));
   });
 }
 
-function valuesToBreaks(values, n=5){
-  const v = values.filter(Number.isFinite).sort((a,b)=>a-b);
-  if(!v.length) return [];
-  const br=[v[0]];
-  for(let i=1;i<n;i++){ br.push(v[Math.floor(i*(v.length-1)/n)]); }
-  br.push(v[v.length-1]);
-  return br;
+// leyenda
+function ramp(){return ['#e6f3ff','#bcdfff','#86c6ff','#4aa6ff','#1e82e6','#0a63c7']}
+function breaksFrom(vals,n=6){
+  const v=vals.filter(Number.isFinite).sort((a,b)=>a-b); if(!v.length) return [];
+  const br=[v[0]]; for(let i=1;i<n;i++) br.push(v[Math.floor(i*(v.length-1)/n)]); br.push(v[v.length-1]); return br;
 }
-function colorRamp(){
-  // 5 tonos (no fijamos colores exactos del sistema; Leaflet usa CSS; aquí algo amable)
-  return ['#e6f3ff','#b3dcff','#6bbcff','#2a93ff','#0a63c7','#073b7a'];
-}
-function makeLegend(title, breaks){
-  const el = document.getElementById("legend");
-  if(!breaks || breaks.length<2){ el.style.display="none"; return; }
-  const ramp = colorRamp();
-  let html = `<div style="font-weight:700;margin-bottom:.2rem">${title}</div>`;
-  for(let i=0;i<breaks.length-1;i++){
-    const a = Math.round(breaks[i]).toLocaleString('es-CO');
-    const b = Math.round(breaks[i+1]).toLocaleString('es-CO');
-    html += `<div><span class="sw" style="background:${ramp[Math.min(i,ramp.length-1)]}"></span>${a}–${b}</div>`;
+function legend(title, br){
+  const Lg=document.getElementById("legend"); if(!br||br.length<2){Lg.style.display="none";return}
+  const R=ramp(); let html=`<div style="font-weight:700;margin-bottom:.2rem">${title}</div>`;
+  for(let i=0;i<br.length-1;i++){
+    html+=`<div><span class="sw" style="display:inline-block;width:14px;height:10px;border:1px solid #ffffff26;border-radius:3px;margin-right:6px;background:${R[Math.min(i,R.length-1)]}"></span>${Math.round(br[i]).toLocaleString('es-CO')}–${Math.round(br[i+1]).toLocaleString('es-CO')}</div>`;
   }
-  el.innerHTML = html; el.style.display="block";
+  Lg.innerHTML=html; Lg.style.display="block";
 }
-
-function styleBy(valuesMap, keyFn){
-  const vals = [];
-  const mapVals = new Map(valuesMap); // code -> value
-  // recolecta valores para breaks
-  map.eachLayer(g=>{
-    if(!g.eachLayer) return;
-    g.eachLayer(l=>{
-      const code = getCode(l.feature.properties||{});
-      const v = code && mapVals.has(code) ? mapVals.get(code) : null;
-      if(Number.isFinite(v)) vals.push(v);
-    });
-  });
-  const br = valuesToBreaks(vals, 6);
-  const ramp = colorRamp();
-  return (feat)=>{
-    const code = getCode(feat.properties||{});
-    const v = code && mapVals.has(code) ? mapVals.get(code) : null;
-    if(!Number.isFinite(v)) return baseStyle();
-    let idx = br.findIndex(b=>v<=b)-1; if(idx<0) idx = br.length-2;
-    return { color:'#0a63c7', weight:1, fillOpacity:.7, fillColor:ramp[Math.max(0,Math.min(idx,ramp.length-1))] };
+function styleBy(mapVals){
+  const vals=[...mapVals.values()].filter(Number.isFinite);
+  const br=breaksFrom(vals,6), R=ramp();
+  return feat=>{
+    const code=getCode(feat.properties||{}); const v=code?mapVals.get(code):null;
+    if(!Number.isFinite(v)) return baseStyle('#43d17a');
+    let idx=br.findIndex(b=>v<=b)-1; if(idx<0) idx=br.length-2; idx=Math.max(0,Math.min(idx,R.length-1));
+    return {color:'#0a63c7',weight:1,fillOpacity:.7,fillColor:R[idx]};
   };
 }
 
-function styleByArea(){
-  return (feat)=>{
-    // aproximación simple: mayor área => color más intenso
-    try{
-      const gj = L.geoJSON(feat);
-      const b = gj.getBounds();
-      const area = Math.abs((b.getEast()-b.getWest())*(b.getNorth()-b.getSouth()));
-      // normaliza
-      const score = Math.min(1, Math.max(0, area / 4));
-      const ramp = colorRamp();
-      const idx = Math.min(ramp.length-1, Math.floor(score*(ramp.length-1)));
-      return { color:'#2a93ff', weight:1, fillOpacity:.65, fillColor:ramp[idx] };
-    }catch(_){ return baseStyle(); }
-  };
-}
-
+// ============ CARGA ============
 async function loadAll(){
   try{
-    const [comunas,correg,mpios] = await Promise.all([
+    const [c1,c2,c3] = await Promise.all([
       fetchFirstOk(CONFIG.data.comunas,"Comunas (GeoJSON)"),
       fetchFirstOk(CONFIG.data.correg,"Corregimientos (GeoJSON)"),
       fetchFirstOk(CONFIG.data.mpios,"Municipios (GeoJSON)")
     ]);
+    layers.comunas=L.geoJSON(c1,{style:baseStyle('#6bd1ff')}).addTo(map);
+    layers.correg =L.geoJSON(c2,{style:baseStyle('#ffe08a')}).addTo(map);
+    layers.mpios  =L.geoJSON(c3,{style:baseStyle('#43d17a')}).addTo(map);
+    [ ["Comuna",layers.comunas],["Correg.",layers.correg],["Municipio",layers.mpios] ].forEach(([lbl,g])=>attachInteractive(g,lbl));
 
-    layers.comunas = L.geoJSON(comunas,{style:baseStyle('#6bd1ff')}).addTo(map);
-    layers.correg  = L.geoJSON(correg ,{style:baseStyle('#ffe08a')}).addTo(map);
-    layers.mpios   = L.geoJSON(mpios  ,{style:baseStyle('#43d17a')}).addTo(map);
+    // índice búsqueda
+    window._idx=[]; [layers.comunas,layers.correg,layers.mpios].forEach(g=>g&&g.eachLayer(l=>{
+      window._idx.push({name:getName(l.feature.properties||{}), bounds:l.getBounds()});
+    }));
+    Diag.log(`Índice de búsqueda: ${_idx.length} elementos ✔`);
 
-    attachInteractive(layers.comunas,"Comuna");
-    attachInteractive(layers.correg,"Correg.");
-    attachInteractive(layers.mpios,"Municipio");
-
-    // Búsqueda básica
-    window._index = [];
-    [layers.comunas,layers.correg,layers.mpios].forEach((g,gi)=>{
-      if(!g) return;
-      g.eachLayer(l=>{
-        const n = getName(l.feature.properties||{});
-        const c = getCode(l.feature.properties||{});
-        window._index.push({name:n, code:c, bounds:l.getBounds()});
-      });
-    });
-    Diag.log(`Índice de búsqueda: ${_index.length} elementos ✔`);
-
-    // Censo (opcional)
-    for(const cc of CONFIG.censusCandidates){
+    // censo (opcional)
+    for(const u of CONFIG.census){
       try{
-        const res = await fetch(cc,{cache:"no-store"});
-        if(!res.ok) throw new Error(res.status);
-        const data = await res.json();
-        // el JSON puede ser array u objeto {codigo:..., poblacion:...}
-        const sample = Array.isArray(data) ? data[0] : Object.values(data)[0];
-        cache.censusKey = guessKey(sample||data, CONFIG.codeKeys);
-        cache.censusPopKey = guessKey(sample||data, CONFIG.popKeys);
-        if(!cache.censusKey || !cache.censusPopKey) throw new Error("no se detectaron llaves (cod/pob)");
-        cache.census = new Map();
-        const pushRow = (row)=>{
-          const code = String(row[cache.censusKey]).padStart(5,"0");
-          const val  = Number(String(row[cache.censusPopKey]).replace(/[^\d.]/g,''));
-          if(code && Number.isFinite(val)) cache.census.set(code,val);
+        const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw new Error(r.status);
+        const data=await r.json(); const sample=Array.isArray(data)?data[0]:Object.values(data)[0];
+        cache.codeKey=guessKey(sample||data,CONFIG.codeKeys); cache.popKey=guessKey(sample||data,CONFIG.popKeys);
+        if(!cache.codeKey||!cache.popKey) throw new Error("no llaves (código/población)");
+        const M=new Map(); const push=row=>{
+          const code=String(row[cache.codeKey]).padStart(5,"0");
+          const val=Number(String(row[cache.popKey]).replace(/[^\d.]/g,''));
+          if(code && Number.isFinite(val)) M.set(code,val);
         };
-        if(Array.isArray(data)) data.forEach(pushRow); else Object.values(data).forEach(pushRow);
-        Diag.log(`Censo: ${cc} ✔ (${cache.census.size} municipios con población)`);
+        if(Array.isArray(data)) data.forEach(push); else Object.values(data).forEach(push);
+        cache.census=M; Diag.log(`Censo: ${u} ✔ (${M.size} municipios)`);
         break;
-      }catch(e){
-        Diag.log(`Censo: ${cc} — ${e.message}`, false);
-      }
+      }catch(e){ Diag.log(`Censo: ${u} — ${e.message}`, false); }
     }
-
   }catch(e){
-    Diag.log(e.message, false);
-    toast("Carga incompleta. Revisa el panel Diagnóstico.");
+    Diag.log(e.message,false);
   }
 }
+loadAll();
 
-/* =======================
-   UI: estilos y toggles
-   ======================= */
+// ============ UI (BOTONES QUE “ABRAN”) ============
+function safeToggle(layer, nombre){
+  if(!layer){ toast(`La capa “${nombre}” aún no está cargada`); return; }
+  if(map.hasLayer(layer)){ map.removeLayer(layer); toast(`Ocultando ${nombre}`); }
+  else { layer.addTo(map); toast(`Mostrando ${nombre}`); }
+  setTimeout(()=>map.invalidateSize(), 50);
+}
+// estilo
 function applyStyle(mode){
-  if(mode==="poblacion" && cache.census){
-    const sty = styleBy(cache.census, getCode);
-    if(layers.mpios) layers.mpios.setStyle(sty);
-    makeLegend("Población (CNPV 2018)", valuesToBreaks([...cache.census.values()],6));
-  }else if(mode==="densidad"){
-    if(layers.mpios) layers.mpios.setStyle(styleByArea());
-    makeLegend("Auto-densidad (aprox. por área)", null); // mostramos rótulo simple
+  if(mode==="poblacion"){
+    if(cache.census && layers.mpios){
+      layers.mpios.setStyle(styleBy(cache.census));
+      legend("Población (CNPV 2018)", breaksFrom([...cache.census.values()],6));
+      toast("Estilo: Población");
+    }else{
+      toast("No hay censo detectado. Manteniendo estilo detallado.");
+    }
   }else{
     if(layers.mpios) layers.mpios.setStyle(baseStyle('#43d17a'));
     if(layers.comunas) layers.comunas.setStyle(baseStyle('#6bd1ff'));
     if(layers.correg) layers.correg.setStyle(baseStyle('#ffe08a'));
     document.getElementById("legend").style.display="none";
+    toast("Estilo: Detallada");
   }
-  toast(`Estilo: ${mode}`);
 }
 
+// listeners (asegurados)
 document.querySelectorAll('[data-style]').forEach(b=>{
-  b.addEventListener('click', ()=> applyStyle(b.dataset.style));
+  b.addEventListener('click', ()=>applyStyle(b.dataset.style));
 });
+const btnCom = document.getElementById("toggleComunas");
+const btnCor = document.getElementById("toggleCorreg");
+const btnMpi = document.getElementById("toggleMpios");
+btnCom && (btnCom.onclick = ()=> safeToggle(layers.comunas,"Comunas"));
+btnCor && (btnCor.onclick = ()=> safeToggle(layers.correg,"Corregimientos"));
+btnMpi && (btnMpi.onclick = ()=> safeToggle(layers.mpios,"Municipios"));
 
-document.getElementById("toggleComunas").onclick = ()=>{
-  if(!layers.comunas) return;
-  if(map.hasLayer(layers.comunas)){ map.removeLayer(layers.comunas); toast("Ocultando Comunas"); }
-  else { layers.comunas.addTo(map); toast("Mostrando Comunas"); }
-};
-document.getElementById("toggleCorreg").onclick = ()=>{
-  if(!layers.correg) return;
-  if(map.hasLayer(layers.correg)){ map.removeLayer(layers.correg); toast("Ocultando Corregimientos"); }
-  else { layers.correg.addTo(map); toast("Mostrando Corregimientos"); }
-};
-document.getElementById("toggleMpios").onclick = ()=>{
-  if(!layers.mpios) return;
-  if(map.hasLayer(layers.mpios)){ map.removeLayer(layers.mpios); toast("Ocultando Municipios"); }
-  else { layers.mpios.addTo(map); toast("Mostrando Municipios"); }
-};
-
-document.getElementById("btnReset").onclick = ()=>{ map.fitBounds(CONFIG.boundsTolima); };
-document.getElementById("btnShare").onclick = async ()=>{
-  try{
-    await navigator.clipboard.writeText(location.href);
-    toast("Enlace copiado al portapapeles");
-  }catch{ toast("No se pudo copiar el enlace"); }
-};
-
-document.getElementById("q").addEventListener("keydown", (e)=>{
+const q = document.getElementById("q");
+q && q.addEventListener("keydown",(e)=>{
   if(e.key!=="Enter") return;
-  const term = e.target.value.trim().toLowerCase();
-  if(!term) return;
-  const hit = (window._index||[]).find(x=>x.name.toLowerCase().includes(term));
-  if(hit && hit.bounds){ map.fitBounds(hit.bounds.pad(0.4)); toast(`Ir a: ${hit.name}`); }
-  else toast("Sin resultados");
+  const t=e.target.value.trim().toLowerCase(); if(!t) return;
+  const hit=(window._idx||[]).find(x=>x.name.toLowerCase().includes(t));
+  if(hit&&hit.bounds) map.fitBounds(hit.bounds.pad(0.4)); else toast("Sin resultados");
 });
+</script>
+
 
 loadAll();
 </script>
