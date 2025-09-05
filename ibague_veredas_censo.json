@@ -1,27 +1,53 @@
-(async function loadCensoVeredas(){
-  try{
-    let data=null;
-    for(const u of (CONFIG.censoVeredasUrls||[])){
-      try{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; data=await r.json(); Diag.log(`Censo veredas: ${u} ✔`); break; }
-      catch(_){ Diag.log(`Censo veredas: ${u} — 404`, false); }
-    }
-    if(!data){ const el=document.getElementById('censoVeredas'); if(el){ data=JSON.parse(el.textContent); Diag.log('Censo veredas (embebido) ✔'); } }
-    if(!data) return;
+(async ()=>{
+  const url = '/ibague_veredas_censo.json';
+  const norm = s => s ? String(s).toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,'')
+    .replace(/\s+/g,' ').trim() : '';
 
-    const pick=(obj, arr)=>{ for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k; for(const k in obj||{}) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k; return null; };
-    const sample = Array.isArray(data)? data[0] : data;
-    const nameKey = pick(sample, CONFIG.nameKeysVereda) || 'VEREDA';
-    const popKey  = pick(sample, CONFIG.popKeys)        || 'POB_TOTAL';
+  // 1) Carga censo
+  const r = await fetch(url, {cache:'no-store'});
+  if (!r.ok) throw new Error(`No pude abrir ${url} — ${r.status} ${r.statusText}`);
+  const data = await r.json();
+  if (!Array.isArray(data)) throw new Error('El censo debe ser un arreglo JSON');
 
-    const norm=s=>s?String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim():null;
-    const M = new Map();
-    (Array.isArray(data)? data : Object.values(data)).forEach(row=>{
-      const name = norm(row[nameKey]);
-      const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
-      if(name && Number.isFinite(val)) M.set(name,val);
-    });
-    cache.censusVeredasByName = M;
-    Diag.log(`Censo veredas ✔ (${M.size})`);
-  }catch(e){ Diag.log("Censo veredas — "+e.message, false); }
+  // 2) Detecta llaves (por si usaste otras)
+  const sample = data[0] || {};
+  const pick = (obj, cands) => {
+    for (const k of cands) if (Object.hasOwn(obj, k)) return k;
+    for (const k in obj) if (cands.some(c=>k.toLowerCase().includes(c.toLowerCase()))) return k;
+    return null;
+  };
+  const nameKey = pick(sample, ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"]) || "VEREDA";
+  const popKey  = pick(sample, ["POB_TOTAL","POBLACION","TOTAL","poblacion","total"]) || "POB_TOTAL";
+
+  // 3) Valida filas
+  const rowsBad = [];
+  const C = new Map();
+  for (const row of data) {
+    const name = norm(row[nameKey]);
+    const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+    if (!name || !Number.isFinite(val)) rowsBad.push(row);
+    else C.set(name, val);
+  }
+
+  // 4) GeoJSON de veredas desde la capa del mapa (si está cargada)
+  if (!window.layers || !layers.veredas) {
+    console.warn('Capa de veredas no está cargada aún. Igual te dejo la revisión de JSON.');
+  }
+  const feats = (layers && layers.veredas) ? layers.veredas.toGeoJSON().features : [];
+  const names = feats.map(f=>{
+    const p = f.properties || {};
+    const k = ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"]
+      .find(x=>Object.hasOwn(p,x)) || Object.keys(p)[0];
+    return norm(p[k]);
+  });
+
+  const unmatched = names.filter(n => n && !C.has(n));
+  const matched = names.length - unmatched.length;
+
+  console.log(`✅ Censo veredas: ${data.length} registros`);
+  console.log(`🔎 Llaves detectadas: nombre="${nameKey}" · poblacion="${popKey}"`);
+  console.log(`📍 Veredas en mapa: ${names.length} · Con censo: ${matched} · Sin censo: ${unmatched.length}`);
+  if (rowsBad.length) console.warn(`⚠️ Filas inválidas: ${rowsBad.length}`, rowsBad.slice(0,5));
+  if (unmatched.length) console.warn('⛳ Ejemplos sin censo:', unmatched.slice(0,10));
 })();
-
