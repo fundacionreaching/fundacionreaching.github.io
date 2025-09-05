@@ -1,43 +1,53 @@
 (async ()=>{
-  const urls = [
-    "/veredas.geojson",
-    "./veredas.geojson",
-    "./ibague_veredas.geojson",
-    "/ibague_veredas.geojson",
-    "./data/ibague_veredas.geojson",
-    "/data/ibague_veredas.geojson"
-  ];
-  let data=null, used=null;
-  for (const u of urls) {
-    try { const r = await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; data = await r.json(); used=u; break; }
-    catch(_) {}
-  }
-  if(!data) throw new Error("No pude cargar veredas desde ninguna ruta conocida.");
+  const url = '/ibague_veredas_censo.json';
+  const norm = s => s ? String(s).toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,'')
+    .replace(/\s+/g,' ').trim() : '';
 
-  const feats = Array.isArray(data) ? data
-               : (data.type==="FeatureCollection" ? data.features : (data.features||[]));
+  // 1) Carga censo
+  const r = await fetch(url, {cache:'no-store'});
+  if (!r.ok) throw new Error(`No pude abrir ${url} — ${r.status} ${r.statusText}`);
+  const data = await r.json();
+  if (!Array.isArray(data)) throw new Error('El censo debe ser un arreglo JSON');
 
-  // Detecta automáticamente la llave de nombre
-  const pickNameKey = (p)=>{
-    const candidates = ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"];
-    for(const k of candidates) if (p && Object.hasOwn(p,k)) return k;
-    for(const k in (p||{})) if (typeof p[k]==="string") return k; // fallback
-    return Object.keys(p||{})[0] || "VEREDA";
+  // 2) Detecta llaves (por si usaste otras)
+  const sample = data[0] || {};
+  const pick = (obj, cands) => {
+    for (const k of cands) if (Object.hasOwn(obj, k)) return k;
+    for (const k in obj) if (cands.some(c=>k.toLowerCase().includes(c.toLowerCase()))) return k;
+    return null;
   };
-  const K = feats.length ? pickNameKey(feats[0].properties||{}) : "VEREDA";
+  const nameKey = pick(sample, ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"]) || "VEREDA";
+  const popKey  = pick(sample, ["POB_TOTAL","POBLACION","TOTAL","poblacion","total"]) || "POB_TOTAL";
 
-  const out = feats.map(f=>{
-    const name = String(((f.properties||{})[K] ?? "")).trim();
-    return name ? { VEREDA: name, POB_TOTAL: 0 } : null;
-  }).filter(Boolean);
+  // 3) Valida filas
+  const rowsBad = [];
+  const C = new Map();
+  for (const row of data) {
+    const name = norm(row[nameKey]);
+    const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+    if (!name || !Number.isFinite(val)) rowsBad.push(row);
+    else C.set(name, val);
+  }
 
-  // Descarga como archivo
-  const blob = new Blob([JSON.stringify(out,null,2)], {type:"application/json;charset=utf-8"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "ibague_veredas_censo.json";
-  a.click();
-  URL.revokeObjectURL(a.href);
+  // 4) GeoJSON de veredas desde la capa del mapa (si está cargada)
+  if (!window.layers || !layers.veredas) {
+    console.warn('Capa de veredas no está cargada aún. Igual te dejo la revisión de JSON.');
+  }
+  const feats = (layers && layers.veredas) ? layers.veredas.toGeoJSON().features : [];
+  const names = feats.map(f=>{
+    const p = f.properties || {};
+    const k = ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"]
+      .find(x=>Object.hasOwn(p,x)) || Object.keys(p)[0];
+    return norm(p[k]);
+  });
 
-  console.log(`✅ Generado ibague_veredas_censo.json con ${out.length} veredas (desde ${used}) usando llave "${K}".`);
+  const unmatched = names.filter(n => n && !C.has(n));
+  const matched = names.length - unmatched.length;
+
+  console.log(`✅ Censo veredas: ${data.length} registros`);
+  console.log(`🔎 Llaves detectadas: nombre="${nameKey}" · poblacion="${popKey}"`);
+  console.log(`📍 Veredas en mapa: ${names.length} · Con censo: ${matched} · Sin censo: ${unmatched.length}`);
+  if (rowsBad.length) console.warn(`⚠️ Filas inválidas: ${rowsBad.length}`, rowsBad.slice(0,5));
+  if (unmatched.length) console.warn('⛳ Ejemplos sin censo:', unmatched.slice(0,10));
 })();
