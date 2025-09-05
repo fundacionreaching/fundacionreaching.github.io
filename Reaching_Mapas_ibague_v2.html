@@ -93,6 +93,85 @@
         <div id="loader">Cargando capas…</div>
       </section>
     </div>
+    <script>
+(function(){
+  // ✅ Por si el loader o el mapa tapan el panel:
+  const css = document.createElement('style');
+  css.textContent = `
+    #reaching-lienzo #loader{pointer-events:none}
+    #reaching-lienzo .panel{position:relative;z-index:10}
+    #reaching-lienzo .btn,#reaching-lienzo .chip{pointer-events:auto}
+  `;
+  document.head.appendChild(css);
+
+  // Espera a que exista el lienzo y las funciones (si tu script ya las define).
+  function ready(fn){ document.readyState!='loading' ? fn() : document.addEventListener('DOMContentLoaded',fn); }
+  ready(function(){
+    const root = document.querySelector('#reaching-lienzo') || document;
+    const has = (sel)=> root.querySelector(sel);
+
+    // Si applyStyle/safeToggle no están globales, intenta obtenerlas del cierre del lienzo:
+    // (Si ya existen, no se tocan)
+    if (!('applyStyle' in window) && typeof window.__applyStyle==='function') window.applyStyle = window.__applyStyle;
+    if (!('safeToggle' in window) && typeof window.__safeToggle==='function') window.safeToggle = window.__safeToggle;
+
+    // 🔁 Delegación universal: hace que cualquier botón con data-style funcione
+    root.addEventListener('click', (e)=>{
+      const b = e.target.closest('[data-style]');
+      if (b && typeof window.applyStyle === 'function') {
+        e.preventDefault();
+        window.applyStyle(b.dataset.style);
+      }
+    });
+
+    // 🔧 Soporte para IDs viejos y nuevos en los toggles (cubre ambas variantes)
+    const bindToggle = (sel, layerName) => {
+      const el = root.querySelector(sel) || document.querySelector(sel.replace('#reaching-lienzo ',''));
+      if (el) el.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        if (typeof window.safeToggle==='function' && window.layers) {
+          const L = window.layers;
+          const layer = (layerName==='Comunas')? L.comunas :
+                        (layerName==='Corregimientos')? L.correg :
+                        (layerName==='Veredas')? L.veredas : L.mpios;
+          window.safeToggle(layer, layerName);
+        }
+      }, {once:false});
+    };
+
+    // Nuevos IDs del lienzo:
+    bindToggle('#reaching-lienzo #tgComunas', 'Comunas');
+    bindToggle('#reaching-lienzo #tgCorreg',  'Corregimientos');
+    bindToggle('#reaching-lienzo #tgVeredas', 'Veredas');
+    bindToggle('#reaching-lienzo #tgMpios',   'Municipios');
+
+    // IDs de la versión anterior (por si tu HTML los conserva):
+    bindToggle('#toggleComunas', 'Comunas');
+    bindToggle('#toggleCorreg',  'Corregimientos');
+    bindToggle('#toggleVeredas', 'Veredas');
+    bindToggle('#toggleMpios',   'Municipios');
+
+    // ✅ Botones de zoom (si cambiaste IDs, también quedarán cubiertos)
+    const bind = (sel, fn)=>{ const el = root.querySelector(sel) || document.querySelector(sel.replace('#reaching-lienzo ','')); if (el && typeof fn==='function') el.addEventListener('click', (e)=>{e.preventDefault(); fn();}); };
+    bind('#reaching-lienzo #rzTolima', ()=>{ try{ map.fitBounds([[3.2,-75.7],[5.7,-74.6]]); setTimeout(()=>map.invalidateSize(),60);}catch(_){ } });
+    bind('#reaching-lienzo #rzIbague', ()=>{ try{
+      if (layers?.comunas){ map.fitBounds(layers.comunas.getBounds().pad(0.2)); }
+      else if (layers?.mpios){
+        let f=null; layers.mpios.eachLayer(l=>{ const n=(l.feature?.properties && (l.feature.properties.NOMBRE||l.feature.properties.NOM_MPIO||"")+"").toLowerCase(); if(n.includes("bagué")||n.includes("ibague")) f=l; });
+        f? map.fitBounds(f.getBounds().pad(0.2)) : map.setView([4.44,-75.20],11);
+      }
+      setTimeout(()=>map.invalidateSize(),60);
+    }catch(_){ } });
+
+    // 🧪 Prueba instantánea: si hay botones en pantalla y applyStyle existe, activa 'detallada'
+    try{
+      const testBtn = root.querySelector('[data-style="detallada"]');
+      if (testBtn && typeof window.applyStyle==='function') window.applyStyle('detallada');
+    }catch(_){}
+  });
+})();
+</script>
+
   </div>
 
   <script>
