@@ -220,8 +220,31 @@ function styleBySmart(){
 </script>
 
 /* ===== Render info & eventos ===== */
-function renderInfo(props,label){ const box=document.getElementById('info'); if(!box) return; if(!props){ box.innerHTML="<em>Sin datos</em>"; return; } const name=getName(props); const code=getCode(props)||"—"; let pob=null; if(cache.census){ const v=cache.census.get(String(code).padStart(5,'0')); if(Number.isFinite(v)) pob=v.toLocaleString('es-CO'); } let rows=""; for(const [k,v] of Object.entries(props)){ rows += `<tr><td>${k}</td><td>${v}</td></tr>`; } const head = `<div style="font-weight:700;margin-bottom:.35rem">${label}: ${name}</div>`; const extras = `<div class="muted" style="margin-bottom:.35rem">Código: <b>${code}</b>${pob?` · Población: <b>${pob}</b>`:""}</div>`; box.innerHTML = head + extras + `<table>${rows}</table>`; }
-function attachInteractive(group,label){ if(!group) return; group.eachLayer(l=>{ const props=l.feature.properties||{}; const name=getName(props); l.bindTooltip(`${label}: <b>${name}</b>`); l.on("mouseover",()=>l.setStyle(hoverStyle())); l.on("mouseout",()=>l.setStyle(baseStyle())); l.on("click", ()=>{ renderInfo(props,label); try{ l.bindPopup(`<b>${label}</b><br>${name}`).openPopup(); }catch(_){} }); }); }
+<script>
+function renderInfo(props,label){
+  const box=document.getElementById('info'); if(!box) return;
+  if(!props){ box.innerHTML="<em>Sin datos</em>"; return; }
+  const getNameLocal=(p)=>{ const arr=["NOMBRE","NOM_MPIO","NOMBRE_MPIO","MPIO_CNMBR","COMUNA","NOM_COMUNA","CORREGIMIENTO","NOM_CORR","VEREDA","NOM_VEREDA","NOM_COM","NOMBREGEO","DESCRIPCION","nombre"]; let k=null; for(const c of arr) if(p && Object.hasOwn(p,c)) {k=c;break;} if(!k && p) for(const c in p) if(arr.some(a=>c.toLowerCase().includes(a.toLowerCase()))) {k=c;break;} return p&&p[k]?String(p[k]):"Sin nombre"; };
+  const name=getNameLocal(props);
+  const code=(function(p){ const arr=["MPIO_CCDGO","COD_DANE","cod_dane","MPIO","CODIGO","codigo","DANE","mpio_cod","codmpio"]; let k=null; for(const c of arr) if(p && Object.hasOwn(p,c)) {k=c;break;} if(!k && p) for(const c in p) if(arr.some(a=>c.toLowerCase().includes(a.toLowerCase()))) {k=c;break;} return k&&p[k]!=null?String(p[k]).padStart(5,"0"):null; })(props) || "—";
+
+  let pob=null;
+  if(cache.censusByCode||cache.censusByName){
+    let v=null;
+    if(code && cache.censusByCode) v=cache.censusByCode.get(String(code).padStart(5,'0'));
+    if(!Number.isFinite(v)){
+      const nm=normName(name);
+      if(nm&&cache.censusByName) v=cache.censusByName.get(nm);
+    }
+    if(Number.isFinite(v)) pob=v.toLocaleString('es-CO');
+  }
+
+  let rows=""; for(const [k,v] of Object.entries(props)){ rows += `<tr><td>${k}</td><td>${v}</td></tr>`; }
+  const head = `<div style="font-weight:700;margin-bottom:.35rem">${label}: ${name}</div>`;
+  const extras = `<div class="muted" style="margin-bottom:.35rem">Código: <b>${code}</b>${pob?` · Población: <b>${pob}</b>`:""}</div>`;
+  box.innerHTML = head + extras + `<table>${rows}</table>`;
+}
+</script>
 
 /* ===== Fetch helpers ===== */
 async function fetchJson(u){ const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw new Error(r.status+" "+r.statusText); const txt=await r.text(); return JSON.parse(txt); }
