@@ -121,6 +121,15 @@ window.addEventListener("DOMContentLoaded", ()=>{
   if(window.innerWidth<1024){ const lay=document.getElementById("layout"); lay&&lay.classList.add("collapsed"); }
 });
 window.onerror = function(msg, src, line, col){ const el=document.getElementById('jsErr'); el.textContent = "⚠️ Error de script: "+msg+" ("+src+":"+line+":"+col+")"; };
+  <script>
+window.addEventListener('unhandledrejection', (ev)=>{
+  const el=document.getElementById('jsErr');
+  const reason = ev && ev.reason ? (ev.reason.message || String(ev.reason)) : 'Desconocido';
+  if(el) el.textContent = "⚠️ Promesa rechazada: " + reason;
+  if (window.Diag) Diag.log("Promesa rechazada — " + reason, false);
+});
+</script>
+
 
 /* ===== CONFIG ===== */
 const CONFIG = {
