@@ -143,6 +143,15 @@ function toast(msg, ms=2400){ const t=document.createElement("div"); t.textConte
 function guessKey(obj, arr){ for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k; for(const k in obj) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k; return null; }
 function getName(p){ const k=guessKey(p,CONFIG.nameKeys)||Object.keys(p||{})[0]; return p&&p[k]?String(p[k]):"Sin nombre"; }
 function getCode(p){ const k=guessKey(p,CONFIG.codeKeys); return k&&p[k]!=null?String(p[k]).padStart(5,"0"):null; }
+  <script>
+function getCode(p){ const k=guessKey(p,CONFIG.codeKeys); return k&&p[k]!=null?String(p[k]).padStart(5,"0"):null; }
+function normName(s){
+  return s ? String(s).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^\w\s]/g,'').replace(/\s+/g,' ')
+    .trim() : null;
+}
+
 
 /* ===== Mapa ===== */
 const map=L.map("map",{preferCanvas:true});
