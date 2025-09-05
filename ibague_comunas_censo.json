@@ -1,5 +1,15 @@
 [
-  {"COMUNA":"Comuna 1","POB_TOTAL": 0},
-  {"COMUNA":"Comuna 2","POB_TOTAL": 0}
-  
+  {"COMUNA": "Comuna 1", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 2", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 3", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 4", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 5", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 6", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 7", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 8", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 9", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 10", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 11", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 12", "POB_TOTAL": 0},
+  {"COMUNA": "Comuna 13", "POB_TOTAL": 0}
 ]
