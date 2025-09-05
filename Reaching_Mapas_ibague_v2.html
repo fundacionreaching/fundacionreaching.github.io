@@ -33,6 +33,9 @@
   #info table{width:100%;border-collapse:collapse}
   #info td{border-bottom:1px solid #ffffff16;padding:.25rem .2rem}
   #info td:first-child{color:#9aa3b2;width:42%}
+  /* Loader */
+  #loader{display:none}
+  @media (max-width:1024px){ .layout{grid-template-columns:0 1fr} }
 </style>
 </head>
 <body>
@@ -45,6 +48,8 @@
     <div class="btn-row">
       <button id="btnCollapse" class="btn ghost">☰ Ocultar/mostrar menú</button>
       <button id="btnReset" class="btn ghost">⟳ Restablecer vista</button>
+      <button id="btnTolima" class="btn">Tolima</button>
+      <button id="btnIbague" class="btn">Ibagué</button>
     </div>
   </header>
 
@@ -93,6 +98,7 @@
     <section id="mapWrap">
       <div id="map"></div>
       <div id="legend" class="legend" style="display:none"></div>
+      <div id="loader" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:#0b1020cc;z-index:500;font-weight:700;letter-spacing:.3px">Cargando capas…</div>
     </section>
   </main>
 
@@ -109,7 +115,11 @@
 <script>
 /* ===== Diagnóstico & errores ===== */
 const Diag = { el:null, log(msg, ok=true){ const d=document.createElement("div"); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el&&this.el.appendChild(d); } };
-window.addEventListener("DOMContentLoaded", ()=>{ Diag.el=document.getElementById("diag"); Diag.log("JS listo ✔"); });
+window.addEventListener("DOMContentLoaded", ()=>{
+  Diag.el=document.getElementById("diag");
+  Diag.log("JS listo ✔");
+  if(window.innerWidth<1024){ const lay=document.getElementById("layout"); lay&&lay.classList.add("collapsed"); }
+});
 window.onerror = function(msg, src, line, col){ const el=document.getElementById('jsErr'); el.textContent = "⚠️ Error de script: "+msg+" ("+src+":"+line+":"+col+")"; };
 
 /* ===== CONFIG ===== */
@@ -122,7 +132,7 @@ const CONFIG = {
     // Primero la que ya te funciona para evitar el ❌ inicial
     mpios:   ["./data/tolima_municipios.geojson","./tolima_municipios.geojson","/data/tolima_municipios.geojson","/tolima_municipios.geojson"]
   },
-  census: ["./municipios_censo.json","./tolima_censo.json","./data/municipios_censo.json","./data/tolima_censo.json"],
+  census: [],
   nameKeys: ["NOMBRE","NOM_MPIO","NOMBRE_MPIO","MPIO_CNMBR","COMUNA","NOM_COMUNA","CORREGIMIENTO","NOM_CORR","VEREDA","NOM_VEREDA","NOM_COM","NOMBREGEO","DESCRIPCION","nombre"],
   codeKeys: ["MPIO_CCDGO","COD_DANE","cod_dane","MPIO","CODIGO","codigo","DANE","mpio_cod","codmpio"],
   popKeys : ["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total"]
@@ -165,48 +175,74 @@ async function trySources(urls,label){ for(const u of urls){ try{ const data=awa
 
 /* ===== Carga ===== */
 async function loadAll(){
+  const loader=document.getElementById("loader"); if(loader) loader.style.display="flex";
   try{
     const comunas=await trySources(CONFIG.data.comunas,"Comunas (GeoJSON)");
-    if(comunas){ layers.comunas=L.geoJSON(comunas,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,"Comuna"); }
+    if(comunas){ layers.comunas=L.geoJSON(comunas,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,"Comuna"); Diag.log(`Comunas: ${layers.comunas.getLayers().length} elementos ✔`); }
     const correg =await trySources(CONFIG.data.correg,"Corregimientos (GeoJSON)");
-    if(correg){ layers.correg=L.geoJSON(correg,{style:baseStyle('#ffe08a')}).addTo(map); attachInteractive(layers.correg,"Correg."); }
+    if(correg){ layers.correg=L.geoJSON(correg,{style:baseStyle('#ffe08a')}).addTo(map); attachInteractive(layers.correg,"Correg."); Diag.log(`Corregimientos: ${layers.correg.getLayers().length} elementos ✔`); }
     const veredas=await trySources(CONFIG.data.veredas,"Veredas (GeoJSON)");
-    if(veredas){ layers.veredas=L.geoJSON(veredas,{style:baseStyle('#b78cff')}).addTo(map); attachInteractive(layers.veredas,"Vereda"); }
+    if(veredas){ layers.veredas=L.geoJSON(veredas,{style:baseStyle('#b78cff')}).addTo(map); attachInteractive(layers.veredas,"Vereda"); Diag.log(`Veredas: ${layers.veredas.getLayers().length} elementos ✔`); }
     const mpios  =await trySources(CONFIG.data.mpios,"Municipios (GeoJSON)");
-    if(mpios){ layers.mpios=L.geoJSON(mpios,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,"Municipio"); }
+    if(mpios){ layers.mpios=L.geoJSON(mpios,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,"Municipio"); Diag.log(`Municipios: ${layers.mpios.getLayers().length} elementos ✔`); }
 
     // Índice búsqueda
     window._idx=[]; [layers.comunas,layers.correg,layers.veredas,layers.mpios].forEach(g=>g&&g.eachLayer(l=>{ window._idx.push({name:getName(l.feature.properties||{}), bounds:l.getBounds()}); }));
     Diag.log(`Índice de búsqueda: ${_idx.length} elementos ✔`);
 
   }catch(e){ Diag.log("Fallo general de carga: "+e.message, false); }
+  finally{ if(loader) loader.style.display="none"; }
 }
 loadAll();
 
 // Censo opcional (externo o embebido)
 (async function loadCenso(){
-  let loaded=false;
+  // 1) Embebido primero (sin depender de archivos externos)
+  try{
+    const el = document.getElementById('censoTolima');
+    if(!el) throw new Error("no se encontró <script id='censoTolima'>");
+    const data = JSON.parse(el.textContent);
+    const sample = data[0];
+    const codeKey = guessKey(sample, CONFIG.codeKeys) || 'COD_DANE';
+    const popKey  = guessKey(sample, CONFIG.popKeys)  || 'POB_TOTAL';
+
+    const M = new Map();
+    data.forEach(row=>{
+      const code = String(row[codeKey]).padStart(5,'0');
+      const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+      if(code && Number.isFinite(val)) M.set(code, val);
+    });
+
+    cache.census = M; cache.codeKey = codeKey; cache.popKey = popKey;
+    const total = [...M.values()].reduce((a,b)=>a+b,0);
+    Diag.log(`Censo: embebido ✔ (${M.size} municipios; total ${total.toLocaleString('es-CO')})`);
+    return; // listo
+  }catch(e){
+    Diag.log("Censo embebido — " + e.message, false);
+  }
+
+  // 2) (opcional) Intentar URLs externas SOLO si falla el embebido
+  let loaded = false;
   for(const u of CONFIG.census){
     try{
-      const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw new Error(r.status);
-      const data=await r.json();
-      const sample=Array.isArray(data)?data[0]:Object.values(data)[0];
-      const codeKey=guessKey(sample||data,CONFIG.codeKeys); const popKey=guessKey(sample||data,CONFIG.popKeys);
-      if(!codeKey||!popKey) throw new Error("no llaves (código/población)");
-      const M=new Map(); const push=row=>{ const code=String(row[codeKey]).padStart(5,'0'); const val=Number(String(row[popKey]).replace(/[^\d.]/g,'')); if(code&&Number.isFinite(val)) M.set(code,val); };
+      const r = await fetch(u,{cache:'no-store'}); if(!r.ok) throw new Error(r.status);
+      const data = await r.json();
+      const sample = Array.isArray(data)?data[0]:Object.values(data)[0];
+      const codeKey = guessKey(sample||data, CONFIG.codeKeys);
+      const popKey  = guessKey(sample||data, CONFIG.popKeys);
+      if(!codeKey || !popKey) throw new Error('no llaves (código/población)');
+
+      const M = new Map();
+      const push = row=>{ const code = String(row[codeKey]).padStart(5,'0'); const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,'')); if(code && Number.isFinite(val)) M.set(code,val); };
       if(Array.isArray(data)) data.forEach(push); else Object.values(data).forEach(push);
-      cache.census=M; cache.codeKey=codeKey; cache.popKey=popKey; Diag.log(`Censo: ${u} ✔ (${M.size} municipios)`); loaded=true; break;
+
+      cache.census = M; cache.codeKey = codeKey; cache.popKey = popKey;
+      const total = [...M.values()].reduce((a,b)=>a+b,0);
+      Diag.log(`Censo: ${u} ✔ (${M.size} municipios; total ${total.toLocaleString('es-CO')})`);
+      loaded = true; break;
     }catch(e){ Diag.log(`Censo: ${u} — ${e.message}`, false); }
   }
-  if(!loaded){
-    try{
-      const el=document.getElementById('censoTolima'); if(!el) throw new Error("no se encontró <script id='censoTolima'>");
-      const data=JSON.parse(el.textContent); const sample=data[0];
-      const codeKey=guessKey(sample,CONFIG.codeKeys)||'COD_DANE'; const popKey=guessKey(sample,CONFIG.popKeys)||'POB_TOTAL';
-      const M=new Map(); data.forEach(row=>{ const code=String(row[codeKey]).padStart(5,'0'); const val=Number(String(row[popKey]).replace(/[^\d.]/g,'')); if(code&&Number.isFinite(val)) M.set(code,val); });
-      cache.census=M; cache.codeKey=codeKey; cache.popKey=popKey; Diag.log(`Censo: embebido ✔ (${M.size} municipios)`);
-    }catch(e){ Diag.log("Censo: embebido — "+e.message, false); }
-  }
+  if(!loaded){ Diag.log('Censo: no disponible', false); }
 })();
 
 /* ===== UI ===== */
@@ -233,6 +269,14 @@ document.getElementById("toggleMpios").onclick  =()=>safeToggle(layers.mpios,"Mu
 document.getElementById("q").addEventListener("keydown",(e)=>{ if(e.key!=="Enter") return; const t=e.target.value.trim().toLowerCase(); if(!t) return; const hit=(window._idx||[]).find(x=>x.name.toLowerCase().includes(t)); if(hit&&hit.bounds) map.fitBounds(hit.bounds.pad(0.4)); else toast("Sin resultados"); });
 document.getElementById("btnReset").onclick=()=>{ map.fitBounds(CONFIG.boundsTolima); setTimeout(()=>map.invalidateSize(),60); };
 document.getElementById("btnCollapse").onclick=()=>{ const lay=document.getElementById("layout"); lay.classList.toggle("collapsed"); setTimeout(()=>map.invalidateSize(),120); };
+// Controles extra: atajos de zoom
+function zoomIbague(){
+  if(layers.comunas){ map.fitBounds(layers.comunas.getBounds().pad(0.2)); return; }
+  if(layers.mpios){ let found=null; layers.mpios.eachLayer(l=>{ const n=getName(l.feature.properties||{}).toLowerCase(); if(n.includes("bagué")||n.includes("ibague")) found=l; }); if(found){ map.fitBounds(found.getBounds().pad(0.2)); return; } }
+  map.setView([4.44,-75.20],11);
+}
+const bTol=document.getElementById('btnTolima'); if(bTol) bTol.onclick=()=>{ map.fitBounds(CONFIG.boundsTolima); setTimeout(()=>map.invalidateSize(),60); };
+const bIbg=document.getElementById('btnIbague'); if(bIbg) bIbg.onclick=()=>{ zoomIbague(); setTimeout(()=>map.invalidateSize(),60); };
 </script>
 </body>
 </html>
