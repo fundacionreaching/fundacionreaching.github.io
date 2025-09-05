@@ -196,48 +196,7 @@ function onlyPolys(fc){
 }
 </script>
 
-  const ctrl=new AbortController();
-  const to=setTimeout(()=>ctrl.abort(),12000); // 12s para evitar cuelgue
-  try{
-    const r=await fetch(u,{cache:"no-store", signal: ctrl.signal});
-    if(!r.ok) throw new Error(r.status+" "+r.statusText);
-    const txt=await r.text();
-    let data; 
-    try{ data=JSON.parse(txt); } 
-    catch(_){ data=JSON.parse(txt.replace(/^\uFEFF/,'')); } // quita BOM si viene
-    return data;
-  } finally { clearTimeout(to); }
-}
-</script>
-
-/* ===== Carga ===== */
-async function loadAll(){
-  const loader=document.getElementById("loader"); if(loader) loader.style.display="flex";
-  try{
-    const comunas=await trySources(CONFIG.data.comunas,"Comunas (GeoJSON)");
-    if(comunas){ layers.comunas=L.geoJSON(comunas,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,"Comuna"); Diag.log(`Comunas: ${layers.comunas.getLayers().length} elementos ✔`); }
-    const correg =await trySources(CONFIG.data.correg,"Corregimientos (GeoJSON)");
-    if(correg){ layers.correg=L.geoJSON(correg,{style:baseStyle('#ffe08a')}).addTo(map); attachInteractive(layers.correg,"Correg."); Diag.log(`Corregimientos: ${layers.correg.getLayers().length} elementos ✔`); }
-    const veredas=await trySources(CONFIG.data.veredas,"Veredas (GeoJSON)");
-    if(veredas){ layers.veredas=L.geoJSON(veredas,{style:baseStyle('#b78cff')}).addTo(map); attachInteractive(layers.veredas,"Vereda"); Diag.log(`Veredas: ${layers.veredas.getLayers().length} elementos ✔`); }
-    const mpios  =await trySources(CONFIG.data.mpios,"Municipios (GeoJSON)");
-    if(mpios){ layers.mpios=L.geoJSON(mpios,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,"Municipio"); Diag.log(`Municipios: ${layers.mpios.getLayers().length} elementos ✔`); }
-
-    // Índice búsqueda
-    window._idx=[]; [layers.comunas,layers.correg,layers.veredas,layers.mpios].forEach(g=>g&&g.eachLayer(l=>{ window._idx.push({name:getName(l.feature.properties||{}), bounds:l.getBounds()}); }));
-    Diag.log(`Índice de búsqueda: ${_idx.length} elementos ✔`);
-
-  }catch(e){ Diag.log("Fallo general de carga: "+e.message, false); }
-  finally{ if(loader) loader.style.display="none"; }
-}
-loadAll();
-
-// Censo opcional (externo o embebido)
-(async function loadCenso(){
-  // 1) Embebido primero (sin depender de archivos externos)
-  try{
-    const el = document.getElementById('censoTolima');
-    if(!el) throw new Error("no se encontró <script id='censoTolima'>");
+ <script id='censoTolima'>");
     const data = JSON.parse(el.textContent);
     const sample = data[0];
     const codeKey = guessKey(sample, CONFIG.codeKeys) || 'COD_DANE';
