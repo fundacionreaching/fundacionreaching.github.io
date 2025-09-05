@@ -99,6 +99,59 @@
 
 <!-- Script único (incluye verificación “JS listo ✔”) -->
 <script>
+  <script>
+// ... (deja tu código tal cual arriba)
+
+// NUEVO: renderiza propiedades en el panel
+function renderInfo(props,label){
+  const box=document.getElementById('info'); if(!box) return;
+  if(!props){ box.innerHTML="<em>Sin datos</em>"; return; }
+
+  const name=getName(props);
+  const code=getCode(props)||"—";
+
+  // si hay censo cargado, intenta población por código DANE
+  let pob = null;
+  if (window.cache && cache.census) {
+    const v = cache.census.get(String(code).padStart(5,"0"));
+    if (Number.isFinite(v)) pob = v.toLocaleString('es-CO');
+  }
+
+  // tabla con TODOS los atributos del GeoJSON
+  let rows="";
+  for(const [k,v] of Object.entries(props)){
+    rows += `<tr><td>${k}</td><td>${v}</td></tr>`;
+  }
+
+  const head = `<div style="font-weight:700;margin-bottom:.35rem">${label}: ${name}</div>`;
+  const extras = `<div class="muted" style="margin-bottom:.35rem">
+                    Código: <b>${code}</b>${pob ? ` · Población: <b>${pob}</b>` : ``}
+                  </div>`;
+  box.innerHTML = head + extras + `<table>${rows}</table>`;
+}
+
+// REEMPLAZA tu función attachInteractive por esta
+function attachInteractive(group,label){
+  if(!group) return;
+  group.eachLayer(l=>{
+    const props=l.feature.properties||{};
+    const name=getName(props);
+
+    l.bindTooltip(`${label}: <b>${name}</b>`);
+    l.on("mouseover",()=>l.setStyle(hoverStyle()));
+    l.on("mouseout",()=>l.setStyle(baseStyle()));
+
+    // click = muestra información + popup corto
+    l.on("click", ()=>{
+      renderInfo(props,label);
+      try{ l.bindPopup(`<b>${label}</b><br>${name}`).openPopup(); }catch(_){}
+    });
+  });
+}
+
+// ... (deja el resto de tu código tal cual abajo)
+</script>
+
 /* ===== Captura errores y OK de JS ===== */
 const Diag = { el:null,
   log(msg, ok=true){ const d=document.createElement("div"); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el&&this.el.appendChild(d); }
