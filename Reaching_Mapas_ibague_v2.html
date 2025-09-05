@@ -171,6 +171,25 @@ function legend(title, br){ const Lg=document.getElementById("legend"); if(!br||
 function styleBy(mapVals){ const vals=[...mapVals.values()].filter(Number.isFinite); const br=breaksFrom(vals,6), R=ramp(); return feat=>{ const code=getCode(feat.properties||{}); const v=code?mapVals.get(code):null; if(!Number.isFinite(v)) return baseStyle('#43d17a'); let idx=br.findIndex(b=>v<=b)-1; if(idx<0) idx=br.length-2; idx=Math.max(0,Math.min(idx,R.length-1)); return {color:'#0a63c7',weight:1,fillOpacity:.7,fillColor:R[idx]}; }; }
 /* Auto-densidad aproximada */
 function styleByArea(){ return (feat)=>{ try{ const gj=L.geoJSON(feat); const b=gj.getBounds(); const area=Math.abs((b.getEast()-b.getWest())*(b.getNorth()-b.getSouth())); const score=Math.min(1,Math.max(0, area/4)); const R=ramp(); const i=Math.min(R.length-1, Math.floor(score*(R.length-1))); return {color:'#2a93ff',weight:1,fillOpacity:.65,fillColor:R[i]}; }catch(_){ return baseStyle(); } }; }
+<script>
+function styleBySmart(){
+  const vals = Array.isArray(cache.censusVals)? cache.censusVals
+              : (cache.censusByCode? [...cache.censusByCode.values()] : []);
+  const br = breaksFrom(vals,6), R=ramp();
+  return (feat)=>{
+    const props = feat.properties||{};
+    const code  = getCode(props);
+    let v = code && cache.censusByCode ? cache.censusByCode.get(code) : undefined;
+    if(!Number.isFinite(v)){
+      const nm = normName(getName(props));
+      if(nm && cache.censusByName) v = cache.censusByName.get(nm);
+    }
+    if(!Number.isFinite(v)) return baseStyle('#43d17a');
+    let idx=br.findIndex(b=>v<=b)-1; if(idx<0) idx=br.length-2; idx=Math.max(0,Math.min(idx,R.length-1));
+    return {color:'#0a63c7',weight:1,fillOpacity:.7,fillColor:R[idx]};
+  };
+}
+</script>
 
 /* ===== Render info & eventos ===== */
 function renderInfo(props,label){ const box=document.getElementById('info'); if(!box) return; if(!props){ box.innerHTML="<em>Sin datos</em>"; return; } const name=getName(props); const code=getCode(props)||"—"; let pob=null; if(cache.census){ const v=cache.census.get(String(code).padStart(5,'0')); if(Number.isFinite(v)) pob=v.toLocaleString('es-CO'); } let rows=""; for(const [k,v] of Object.entries(props)){ rows += `<tr><td>${k}</td><td>${v}</td></tr>`; } const head = `<div style="font-weight:700;margin-bottom:.35rem">${label}: ${name}</div>`; const extras = `<div class="muted" style="margin-bottom:.35rem">Código: <b>${code}</b>${pob?` · Población: <b>${pob}</b>`:""}</div>`; box.innerHTML = head + extras + `<table>${rows}</table>`; }
