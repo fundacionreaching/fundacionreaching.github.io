@@ -121,8 +121,6 @@ window.addEventListener("DOMContentLoaded", ()=>{
   if(window.innerWidth<1024){ const lay=document.getElementById("layout"); lay&&lay.classList.add("collapsed"); }
 });
 window.onerror = function(msg, src, line, col){ const el=document.getElementById('jsErr'); el.textContent = "⚠️ Error de script: "+msg+" ("+src+":"+line+":"+col+")"; };
-// Captura errores de promesas no manejadas (evita cuelgues silenciosos)
-window.addEventListener('unhandledrejection', (ev)=>{ const el=document.getElementById('jsErr'); const reason=ev&&ev.reason? (ev.reason.message||String(ev.reason)) : 'Desconocido'; if(el) el.textContent = "⚠️ Promesa rechazada: "+reason; Diag.log("Promesa rechazada — "+reason, false); });
 
 /* ===== CONFIG ===== */
 const CONFIG = {
@@ -145,16 +143,6 @@ function toast(msg, ms=2400){ const t=document.createElement("div"); t.textConte
 function guessKey(obj, arr){ for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k; for(const k in obj) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k; return null; }
 function getName(p){ const k=guessKey(p,CONFIG.nameKeys)||Object.keys(p||{})[0]; return p&&p[k]?String(p[k]):"Sin nombre"; }
 function getCode(p){ const k=guessKey(p,CONFIG.codeKeys); return k&&p[k]!=null?String(p[k]).padStart(5,"0"):null; }
-// Normaliza nombres (para empatar por nombre si falta el código DANE)
-function normName(s){
-  return s ? String(s)
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^\w\s]/g,'')
-    .replace(/\s+/g,' ')
-    .trim()
-  : null;
-}
 
 /* ===== Mapa ===== */
 const map=L.map("map",{preferCanvas:true});
@@ -165,7 +153,7 @@ baseOSM.addTo(map); map.fitBounds(CONFIG.boundsTolima);
 L.control.layers({"OSM":baseOSM,"OSM Claro":baseCarto,"Satélite":baseSat},{},{position:'topright'}).addTo(map);
 
 const layers={comunas:null,correg:null,veredas:null,mpios:null};
-const cache={censusByCode:null,censusByName:null,censusVals:null,popKey:null,codeKey:null};
+const cache={census:null,popKey:null,codeKey:null};
 
 /* ===== Estilos & leyenda ===== */
 function baseStyle(c){return{color:c||'#69d1ff',weight:1,fillOpacity:.15}}
@@ -182,7 +170,7 @@ function renderInfo(props,label){ const box=document.getElementById('info'); if(
 function attachInteractive(group,label){ if(!group) return; group.eachLayer(l=>{ const props=l.feature.properties||{}; const name=getName(props); l.bindTooltip(`${label}: <b>${name}</b>`); l.on("mouseover",()=>l.setStyle(hoverStyle())); l.on("mouseout",()=>l.setStyle(baseStyle())); l.on("click", ()=>{ renderInfo(props,label); try{ l.bindPopup(`<b>${label}</b><br>${name}`).openPopup(); }catch(_){} }); }); }
 
 /* ===== Fetch helpers ===== */
-async function fetchJson(u){); if(!r.ok) throw new Error(r.status+" "+r.statusText); const txt=await r.text(); return JSON.parse(txt); }
+async function fetchJson(u){ const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw new Error(r.status+" "+r.statusText); const txt=await r.text(); return JSON.parse(txt); }
 async function trySources(urls,label){ for(const u of urls){ try{ const data=await fetchJson(u); Diag.log(`${label}: ${u} ✔ OK`); return data; } catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false); } } return null; }
 
 /* ===== Carga ===== */
