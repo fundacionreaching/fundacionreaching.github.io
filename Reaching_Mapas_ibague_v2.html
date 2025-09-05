@@ -181,6 +181,21 @@ function attachInteractive(group,label){ if(!group) return; group.eachLayer(l=>{
 /* ===== Fetch helpers ===== */
 <script>
 async function fetchJson(u){
+  <script>
+function asFeatureCollection(data){
+  if(!data) throw new Error("GeoJSON vacío");
+  if(Array.isArray(data)) return {type:'FeatureCollection', features:data};
+  if(data.type==='FeatureCollection' && Array.isArray(data.features)) return data;
+  if(data.type==='Feature' && data.geometry) return {type:'FeatureCollection', features:[data]};
+  throw new Error('No es Feature/FeatureCollection');
+}
+function onlyPolys(fc){
+  fc.features = (fc.features||[]).filter(f=> f && f.type==='Feature' && 
+                 f.geometry && ['Polygon','MultiPolygon'].includes(f.geometry.type));
+  return fc;
+}
+</script>
+
   const ctrl=new AbortController();
   const to=setTimeout(()=>ctrl.abort(),12000); // 12s para evitar cuelgue
   try{
