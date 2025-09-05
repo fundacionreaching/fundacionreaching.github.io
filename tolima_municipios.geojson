@@ -1,1 +1,16 @@
+const CONFIG = {
+  // ...
+  data: {
+    comunas: ["./ibague_urbano.geojson","./data/ibague_urbano.geojson"],
+    correg:  ["./ibague_corregimientos.geojson","./data/ibague_corregimientos.geojson"],
+    veredas: ["./ibague_veredas.geojson","./data/ibague_veredas.geojson","/veredas.geojson","/data/veredas.geojson"],
+    mpios: [
+      "/tolima_municipios.geojson",                     // ← tu archivo en la raíz del sitio
+      "./tolima_municipios.geojson",                    // fallback relativo
+      "./data/tolima_municipios.geojson",               // fallback en /data
+      "https://fundacionreaching.github.io/tolima_municipios.geojson" // fallback absoluto
+    ]
+  },
+  // ...
+};
 
