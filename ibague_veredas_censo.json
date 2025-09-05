@@ -1,0 +1,43 @@
+(async ()=>{
+  const urls = [
+    "/veredas.geojson",
+    "./veredas.geojson",
+    "./ibague_veredas.geojson",
+    "/ibague_veredas.geojson",
+    "./data/ibague_veredas.geojson",
+    "/data/ibague_veredas.geojson"
+  ];
+  let data=null, used=null;
+  for (const u of urls) {
+    try { const r = await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; data = await r.json(); used=u; break; }
+    catch(_) {}
+  }
+  if(!data) throw new Error("No pude cargar veredas desde ninguna ruta conocida.");
+
+  const feats = Array.isArray(data) ? data
+               : (data.type==="FeatureCollection" ? data.features : (data.features||[]));
+
+  // Detecta automáticamente la llave de nombre
+  const pickNameKey = (p)=>{
+    const candidates = ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"];
+    for(const k of candidates) if (p && Object.hasOwn(p,k)) return k;
+    for(const k in (p||{})) if (typeof p[k]==="string") return k; // fallback
+    return Object.keys(p||{})[0] || "VEREDA";
+  };
+  const K = feats.length ? pickNameKey(feats[0].properties||{}) : "VEREDA";
+
+  const out = feats.map(f=>{
+    const name = String(((f.properties||{})[K] ?? "")).trim();
+    return name ? { VEREDA: name, POB_TOTAL: 0 } : null;
+  }).filter(Boolean);
+
+  // Descarga como archivo
+  const blob = new Blob([JSON.stringify(out,null,2)], {type:"application/json;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ibague_veredas_censo.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  console.log(`✅ Generado ibague_veredas_censo.json con ${out.length} veredas (desde ${used}) usando llave "${K}".`);
+})();
