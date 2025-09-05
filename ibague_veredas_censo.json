@@ -5,4 +5,38 @@
     "/veredas.geojson","./veredas.geojson",
     "./ibague_veredas.geojson","/ibague_veredas.geojson",
     "./data/ibague_veredas.geojson","/data/ibague_veredas.geojson"
+
+[
+  {"VEREDA":"<Nombre de Vereda 1>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 2>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 3>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 4>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 5>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 6>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 7>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 8>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 9>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 10>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 11>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 12>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 13>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 14>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 15>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 16>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 17>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 18>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 19>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 20>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 21>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 22>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 23>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 24>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 25>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 26>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 27>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 28>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 29>","POB_TOTAL":0},
+  {"VEREDA":"<Nombre de Vereda 30>","POB_TOTAL":0}
+]
+
  
