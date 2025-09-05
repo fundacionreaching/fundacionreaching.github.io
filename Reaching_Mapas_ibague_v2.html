@@ -179,8 +179,21 @@ function renderInfo(props,label){ const box=document.getElementById('info'); if(
 function attachInteractive(group,label){ if(!group) return; group.eachLayer(l=>{ const props=l.feature.properties||{}; const name=getName(props); l.bindTooltip(`${label}: <b>${name}</b>`); l.on("mouseover",()=>l.setStyle(hoverStyle())); l.on("mouseout",()=>l.setStyle(baseStyle())); l.on("click", ()=>{ renderInfo(props,label); try{ l.bindPopup(`<b>${label}</b><br>${name}`).openPopup(); }catch(_){} }); }); }
 
 /* ===== Fetch helpers ===== */
-async function fetchJson(u){ const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw new Error(r.status+" "+r.statusText); const txt=await r.text(); return JSON.parse(txt); }
-async function trySources(urls,label){ for(const u of urls){ try{ const data=await fetchJson(u); Diag.log(`${label}: ${u} ✔ OK`); return data; } catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false); } } return null; }
+<script>
+async function fetchJson(u){
+  const ctrl=new AbortController();
+  const to=setTimeout(()=>ctrl.abort(),12000); // 12s para evitar cuelgue
+  try{
+    const r=await fetch(u,{cache:"no-store", signal: ctrl.signal});
+    if(!r.ok) throw new Error(r.status+" "+r.statusText);
+    const txt=await r.text();
+    let data; 
+    try{ data=JSON.parse(txt); } 
+    catch(_){ data=JSON.parse(txt.replace(/^\uFEFF/,'')); } // quita BOM si viene
+    return data;
+  } finally { clearTimeout(to); }
+}
+</script>
 
 /* ===== Carga ===== */
 async function loadAll(){
