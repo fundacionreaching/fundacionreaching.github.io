@@ -121,15 +121,8 @@ window.addEventListener("DOMContentLoaded", ()=>{
   if(window.innerWidth<1024){ const lay=document.getElementById("layout"); lay&&lay.classList.add("collapsed"); }
 });
 window.onerror = function(msg, src, line, col){ const el=document.getElementById('jsErr'); el.textContent = "⚠️ Error de script: "+msg+" ("+src+":"+line+":"+col+")"; };
-  <script>
-window.addEventListener('unhandledrejection', (ev)=>{
-  const el=document.getElementById('jsErr');
-  const reason = ev && ev.reason ? (ev.reason.message || String(ev.reason)) : 'Desconocido';
-  if(el) el.textContent = "⚠️ Promesa rechazada: " + reason;
-  if (window.Diag) Diag.log("Promesa rechazada — " + reason, false);
-});
-</script>
-
+// Captura errores de promesas no manejadas (evita cuelgues silenciosos)
+window.addEventListener('unhandledrejection', (ev)=>{ const el=document.getElementById('jsErr'); const reason=ev&&ev.reason? (ev.reason.message||String(ev.reason)) : 'Desconocido'; if(el) el.textContent = "⚠️ Promesa rechazada: "+reason; Diag.log("Promesa rechazada — "+reason, false); });
 
 /* ===== CONFIG ===== */
 const CONFIG = {
@@ -152,6 +145,16 @@ function toast(msg, ms=2400){ const t=document.createElement("div"); t.textConte
 function guessKey(obj, arr){ for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k; for(const k in obj) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k; return null; }
 function getName(p){ const k=guessKey(p,CONFIG.nameKeys)||Object.keys(p||{})[0]; return p&&p[k]?String(p[k]):"Sin nombre"; }
 function getCode(p){ const k=guessKey(p,CONFIG.codeKeys); return k&&p[k]!=null?String(p[k]).padStart(5,"0"):null; }
+// Normaliza nombres (para empatar por nombre si falta el código DANE)
+function normName(s){
+  return s ? String(s)
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^\w\s]/g,'')
+    .replace(/\s+/g,' ')
+    .trim()
+  : null;
+}
 
 /* ===== Mapa ===== */
 const map=L.map("map",{preferCanvas:true});
@@ -162,7 +165,7 @@ baseOSM.addTo(map); map.fitBounds(CONFIG.boundsTolima);
 L.control.layers({"OSM":baseOSM,"OSM Claro":baseCarto,"Satélite":baseSat},{},{position:'topright'}).addTo(map);
 
 const layers={comunas:null,correg:null,veredas:null,mpios:null};
-const cache={census:null,popKey:null,codeKey:null};
+const cache={censusByCode:null,censusByName:null,censusVals:null,popKey:null,codeKey:null};
 
 /* ===== Estilos & leyenda ===== */
 function baseStyle(c){return{color:c||'#69d1ff',weight:1,fillOpacity:.15}}
@@ -179,24 +182,37 @@ function renderInfo(props,label){ const box=document.getElementById('info'); if(
 function attachInteractive(group,label){ if(!group) return; group.eachLayer(l=>{ const props=l.feature.properties||{}; const name=getName(props); l.bindTooltip(`${label}: <b>${name}</b>`); l.on("mouseover",()=>l.setStyle(hoverStyle())); l.on("mouseout",()=>l.setStyle(baseStyle())); l.on("click", ()=>{ renderInfo(props,label); try{ l.bindPopup(`<b>${label}</b><br>${name}`).openPopup(); }catch(_){} }); }); }
 
 /* ===== Fetch helpers ===== */
-<script>
-async function fetchJson(u){
-  <script>
-function asFeatureCollection(data){
-  if(!data) throw new Error("GeoJSON vacío");
-  if(Array.isArray(data)) return {type:'FeatureCollection', features:data};
-  if(data.type==='FeatureCollection' && Array.isArray(data.features)) return data;
-  if(data.type==='Feature' && data.geometry) return {type:'FeatureCollection', features:[data]};
-  throw new Error('No es Feature/FeatureCollection');
-}
-function onlyPolys(fc){
-  fc.features = (fc.features||[]).filter(f=> f && f.type==='Feature' && 
-                 f.geometry && ['Polygon','MultiPolygon'].includes(f.geometry.type));
-  return fc;
-}
-</script>
+async function fetchJson(u){); if(!r.ok) throw new Error(r.status+" "+r.statusText); const txt=await r.text(); return JSON.parse(txt); }
+async function trySources(urls,label){ for(const u of urls){ try{ const data=await fetchJson(u); Diag.log(`${label}: ${u} ✔ OK`); return data; } catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false); } } return null; }
 
- <script id='censoTolima'>");
+/* ===== Carga ===== */
+async function loadAll(){
+  const loader=document.getElementById("loader"); if(loader) loader.style.display="flex";
+  try{
+    const comunas=await trySources(CONFIG.data.comunas,"Comunas (GeoJSON)");
+    if(comunas){ layers.comunas=L.geoJSON(comunas,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,"Comuna"); Diag.log(`Comunas: ${layers.comunas.getLayers().length} elementos ✔`); }
+    const correg =await trySources(CONFIG.data.correg,"Corregimientos (GeoJSON)");
+    if(correg){ layers.correg=L.geoJSON(correg,{style:baseStyle('#ffe08a')}).addTo(map); attachInteractive(layers.correg,"Correg."); Diag.log(`Corregimientos: ${layers.correg.getLayers().length} elementos ✔`); }
+    const veredas=await trySources(CONFIG.data.veredas,"Veredas (GeoJSON)");
+    if(veredas){ layers.veredas=L.geoJSON(veredas,{style:baseStyle('#b78cff')}).addTo(map); attachInteractive(layers.veredas,"Vereda"); Diag.log(`Veredas: ${layers.veredas.getLayers().length} elementos ✔`); }
+    const mpios  =await trySources(CONFIG.data.mpios,"Municipios (GeoJSON)");
+    if(mpios){ layers.mpios=L.geoJSON(mpios,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,"Municipio"); Diag.log(`Municipios: ${layers.mpios.getLayers().length} elementos ✔`); }
+
+    // Índice búsqueda
+    window._idx=[]; [layers.comunas,layers.correg,layers.veredas,layers.mpios].forEach(g=>g&&g.eachLayer(l=>{ window._idx.push({name:getName(l.feature.properties||{}), bounds:l.getBounds()}); }));
+    Diag.log(`Índice de búsqueda: ${_idx.length} elementos ✔`);
+
+  }catch(e){ Diag.log("Fallo general de carga: "+e.message, false); }
+  finally{ if(loader) loader.style.display="none"; }
+}
+loadAll();
+
+// Censo opcional (externo o embebido)
+(async function loadCenso(){
+  // 1) Embebido primero (sin depender de archivos externos)
+  try{
+    const el = document.getElementById('censoTolima');
+    if(!el) throw new Error("no se encontró <script id='censoTolima'>");
     const data = JSON.parse(el.textContent);
     const sample = data[0];
     const codeKey = guessKey(sample, CONFIG.codeKeys) || 'COD_DANE';
