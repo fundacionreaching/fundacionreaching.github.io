@@ -312,7 +312,23 @@ loadAll();
 /* ===== UI ===== */
 function safeToggle(layer,nombre){ if(!layer){ toast(`La capa “${nombre}” aún no está cargada`); return; } if(map.hasLayer(layer)){ map.removeLayer(layer); toast(`Ocultando ${nombre}`); } else { layer.addTo(map); toast(`Mostrando ${nombre}`); } setTimeout(()=>map.invalidateSize(),60); }
 function applyStyle(mode){
-  if(mode==="poblacion"){
+  if(mode==="poblacion"){if(mode==="poblacion"){
+  if((cache.censusVals||[]).length && layers.mpios){
+    layers.mpios.setStyle(styleBySmart());
+    legend("Población (CNPV 2018)", cache.censusVals ? (function(vals,n=6){
+      const v=vals.filter(Number.isFinite).sort((a,b)=>a-b);
+      if(!v.length) return [];
+      const br=[v[0]];
+      for(let i=1;i<n;i++) br.push(v[Math.floor(i*(v.length-1)/n)]);
+      br.push(v[v.length-1]);
+      return br;
+    })(cache.censusVals,6) : []);
+    toast("Estilo: Población (por código o nombre)");
+  } else {
+    toast("Censo no cargado todavía. Manteniendo estilo detallado.");
+  }
+}
+
     if(cache.census && layers.mpios){ layers.mpios.setStyle(styleBy(cache.census)); legend("Población (CNPV 2018)", breaksFrom([...cache.census.values()],6)); toast("Estilo: Población"); }
     else{ toast("No hay censo detectado. Manteniendo estilo detallado."); }
   }else if(mode==="densidad"){
