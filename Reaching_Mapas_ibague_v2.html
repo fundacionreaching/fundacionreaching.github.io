@@ -213,50 +213,60 @@ loadAll();
   // 1) Embebido primero (sin depender de archivos externos)
   try{
     const el = document.getElementById('censoTolima');
+    if(!el) throw new Error("no se encontró 
+  <script>
+(async function loadCenso(){
+  try{
+    const el = document.getElementById('censoTolima');
     if(!el) throw new Error("no se encontró <script id='censoTolima'>");
     const data = JSON.parse(el.textContent);
-    const sample = data[0];
-    const codeKey = guessKey(sample, CONFIG.codeKeys) || 'COD_DANE';
-    const popKey  = guessKey(sample, CONFIG.popKeys)  || 'POB_TOTAL';
+    const sample = data[0]||{};
 
-    const M = new Map();
+    const codeKey = (function(obj, arr){
+      for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k;
+      for(const k in obj) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k;
+      return null;
+    })(sample, ["MPIO_CCDGO","COD_DANE","cod_dane","MPIO","CODIGO","codigo","DANE","mpio_cod","codmpio"]) || 'COD_DANE';
+
+    const popKey  = (function(obj, arr){
+      for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k;
+      for(const k in obj) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k;
+      return null;
+    })(sample, ["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total"]) || 'POB_TOTAL';
+
+    const nameKey = (function(obj, arr){
+      for(const k of arr) if(obj && Object.hasOwn(obj,k)) return k;
+      for(const k in obj) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k;
+      return null;
+    })(sample, ["NOM_MPIO","NOMBRE","MUNICIPIO","municipio","nombre","mpio","mpio_nom","mpio_nombre"]) || 'NOM_MPIO';
+
+    // Construye dos mapas: por código y por nombre normalizado
+    const Mcode = new Map();
+    const Mname = new Map();
     data.forEach(row=>{
-      const code = String(row[codeKey]).padStart(5,'0');
+      const code = row[codeKey]!=null ? String(row[codeKey]).padStart(5,'0') : null;
+      const name = normName(row[nameKey]);
       const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
-      if(code && Number.isFinite(val)) M.set(code, val);
+      if(Number.isFinite(val)){
+        if(code) Mcode.set(code,val);
+        if(name) Mname.set(name,val);
+      }
     });
 
-    cache.census = M; cache.codeKey = codeKey; cache.popKey = popKey;
-    const total = [...M.values()].reduce((a,b)=>a+b,0);
-    Diag.log(`Censo: embebido ✔ (${M.size} municipios; total ${total.toLocaleString('es-CO')})`);
-    return; // listo
+    // Guarda en cache (nuevas propiedades)
+    window.cache = window.cache || {};
+    cache.censusByCode = Mcode;
+    cache.censusByName = Mname;
+    cache.censusVals   = [...new Set([...Mcode.values(), ...Mname.values()])];
+
+    const total = cache.censusVals.reduce((a,b)=>a+b,0);
+    Diag.log(`Censo: embebido ✔ (${Mcode.size||Mname.size} municipios; total ${total.toLocaleString('es-CO')})`);
   }catch(e){
-    Diag.log("Censo embebido — " + e.message, false);
+    Diag.log("Censo embebido — "+e.message, false);
   }
-
-  // 2) (opcional) Intentar URLs externas SOLO si falla el embebido
-  let loaded = false;
-  for(const u of CONFIG.census){
-    try{
-      const r = await fetch(u,{cache:'no-store'}); if(!r.ok) throw new Error(r.status);
-      const data = await r.json();
-      const sample = Array.isArray(data)?data[0]:Object.values(data)[0];
-      const codeKey = guessKey(sample||data, CONFIG.codeKeys);
-      const popKey  = guessKey(sample||data, CONFIG.popKeys);
-      if(!codeKey || !popKey) throw new Error('no llaves (código/población)');
-
-      const M = new Map();
-      const push = row=>{ const code = String(row[codeKey]).padStart(5,'0'); const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,'')); if(code && Number.isFinite(val)) M.set(code,val); };
-      if(Array.isArray(data)) data.forEach(push); else Object.values(data).forEach(push);
-
-      cache.census = M; cache.codeKey = codeKey; cache.popKey = popKey;
-      const total = [...M.values()].reduce((a,b)=>a+b,0);
-      Diag.log(`Censo: ${u} ✔ (${M.size} municipios; total ${total.toLocaleString('es-CO')})`);
-      loaded = true; break;
-    }catch(e){ Diag.log(`Censo: ${u} — ${e.message}`, false); }
-  }
-  if(!loaded){ Diag.log('Censo: no disponible', false); }
 })();
+</script>
+
 
 /* ===== UI ===== */
 function safeToggle(layer,nombre){ if(!layer){ toast(`La capa “${nombre}” aún no está cargada`); return; } if(map.hasLayer(layer)){ map.removeLayer(layer); toast(`Ocultando ${nombre}`); } else { layer.addTo(map); toast(`Mostrando ${nombre}`); } setTimeout(()=>map.invalidateSize(),60); }
