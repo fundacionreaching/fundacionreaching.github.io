@@ -240,7 +240,6 @@
   const statusCenso=document.getElementById('statusCenso');
   const countCaps=document.getElementById('countCaps');
 
-  // Sanitiza JSON que venga con prefijos (ej: "data: {...}")
   const fetchJson = async (u) => {
   const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(),12000);
   try {
