@@ -212,35 +212,34 @@
       `<div class="sub" style="margin-bottom:.35rem">Código: <b>${code}</b>${Number.isFinite(pob)?` · Población: <b>${fmt(pob)}</b>`:""}</div>`+
       `<table>${rows}</table>`;
   }
-  const attachInteractive=(group,label)=>{ if(!group) return; group.eachLayer(l=>{ const props=l.feature?.properties||{}; const nm=getName(props); l.bindTooltip(`${label}: <b>${nm}</b>`); l.on('mouseover',()=>l.setStyle(hoverStyle())); l.on('mouseout',()=>l.setStyle(baseStyle())); l.on('click',()=>{ renderInfo(props,label); try{ l.bindPopup(`<b>${label}</b><br>${nm}`).openPopup(); }catch(_){} }); }); };
+ const attachInteractive=(group,label)=>{
+  if(!group) return;
+  group.eachLayer(l=>{
+    const props = l.feature?.properties || {};
+    const nm    = getName(props);
 
-  // GOTAS
-  function addDropsFor(group, key, getVal){
-    if(drops[key]){ map.removeLayer(drops[key]); drops[key]=null; }
-    if(!group||!getVal) return;
-    const markers=L.layerGroup();
-    const vals=[]; group.eachLayer(l=>{ const v=getVal(l.feature?.properties||{}); if(Number.isFinite(v)) vals.push(v); });
-    const br=breaksFrom(vals,6), R=ramp();
-    const vmin=br[0]??0, vmax=br[br.length-1]??1; const span=Math.max(1, vmax-vmin);
-    const colorFor=(v)=>{ let idx=br.findIndex(b=>v<=b)-1; if(idx<0) idx=br.length-2; idx=Math.max(0,Math.min(idx,R.length-1)); return R[idx]; };
-    const sizeFor =(v)=>{ const n=Math.max(0,Math.min(1,(v-vmin)/span)); const eased=Math.sqrt(n); return 24 + eased*34; };
+    // Detectar población según la capa
+    let pob = null;
+    if(label.startsWith('Comuna') && caches.censusComunasByName)      pob = caches.censusComunasByName.get(norm(nm));
+    else if(label.startsWith('Correg') && caches.censusCorregByName)  pob = caches.censusCorregByName.get(norm(nm));
+    else if(label.startsWith('Vereda') && caches.censusVeredasByName) pob = caches.censusVeredasByName.get(norm(nm));
+    else if(caches.censusMpiosByCode || caches.censusMpiosByName) {
+      pob = caches.censusMpiosByCode?.get(String(getCode(props)||'').padStart(5,'0')) ?? caches.censusMpiosByName?.get(norm(nm));
+    }
 
-    group.eachLayer(l=>{
-      const p=l.feature?.properties||{}; const name=getName(p);
-      const v=getVal(p); if(!Number.isFinite(v)) return;
-      const c=l.getBounds? l.getBounds().getCenter() : (l.getLatLng? l.getLatLng() : null);
-      if(!c) return;
-      const s=sizeFor(v); const col=colorFor(v);
-      const html=`<div class="drop" style="--s:${s}px;--c:${col}"><span class="lab">${'' /* sin etiqueta para no saturar */}</span></div>`;
-      const icon=L.divIcon({html, className:'', iconSize:[s, s*1.3], iconAnchor:[s/2, s*1.05]});
-      const m=L.marker(c,{icon});
-      // Popup limpio con el dato de censo
-      const popHtml = `<div style="min-width:180px"><div style="font-weight:800">${name}</div><div>Población: <b>${fmt(v)}</b></div></div>`;
-      m.bindPopup(popHtml);
-      markers.addLayer(m);
+    l.bindTooltip(`${label}: <b>${nm}</b>`);
+    l.on("mouseover",()=>l.setStyle({weight:3,fillOpacity:.3}));
+    l.on("mouseout", ()=>l.setStyle(baseStyle()));
+    l.on("click",()=>{
+      renderInfo(props,label);
+      const popHtml = Number.isFinite(pob)
+        ? `<div><b>${nm}</b><br>Población: <b>${fmt(pob)}</b></div>`
+        : `<div><b>${nm}</b></div>`;
+      try{ l.bindPopup(popHtml).openPopup(); }catch(_){}
     });
-    drops[key]=markers.addTo(map);
-    return {br};
+  });
+};
+
   }
   function showDropsFor(mode, on){ hideAllDrops(); if(!on) return; const key=mode?.replace('pob_',''); if(key&&drops[key]) drops[key].addTo(map); }
   function hideAllDrops(){ ['mpios','comunas','correg','veredas'].forEach(k=>{ if(drops[k]) map.removeLayer(drops[k]); }); }
