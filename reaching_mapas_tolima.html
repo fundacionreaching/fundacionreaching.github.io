@@ -144,7 +144,42 @@
     },
     custom: { comunas:[], correg:[], veredas:[], mpios:[], censo:{comunas:[],correg:[],veredas:[],mpios:[]} }
   };
-  let SRC = JSON.parse(JSON.stringify(SOURCES.prod));
+ 
+  const SRC = {
+  // CAPAS (GEOMETRÍAS)
+  comunas:  ["./ibague_urbano.geojson", "./data/ibague_urbano.geojson"],
+  correg:   ["./ibague_corregimientos.geojson", "./data/ibague_corregimientos.geojson"],
+  veredas:  ["./ibague_veredas.geojson", "./data/ibague_veredas.geojson", "/veredas.geojson"],
+  // Priorice la que SÍ carga (mientras corrige el archivo raíz roto):
+  mpios:    ["./data/tolima_municipios.geojson", "./tolima_municipios.geojson", "/tolima_municipios.geojson"],
+
+  // CENSOS (TABLAS)
+  censo: {
+    comunas: [
+      "https://fundacionreaching.github.io/ibague_comunas_censo.json",
+      "./ibague_comunas_censo.json",
+      "./data/ibague_comunas_censo.json",
+      "/data/ibague_comunas_censo.json"
+    ],
+    correg: [
+      "https://fundacionreaching.github.io/corregimientos_ibague.json",
+      "./ibague_correg_censo.json",
+      "./ibague_corregimientos_censo.json",
+      "./data/ibague_correg_censo.json"
+    ],
+    veredas: [
+      "https://fundacionreaching.github.io/ibague_veredas_censo.json",
+      "./ibague_veredas_censo.json",
+      "./data/ibague_veredas_censo.json"
+    ],
+    mpios: [
+      "https://fundacionreaching.github.io/municipios_censo.json",
+      "./tolima_mpios_censo.json",
+      "./data/tolima_mpios_censo.json"
+    ]
+  }
+};
+
 
   // === UTILIDADES DE UI ===
   const Diag = { el:null, log(msg, ok=true){ const d=document.createElement('div'); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el&&this.el.appendChild(d); } };
