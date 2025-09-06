@@ -237,10 +237,23 @@
 
   // === CARGA DE ARCHIVOS ===
   const loader=document.getElementById('loader');
-  const fetchTextJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000); try{ const r=await fetch(u,{cache:'no-store',signal:ctrl.signal}); if(!r.ok) throw new Error(r.status+" "+r.statusText); const t=await r.text(); try{ return JSON.parse(t); }catch{ return JSON.parse(t.replace(/^﻿/,'')); } } finally{ clearTimeout(to); } };
-  const trySources=async(list,label)=>{ for(const u of list){ try{ const d=await fetchTextJson(u); Diag.log(`${label}: ${u} ✔`); return d; } catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false); } } return null; };
-  const asFC=(data)=>{ if(!data) throw new Error('GeoJSON vacío'); if(Array.isArray(data)) return {type:'FeatureCollection',features:data}; if(data.type==='FeatureCollection') return data; if(data.type==='Feature') return {type:'FeatureCollection',features:[data]}; throw new Error('No es Feature/FeatureCollection'); };
-  const onlyPolys=(fc)=>{ fc.features=(fc.features||[]).filter(f=>f && f.type==='Feature' && f.geometry && ['Polygon','MultiPolygon'].includes(f.geometry.type)); return fc; };
+ const fetchJson = async (u) => {
+  const ctrl = new AbortController();
+  const to = setTimeout(()=>ctrl.abort(), 12000);
+  try {
+    const r = await fetch(u, { cache: "no-store", signal: ctrl.signal });
+    if (!r.ok) throw new Error(r.status + " " + r.statusText);
+    const raw = (await r.text()).trim();
+    const tryParse = (s) => JSON.parse(s.replace(/^﻿/, "")); // quita BOM
+    try { return tryParse(raw); }
+    catch {
+      // Sanitiza: toma desde la primera { hasta la última }
+      const i = raw.indexOf("{"), j = raw.lastIndexOf("}");
+      if (i >= 0 && j > i) return tryParse(raw.slice(i, j + 1));
+      throw new Error("Contenido no JSON");
+    }
+  } finally { clearTimeout(to); }
+};
 
   async function loadAll(){
     loader.style.display='flex'; diagClear();
