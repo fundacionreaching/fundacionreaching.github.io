@@ -1,33 +1,301 @@
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Visor – Ibagué Veredas (GeoJSON)</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Visor Veredas Ibagué — Censo</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style> html,body{height:100%;} #map{height:calc(100vh - 64px);} </style>
+<style>
+  :root{ --bg:#0b1020; --panel:#0e1537; --ink:#eef3ff; --mut:#9aa3b2; --b1:#ffffff16; --b2:#ffffff26; --pri:#2a93ff; --ok:#43d17a; --vio:#b78cff }
+  html,body{ margin:0; height:100%; background:var(--bg); color:var(--ink); font:15px/1.45 ui-sans-serif, system-ui, Segoe UI, Inter, Arial }
+  .wrap{ display:grid; grid-template-rows:auto 1fr; height:100% }
+  header{ position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:.8rem; padding:.7rem .9rem; background:#0d1430cc; border-bottom:1px solid var(--b1) }
+  h1{ font-size:1.05rem; margin:.1rem 0 }
+  .sub{ color:var(--mut); font-size:.86rem }
+  .layout{ display:grid; grid-template-columns: 360px 1fr; gap:.8rem; padding:.8rem }
+  aside{ background:var(--panel); border:1px solid var(--b1); border-radius:12px; padding:.85rem; min-height:420px; overflow:auto }
+  .group + .group{ margin-top:.85rem }
+  .ttl{ font-weight:700; margin-bottom:.35rem; display:flex; align-items:center; gap:.4rem }
+  .btn,.chip{ border:1px solid var(--b2); background:#141d4a; color:var(--ink); padding:.5rem .7rem; border-radius:999px; cursor:pointer; font-weight:600; }
+  .chip{ background:#121a45 }
+  .seg{ display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:.35rem }
+  input[type="search"]{ width:100%; border:1px solid var(--b2); background:#0e1433; color:#fff; border-radius:10px; padding:.55rem .7rem }
+  small{ color:var(--mut) }
+  #mapWrap{ position:relative }
+  #map{ height: calc(100vh - 160px); min-height:520px; border:1px solid var(--b1); border-radius:12px; overflow:hidden }
+  .legend{ position:absolute; bottom:12px; left:12px; background:#121a45cc; border:1px solid var(--b2); border-radius:10px; padding:.55rem .6rem; font-size:.85rem }
+  .sw{ display:inline-block; width:14px; height:10px; margin-right:6px; border:1px solid var(--b2); border-radius:3px }
+  #info table{ width:100%; border-collapse: collapse }
+  #info td{ border-bottom:1px solid var(--b1); padding:.25rem .2rem }
+  #info td:first-child{ color:var(--mut); width:42% }
+  #loader{ display:none; position:absolute; inset:0; align-items:center; justify-content:center; background:#0b1020aa; z-index:50; font-weight:700; letter-spacing:.3px }
+  .badge{ display:inline-block; background:#1b2559; border:1px solid var(--b2); padding:.12rem .45rem; border-radius:999px; font-size:.78rem; color:#bdc6ff }
+  @media (max-width: 1080px){ .layout{ grid-template-columns:1fr } #map{ height:60vh } }
+</style>
 </head>
-<body class="bg-slate-50 text-slate-900">
-<header class="h-16 flex items-center justify-between px-4 border-b bg-white">
-<h1 class="font-black">Ibagué — Veredas</h1>
-<a class="text-indigo-600" href="/">Inicio</a>
-</header>
-<main id="map"></main>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Visor Veredas — Ibagué</h1>
+      <div class="sub">Veredas de Ibagué · CNPV 2018 (censo por nombre)</div>
+    </div>
+    <div class="rightbar">
+      <button id="zoomIbague" class="btn">Ibagué</button>
+      <button id="exportCsv" class="btn">Exportar CSV</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- ===== SEÑAL: INICIO <aside> ===== -->
+    <aside>
+      <div class="group">
+        <div class="ttl">Estilo del mapa <span id="statusCenso" class="badge">Censo: verificando…</span></div>
+        <div class="seg">
+          <button class="btn" id="estDetallada" aria-pressed="true">Detallada</button>
+          <button class="btn" id="estPoblacion" disabled>Población (Veredas)</button>
+        </div>
+        <small>“Población” se habilita cuando el censo de veredas carga correctamente.</small>
+      </div>
+
+      <div class="group">
+        <div class="ttl">Búsqueda</div>
+        <input id="q" type="search" placeholder="Escribe parte del nombre y Enter"/>
+        <small>Busca por nombre de Vereda.</small>
+      </div>
+
+      <div class="group">
+        <div class="ttl">Información</div>
+        <div id="info" style="font-size:.92rem;line-height:1.25"></div>
+      </div>
+
+      <div class="group">
+        <div class="ttl">Diagnóstico</div>
+        <div id="diag" style="font-size:.92rem;line-height:1.25;color:#dbe5ff"></div>
+        <div id="jsErr" style="color:#ffb3b3;font-size:.9rem"></div>
+      </div>
+    </aside>
+    <!-- ===== SEÑAL: FIN <aside> ===== -->
+
+    <section id="mapWrap">
+      <div id="map"></div>
+      <div id="legend" class="legend" style="display:none"></div>
+      <div id="loader">Cargando veredas…</div>
+    </section>
+  </div>
+</div>
+
 <script>
-(async function(){
-const map = L.map('map').setView([4.4389,-75.2322], 11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
-const col = i => ['#fde68a','#fca5a5','#93c5fd','#86efac','#c4b5fd','#f9a8d4'][i%6];
-const capa = L.geoJSON(null, { onEachFeature:(f,l)=>{
-const nom = (f.properties.NOMBRE||f.properties.VEREDA||f.properties.name||'Vereda').toUpperCase();
-l.bindPopup(`<strong>${nom}</strong>`);
-}, style:(f)=>({color:'#1f2937',weight:1,fillColor: col(Math.floor(Math.random()*6)), fillOpacity:.5}) }).addTo(map);
-try{
-const r = await fetch('/data/ibague_veredas.geojson',{cache:'no-store'});
-if(r.ok){ const gj = await r.json(); capa.addData(gj); map.fitBounds(capa.getBounds()); }
-else{ const m = L.marker([4.4389,-75.2322]).addTo(map).bindPopup('No hay /data/ibague_veredas.geojson todavía.').openPopup(); }
-}catch(e){ alert('No se pudo cargar /data/ibague_veredas.geojson'); }
+(function(){
+  const Diag = { el:null, log(msg, ok=true){ const d=document.createElement('div'); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el&&this.el.appendChild(d); } };
+  window.onerror=(m,src,l,c)=>{ const el=document.getElementById('jsErr'); el.textContent="⚠️ Script: "+m+" ("+l+":"+c+")"; };
+
+  // ===== SEÑAL: INICIO SRC =====
+  const SRC = {
+    veredasGeom: [
+      "https://fundacionreaching.github.io/ibague_veredas.geojson",
+      "./ibague_veredas.geojson",
+      "./data/ibague_veredas.geojson"
+    ],
+    veredasCenso: [
+      "https://fundacionreaching.github.io/ibague_veredas_censo.json",
+      "./ibague_veredas_censo.json",
+      "./data/ibague_veredas_censo.json"
+    ]
+  };
+  // ===== SEÑAL: FIN SRC =====
+
+  // Normalización de claves
+  const KEYS = {
+    nameVereda: ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"],
+    pop: ["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total"]
+  };
+  const pickKey=(obj,arr)=>{ for(const k of arr) if(obj&&Object.hasOwn(obj,k)) return k; for(const k in obj||{}) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k; return null; };
+  const norm=(s)=> s? String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim():null;
+
+  // Mapa
+  const map=L.map(document.getElementById('map'),{preferCanvas:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
+  map.setView([4.44,-75.20], 11);
+
+  const layers={ veredas:null };
+  let censusVeredas=null;
+
+  // Leyenda y estilos
+  const ramp=()=>['#e6f3ff','#bcdfff','#86c6ff','#4aa6ff','#1e82e6','#0a63c7'];
+  const legendEl=document.getElementById('legend');
+  const baseStyle=()=>({color:'#b78cff', weight:1, fillOpacity:.15});
+  const hoverStyle=()=>({weight:3, fillOpacity:.3});
+  const breaksFrom=(vals,n=6)=>{ const v=[...vals].filter(Number.isFinite).sort((a,b)=>a-b); if(!v.length) return []; const br=[v[0]]; for(let i=1;i<n;i++) br.push(v[Math.floor(i*(v.length-1)/n)]); br.push(v[v.length-1]); return br; };
+  const legend=(title, br)=>{ if(!br||br.length<2){legendEl.style.display='none'; return} const R=ramp(); let html=`<div style="font-weight:700;margin-bottom:.2rem">${title}</div>`; for(let i=0;i<br.length-1;i++){ html+=`<div><span class="sw" style="background:${R[Math.min(i,R.length-1)]}"></span>${Math.round(br[i]).toLocaleString('es-CO')}–${Math.round(br[i+1]).toLocaleString('es-CO')}</div>`; } legendEl.innerHTML=html; legendEl.style.display='block'; };
+
+  // ===== SEÑAL: INICIO fetchJson =====
+  const fetchJson = async (u) => {
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000);
+    try{
+      const r=await fetch(u,{cache:"no-store",signal:ctrl.signal});
+      if(!r.ok) throw new Error(r.status+" "+r.statusText);
+      const raw=(await r.text()).trim();
+      const tryParse=(s)=>JSON.parse(s.replace(/^﻿/,''));
+      try { return tryParse(raw); }
+      catch {
+        const i=raw.indexOf('{'), j=raw.lastIndexOf('}');
+        if(i>=0 && j>i) return tryParse(raw.slice(i,j+1));
+        throw new Error("Contenido no JSON");
+      }
+    } finally { clearTimeout(to); }
+  };
+  // ===== SEÑAL: FIN fetchJson =====
+
+  const trySources=async(list,label)=>{ for(const u of list){ try{ const d=await fetchJson(u); Diag.log(`${label}: ${u} ✔`); return d; } catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false); } } return null; };
+  const asFC=(data)=>{ if(!data) throw new Error('GeoJSON vacío'); if(Array.isArray(data)) return {type:'FeatureCollection',features:data}; if(data.type==='FeatureCollection') return data; if(data.type==='Feature') return {type:'FeatureCollection',features:[data]}; throw new Error('No es Feature/FeatureCollection'); };
+  const onlyPolys=(fc)=>{ fc.features=(fc.features||[]).filter(f=>f && f.type==='Feature' && f.geometry && ['Polygon','MultiPolygon'].includes(f.geometry.type)); return fc; };
+
+  const loader=document.getElementById('loader');
+  function diagClear(){ const el=document.getElementById('diag'); el.innerHTML=''; }
+
+  // UI
+  const btnDet=document.getElementById('estDetallada');
+  const btnPob=document.getElementById('estPoblacion');
+  const infoBox=document.getElementById('info');
+  const statusCenso=document.getElementById('statusCenso');
+
+  function renderInfo(props){
+    const nameKey=pickKey(props,KEYS.nameVereda)||Object.keys(props||{})[0];
+    const name = props && props[nameKey] ? String(props[nameKey]) : "Sin nombre";
+    const pop  = censusVeredas?.get(norm(name));
+    let rows=""; for(const [k,v] of Object.entries(props||{})){ rows+=`<tr><td>${k}</td><td>${v}</td></tr>`; }
+    infoBox.innerHTML = `<div style="font-weight:700;margin-bottom:.35rem">Vereda: ${name}</div>`+
+      `<div class="sub" style="margin-bottom:.35rem">${Number.isFinite(pop)?`Población: <b>${(+pop).toLocaleString('es-CO')}</b>`:"Sin dato de población"}</div>`+
+      `<table>${rows}</table>`;
+  }
+
+  const attachInteractive=(group)=>{ if(!group) return;
+    group.eachLayer(l=>{
+      const props=l.feature?.properties||{};
+      const nameKey=pickKey(props,KEYS.nameVereda)||Object.keys(props||{})[0];
+      const nm=props[nameKey]??"—";
+      l.bindTooltip(`Vereda: <b>${nm}</b>`);
+      l.on('mouseover',()=>l.setStyle(hoverStyle()));
+      l.on('mouseout',()=>l.setStyle(baseStyle()));
+      l.on('click',()=>{ renderInfo(props); try{ l.bindPopup(`<b>Vereda</b><br>${nm}`).openPopup(); }catch(_){} });
+    });
+  };
+
+  function applyDetallada(){
+    if(layers.veredas) layers.veredas.setStyle(baseStyle());
+    legendEl.style.display='none';
+    btnDet.setAttribute('aria-pressed','true');
+    btnPob.setAttribute('aria-pressed','false');
+  }
+
+  function applyPoblacion(){
+    if(!censusVeredas || !layers.veredas) return;
+    const getVal=(p)=> censusVeredas.get(norm(String(p[pickKey(p,KEYS.nameVereda)||Object.keys(p)[0]]||"")));
+    const vals=[...censusVeredas.values()];
+    const br=breaksFrom(vals,6), R=ramp();
+    layers.veredas.setStyle(feat=>{
+      const v=getVal(feat.properties||{});
+      if(!Number.isFinite(v)) return baseStyle();
+      let idx=br.findIndex(b=>v<=b)-1; if(idx<0) idx=br.length-2; idx=Math.max(0,Math.min(idx,R.length-1));
+      return {color:'#0a63c7',weight:1,fillOpacity:.7,fillColor:R[idx]};
+    });
+    legend("Población (Veredas)", br);
+    btnDet.setAttribute('aria-pressed','false');
+    btnPob.setAttribute('aria-pressed','true');
+  }
+
+  // Búsqueda
+  document.getElementById('q').addEventListener('keydown',(e)=>{
+    if(e.key!=='Enter') return;
+    const t=e.target.value.trim().toLowerCase(); if(!t) return;
+    let hit=null;
+    layers.veredas?.eachLayer(l=>{
+      const props=l.feature?.properties||{};
+      const nameKey=pickKey(props,KEYS.nameVereda)||Object.keys(props||{})[0];
+      const nm=String(props[nameKey]||"").toLowerCase();
+      if(!hit && nm.includes(t)) hit=l;
+    });
+    if(hit) map.fitBounds(hit.getBounds().pad(0.4));
+  });
+
+  // Zoom Ibagué
+  document.getElementById('zoomIbague').onclick=()=>{
+    if(layers.veredas){ map.fitBounds(layers.veredas.getBounds().pad(0.2)); }
+    else map.setView([4.44,-75.20], 11);
+    setTimeout(()=>map.invalidateSize(),60);
+  };
+
+  // Export CSV
+  document.getElementById('exportCsv').onclick=()=>{
+    const rows=[["vereda","poblacion"]];
+    layers.veredas?.eachLayer(l=>{
+      const p=l.feature?.properties||{};
+      const nameKey=pickKey(p,KEYS.nameVereda)||Object.keys(p||{})[0];
+      const nm=String(p[nameKey]||"");
+      const pop=censusVeredas?.get(norm(nm))||"";
+      rows.push([nm,pop]);
+    });
+    const csv=rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ibague_veredas_censo.csv'; a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  // Listeners de estilo
+  btnDet.onclick = ()=>applyDetallada();
+  btnPob.onclick = ()=>applyPoblacion();
+
+  // Carga
+  const loader=document.getElementById('loader');
+  async function loadAll(){
+    loader.style.display='flex'; diagClear();
+    try{
+      // Geometría
+      const gj=await trySources(SRC.veredasGeom, "Veredas (GeoJSON)");
+      if(gj){
+        const fc=onlyPolys(asFC(gj));
+        layers.veredas=L.geoJSON(fc,{style:baseStyle()}).addTo(map);
+        attachInteractive(layers.veredas);
+        map.fitBounds(layers.veredas.getBounds().pad(0.2));
+        Diag.log(`Veredas: ${layers.veredas.getLayers().length} ✔`);
+      }
+
+      // Censo veredas
+      censusVeredas = await (async function(urls){
+        try{
+          let data=null;
+          for(const u of urls){ try{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; data=await r.json(); Diag.log(`Censo veredas: ${u} ✔`); break; }catch(_){ Diag.log(`Censo veredas: ${u} — 404`, false);} }
+          if(!data) return null;
+          const sample=Array.isArray(data)? data[0] : data;
+          const nameKey=pickKey(sample, KEYS.nameVereda)||KEYS.nameVereda[0];
+          const popKey =pickKey(sample, KEYS.pop)||KEYS.pop[0];
+          const M=new Map();
+          const rows=Array.isArray(data)? data : Object.values(data);
+          rows.forEach(row=>{
+            const nm=norm(row[nameKey]);
+            const val=Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+            if(nm && Number.isFinite(val)) M.set(nm,val);
+          });
+          return M;
+        }catch(e){ Diag.log(`Censo veredas — ${e.message}`, false); return null; }
+      })(SRC.veredasCenso);
+
+      if(censusVeredas && censusVeredas.size){
+        document.getElementById('estPoblacion').disabled=false;
+        document.getElementById('statusCenso').textContent='Censo: listo';
+        document.getElementById('statusCenso').style.borderColor='#3dd17a';
+        Diag.log(`Censo veredas ✔ (${censusVeredas.size})`);
+      } else {
+        document.getElementById('statusCenso').textContent='Censo: no detectado';
+        document.getElementById('statusCenso').style.borderColor='#ffb3b3';
+      }
+
+    }catch(e){ Diag.log('Fallo de carga: '+e.message, false); }
+    finally{ loader.style.display='none'; }
+  }
+
+  window.addEventListener('DOMContentLoaded',()=>{ Diag.el=document.getElementById('diag'); Diag.log('JS listo ✔'); loadAll(); });
 })();
 </script>
 </body>
