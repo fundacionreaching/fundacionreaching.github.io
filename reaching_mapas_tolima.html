@@ -274,8 +274,21 @@
     }catch(e){ Diag.log(`${label} — ${e.message}`, false); return {byCode:null, byName:null}; }
   }
 
-  async function loadAll(){
-    loader.style.display='flex'; diagClear(); let loadedCount=0;
+ window.addEventListener('DOMContentLoaded', ()=>{
+  Diag.el = document.getElementById('diag');
+  Diag.log('JS listo ✔');
+  loadAll().then(()=>{
+    const sel = document.getElementById('estiloPob');
+    if (!sel.disabled) {
+      sel.value = 'pob_mpios';
+      sel.dispatchEvent(new Event('change'));
+      const chk = document.getElementById('tgDrops');
+      chk.checked = true;
+      showDropsFor('pob_mpios', true);
+    }
+  });
+});
+
     try{
       const comunas=await trySources(SRC.comunas,'Comunas (GeoJSON)');
       if(comunas){ const fc=onlyPolys(asFC(comunas)); layers.comunas=L.geoJSON(fc,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,'Comuna'); loadedCount+=layers.comunas.getLayers().length; }
