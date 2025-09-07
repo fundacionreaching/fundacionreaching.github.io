@@ -148,9 +148,23 @@
   // 2) Respaldo: GeoJSON nacional (si se usa, filtramos luego a Tolima)
   "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
 ],
-
-  
     ],
+censo: {
+  comunas: ["./ibague_comunas_censo.json","./data/ibague_comunas_censo.json"],
+  correg:  ["./corregimientos_ibague.json","./ibague_correg_censo.json","./data/ibague_correg_censo.json"],
+  veredas: ["./ibague_veredas_censo.json","./data/ibague_veredas_censo.json"],
+  // Municipios: acepta CSV (Google Sheets) o JSON local
+  mpios: [
+    // 👉 OPCIONAL (CSV): publica tu hoja como CSV y pega el enlace "export?format=csv"
+    // "https://docs.google.com/spreadsheets/d/TU_ID/export?format=csv",
+    "https://fundacionreaching.github.io/data/tolima_censo.json",
+    "https://fundacionreaching.github.io/municipios_censo.json",
+    "./data/tolima_censo.json",
+    "./municipios_censo.json"
+  ]
+}
+
+    
     censo: {
       comunas: ["./ibague_comunas_censo.json","./data/ibague_comunas_censo.json"],
       correg:  ["./corregimientos_ibague.json","./ibague_correg_censo.json","./data/ibague_correg_censo.json"],
