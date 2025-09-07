@@ -186,6 +186,57 @@ censo: {
   const norm=(s)=> s? String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim() : null;
   const fmt=(n)=> Number(n).toLocaleString('es-CO');
 
+  // === CSV parser simple (maneja comillas y comas)
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/);
+  if(!lines.length) return [];
+  const head = [...lines.shift().matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)].map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"').trim());
+  return lines.map(l=>{
+    const cells = [...l.matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)].map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"'));
+    const row={}; head.forEach((h,i)=> row[h]=cells[i]); return row;
+  });
+}
+
+// === Cargador flexible: intenta CSV o JSON para Censo de Municipios
+async function loadCensoMpiosFlex(urls,label){
+  const byCode=new Map(), byName=new Map();
+  for(const u of urls){
+    try{
+      const r=await fetch(u,{cache:'no-store'});
+      if(!r.ok) throw new Error(r.status+" "+r.statusText);
+      const ct=(r.headers.get('content-type')||'').toLowerCase();
+      let rows=[];
+      if(ct.includes('text/csv') || u.toLowerCase().includes('.csv') || u.toLowerCase().includes('format=csv')){
+        const t=await r.text(); rows=parseCSV(t);
+      } else {
+        const data=await r.json();
+        rows = Array.isArray(data)? data : Object.values(data);
+      }
+      if(!rows || !rows.length) throw new Error("sin filas");
+      // Detecta columnas
+      const sample=rows[0]||{};
+      const codeKey = (Object.keys(sample).find(k=>["MPIO_CCDGO","COD_DANE","cod_dane","MPIO","CODIGO","codigo","DANE","mpio_cod","codmpio","COD_MPIO"].some(a=>k.toLowerCase().includes(a.toLowerCase()))) ) || "COD_MPIO";
+      const nameKey = (Object.keys(sample).find(k=>["NOM_MPIO","NOMBRE_MPIO","MPIO_CNMBR","NOMBRE","nombre"].some(a=>k.toLowerCase().includes(a.toLowerCase()))) ) || "NOM_MPIO";
+      const popKey  = (Object.keys(sample).find(k=>["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total"].some(a=>k.toLowerCase().includes(a.toLowerCase()))) ) || "POB_2018";
+      rows.forEach(row=>{
+        const code = row[codeKey]!=null ? String(row[codeKey]).padStart(5,'0') : null;
+        const name = row[nameKey]!=null ? String(row[nameKey]) : null;
+        const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+        if(Number.isFinite(val)){
+          if(code) byCode.set(code,val);
+          if(name) byName.set(norm(name),val);
+        }
+      });
+      if(byCode.size || byName.size){ Diag.log(`${label}: ${u} ✔ (codes:${byCode.size} / names:${byName.size})`); return {byCode, byName}; }
+      else throw new Error("sin datos válidos");
+    }catch(e){
+      Diag.log(`${label}: ${u} — ${e.message}`, false);
+    }
+  }
+  return {byCode:null, byName:null};
+}
+
+
   // === Mapa
   const map=L.map(document.getElementById('map'),{preferCanvas:true});
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
