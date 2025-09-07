@@ -154,6 +154,14 @@ censo: {
   comunas: ["./ibague_comunas_censo.json","./data/ibague_comunas_censo.json"],
   correg:  ["./corregimientos_ibague.json","./ibague_correg_censo.json","./data/ibague_correg_censo.json"],
   veredas: ["./ibague_veredas_censo.json","./data/ibague_veredas_censo.json"],
+  mpios: [
+  "https://docs.google.com/spreadsheets/d/TU_ID/export?format=csv", // <- tu hoja publicada
+  "https://fundacionreaching.github.io/municipios_censo.json",
+  "./municipios_censo.json",
+  "https://fundacionreaching.github.io/data/tolima_censo.json",
+  "./data/tolima_censo.json"
+],
+
   // Municipios: acepta CSV (Google Sheets) o JSON local
   
   [const mpioCenso = await loadCensoMpiosFlex(SRC.censo.mpios, 'Censo mpios');
