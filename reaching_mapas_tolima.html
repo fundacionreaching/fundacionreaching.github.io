@@ -141,6 +141,13 @@
     comunas:  ["./ibague_urbano.geojson", "./data/ibague_urbano.geojson"],
     correg:   ["./ibague_corregimientos.geojson", "./data/ibague_corregimientos.geojson"],
     veredas:  ["https://fundacionreaching.github.io/ibague_veredas.geojson", "./ibague_veredas.geojson", "./data/ibague_veredas.geojson"],
+    mpios: [
+  // Espejo con TODOS los municipios (filtraremos a Tolima en el navegador)
+  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson",
+  // Respaldo oficial DANE (DIVIPOLA) para Tolima (73)
+  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=COD_DPTO,NOM_DPTO,COD_MPIO,NOM_MPIO&returnGeometry=true&outSR=4326&f=geojson"
+],
+
    const mpios = await trySources(SRC.mpios,'Municipios (GeoJSON)');
 if (mpios) {
   // Convertir y filtrar a Tolima (COD_DPTO = 73 o NOM_DPTO = 'Tolima')
