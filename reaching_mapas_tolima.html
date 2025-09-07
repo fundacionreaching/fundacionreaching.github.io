@@ -136,15 +136,14 @@
   const Diag = { el:null, log(msg, ok=true){ const d=document.createElement('div'); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el&&this.el.appendChild(d); } };
   window.onerror=(m,src,l,c)=>{ const el=document.getElementById('jsErr'); el.textContent="⚠️ Script: "+m+" ("+l+":"+c+")"; };
 
-  // === RUTAS (fuentes)
+  // === RUTAS
   const SRC = {
-    // Ibagué local (mantenga estos archivos como ya los tiene)
     comunas:  ["./ibague_urbano.geojson","./data/ibague_urbano.geojson"],
     correg:   ["./ibague_corregimientos.geojson","./data/ibague_corregimientos.geojson"],
     veredas:  ["./ibague_veredas.geojson","./data/ibague_veredas.geojson"],
-    // Municipios TOLIMA directamente del DANE (GeoJSON soportado)
-    // https://geoportal.dane.gov.co/.../MapServer/9  (Layer: Municipios — soporta JSON y geoJSON)
+    // Municipios: 1) GitHub Raw (nacional)  2) DANE (Tolima)
     mpios: [
+      "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson",
       "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=COD_DPTO,NOM_DPTO,COD_MPIO,NOM_MPIO&returnGeometry=true&outSR=4326&f=geojson"
     ],
     censo: {
@@ -155,7 +154,7 @@
     }
   };
 
-  // === Claves y utilidades
+  // === Claves/utilidades
   const KEYS = {
     name: ["NOMBRE","NOM_MPIO","NOMBRE_MPIO","MPIO_CNMBR","COMUNA","NOM_COMUNA","CORREGIMIENTO","NOM_CORR","VEREDA","NOM_VEREDA","NOM_COM","NOMBREGEO","DESCRIPCION","nombre"],
     comuna: ["COMUNA","NOM_COMUNA","COMUNA_NOM","nombre_comuna","comuna"],
@@ -178,7 +177,6 @@
   const caches={censusMpiosByCode:null,censusMpiosByName:null,censusComunasByName:null,censusCorregByName:null,censusVeredasByName:null};
 
   const baseStyle=(c)=>({color:c||'#69d1ff',weight:1,fillOpacity:.12});
-  const hoverStyle=()=>({weight:3,fillOpacity:.3});
   const ramp=()=>['#e6f3ff','#bcdfff','#86c6ff','#4aa6ff','#1e82e6','#0a63c7'];
   const legendEl=document.getElementById('legend');
   const breaksFrom=(vals,n=6)=>{ const v=[...vals].filter(Number.isFinite).sort((a,b)=>a-b); if(!v.length) return []; const br=[v[0]]; for(let i=1;i<n;i++) br.push(v[Math.floor(i*(v.length-1)/n)]); br.push(v[v.length-1]); return br; };
@@ -186,13 +184,12 @@
     for(let i=0;i<br.length-1;i++){ html+=`<div><span class="sw" style="background:${R[Math.min(i,R.length-1)]}"></span>${Math.round(br[i]).toLocaleString('es-CO')}–${Math.round(br[i+1]).toLocaleString('es-CO')}</div>`; }
     legendEl.innerHTML=html; legendEl.style.display='block'; };
 
-  // === Fetch robusto
-  const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),30000);
+  // === Fetch robusto (con saneo)
+  const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),25000);
     try{
       const r=await fetch(u,{cache:'no-store',signal:ctrl.signal}); if(!r.ok) throw new Error(r.status+" "+r.statusText);
-      return await r.json();
-    } catch(e){ throw new Error(e.message||'fetch error'); }
-    finally{ clearTimeout(to); } };
+      const t=await r.text(); try{ return JSON.parse(t); }catch{ return JSON.parse(t.replace(/^﻿/,'')); }
+    } finally{ clearTimeout(to); } };
   const trySources=async(list,label)=>{ for(const u of list){ try{ const d=await fetchJson(u); Diag.log(`${label}: ${u} ✔`); return d; } catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false);} } return null; };
   const asFC=(data)=>{ if(!data) throw new Error('GeoJSON vacío'); if(Array.isArray(data)) return {type:'FeatureCollection',features:data}; if(data.type==='FeatureCollection') return data; if(data.type==='Feature') return {type:'FeatureCollection',features:[data]}; throw new Error('No es Feature/FeatureCollection'); };
   const onlyPolys=(fc)=>{ fc.features=(fc.features||[]).filter(f=>f&&f.type==='Feature'&&f.geometry&&['Polygon','MultiPolygon'].includes(f.geometry.type)); return fc; };
@@ -240,12 +237,11 @@
     });
   };
 
-  // === GOTAS
+  // === Gotas
   function addDropsFor(group, key, getVal){
     if(drops[key]){ map.removeLayer(drops[key]); drops[key]=null; }
     if(!group||!getVal) return;
     const markers=L.layerGroup();
-
     const vals=[]; group.eachLayer(l=>{ const v=getVal(l.feature?.properties||{}); if(Number.isFinite(v)) vals.push(v); });
     const br=breaksFrom(vals,6), R=ramp();
     const vmin=br[0]??0, vmax=br[br.length-1]??1; const span=Math.max(1, vmax-vmin);
@@ -312,17 +308,23 @@
       const veredas=await trySources(SRC.veredas,'Veredas (GeoJSON)');
       if(veredas){ const fc=onlyPolys(asFC(veredas)); layers.veredas=L.geoJSON(fc,{style:baseStyle('#b78cff')}).addTo(map); attachInteractive(layers.veredas,'Vereda'); loadedCount+=layers.veredas.getLayers().length; }
 
-      // Municipios: DANE (Tolima = 73, salida GeoJSON)
-      const mpios=await trySources(SRC.mpios,'Municipios (GeoJSON)');
-      if(mpios){
-        const fc = onlyPolys(asFC(mpios));
-        layers.mpios = L.geoJSON(fc,{style:baseStyle('#43d17a')}).addTo(map);
-        attachInteractive(layers.mpios,'Municipio');
+      // Municipios: intentar GitHub Raw; si no, DANE. Luego filtrar Tolima (73) si viniera todo el país.
+      const mpiosRaw=await trySources(SRC.mpios,'Municipios (GeoJSON)');
+      if(mpiosRaw){
+        const all=asFC(mpiosRaw);
+        const tolima={...all, features:(all.features||[]).filter(f=>{
+          const p=f?.properties||{};
+          const dptoCode=(p.COD_DPTO ?? p.DPTO_CCDGO ?? p.cod_dpto ?? p.CODIGO_DPTO ?? p.COD_DPTO_CCNCT ?? p.DPTO);
+          const dptoName=(p.NOM_DPTO ?? p.DEPTO ?? p.NOMBRE_DPT ?? p.NOMBRE_DEPT ?? p.dpto);
+          return String(dptoCode||'').replace(/^0+/,'')==='73' || String(dptoName||'').toLowerCase()==='tolima';
+        })};
+        const fc=onlyPolys(asFC(tolima));
+        layers.mpios=L.geoJSON(fc,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,'Municipio');
         Diag.log(`Municipios (Tolima): ${layers.mpios.getLayers().length} ✔`);
         loadedCount+=layers.mpios.getLayers().length;
       }
 
-      countCaps.textContent = loadedCount? (`Elementos: ${loadedCount.toLocaleString('es-CO')}`) : '—';
+      document.getElementById('countCaps').textContent = loadedCount? (`Elementos: ${loadedCount.toLocaleString('es-CO')}`) : '—';
 
       // Censos
       caches.censusComunasByName = await loadCensoByName(SRC.censo.comunas,'Censo comunas', KEYS.comuna);
@@ -409,7 +411,7 @@
     try{ document.execCommand('copy'); }finally{ sel.removeAllRanges(); }
   }
 
-  // === UX: toasts, toggles, búsqueda
+  // === UX
   function toast(m,ms=2200){ const t=document.createElement('div'); t.textContent=m; t.style.cssText="position:fixed;right:12px;bottom:12px;background:#16204a;color:#fff;border:1px solid #ffffff33;border-radius:12px;padding:.55rem .75rem;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,.35)"; document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
   function safeToggle(layer,nombre){ if(!layer){ toast(`La capa “${nombre}” aún no está cargada`); return; } if(map.hasLayer(layer)){ map.removeLayer(layer); toast(`Ocultando ${nombre}`); } else { layer.addTo(map); toast(`Mostrando ${nombre}`); } setTimeout(()=>map.invalidateSize(),60); }
   function diagClear(){ const el=document.getElementById('diag'); el.innerHTML=''; }
@@ -429,7 +431,7 @@
     setTimeout(()=>map.invalidateSize(),60);
   };
 
-  // === Inicio: cargar y auto-activar "Población → Municipios" con gotas
+  // === Inicio
   window.addEventListener('DOMContentLoaded',()=>{
     Diag.el=document.getElementById('diag');
     Diag.log('JS listo ✔');
