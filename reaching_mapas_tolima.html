@@ -158,12 +158,13 @@ censo: {
   comunas: ["./ibague_comunas_censo.json","./data/ibague_comunas_censo.json"],
   correg:  ["./corregimientos_ibague.json","./ibague_correg_censo.json","./data/ibague_correg_censo.json"],
   veredas: ["./ibague_veredas_censo.json","./data/ibague_veredas_censo.json"],
-  mpios: [
-  "https://docs.google.com/spreadsheets/d/TU_ID/export?format=csv", // <- tu hoja publicada
-  "https://fundacionreaching.github.io/municipios_censo.json",
-  "./municipios_censo.json",
-  "https://fundacionreaching.github.io/data/tolima_censo.json",
-  "./data/tolima_censo.json"
+ mpios: [
+  // 1) DANE: Tolima por COD_DPTO=73 (GeoJSON)
+  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson",
+  // 2) Respaldo nacional (si se usa, luego filtramos Tolima=73 en el cliente)
+  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
+],
+
 ],
 
   // Municipios: acepta CSV (Google Sheets) o JSON local
