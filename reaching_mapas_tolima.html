@@ -141,7 +141,24 @@
     comunas:  ["./ibague_urbano.geojson", "./data/ibague_urbano.geojson"],
     correg:   ["./ibague_corregimientos.geojson", "./data/ibague_corregimientos.geojson"],
     veredas:  ["https://fundacionreaching.github.io/ibague_veredas.geojson", "./ibague_veredas.geojson", "./data/ibague_veredas.geojson"],
-   mpios: [
+   const mpios = await trySources(SRC.mpios,'Municipios (GeoJSON)');
+if (mpios) {
+  // Convertir y filtrar a Tolima (COD_DPTO = 73 o NOM_DPTO = 'Tolima')
+  const fcAll = asFC(mpios);
+  const tolima = {...fcAll, features: (fcAll.features||[]).filter(f=>{
+    const p = f?.properties || {};
+    const dptoCode = (p.COD_DPTO ?? p.DPTO_CCDGO ?? p.cod_dpto ?? p.CODIGO_DPTO ?? p.COD_DPTO_CCNCT);
+    const dptoName = (p.NOM_DPTO ?? p.DEPTO ?? p.NOMBRE_DPT ?? p.NOMBRE_DEPT ?? p.dpto);
+    // Acepta numérico 73, string '73', o nombre 'Tolima'
+    return String(dptoCode||'').replace(/^0+/,'') === '73' || String(dptoName||'').toLowerCase() === 'tolima';
+  })};
+
+  const fc = onlyPolys(asFC(tolima));
+  layers.mpios = L.geoJSON(fc,{style:baseStyle('#43d17a')}).addTo(map);
+  attachInteractive(layers.mpios,'Municipio');
+  Diag.log(`Municipios (Tolima): ${layers.mpios.getLayers().length} ✔`);
+}
+ [
   "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=COD_DPTO,NOM_DPTO,COD_MPIO,NOM_MPIO&returnGeometry=true&outSR=4326&f=geojson"
 ],
 
