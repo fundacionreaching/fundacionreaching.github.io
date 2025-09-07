@@ -148,7 +148,14 @@
   "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=COD_DPTO,NOM_DPTO,COD_MPIO,NOM_MPIO&returnGeometry=true&outSR=4326&f=geojson"
 ],
 
-   const mpios = await trySources(SRC.mpios,'Municipios (GeoJSON)');
+   const mpios=await trySources(SRC.mpios,'Municipios (GeoJSON)');
+if(mpios){
+  const fc=onlyPolys(asFC(mpios));
+  layers.mpios=L.geoJSON(fc,{style:baseStyle('#43d17a')}).addTo(map);
+  attachInteractive(layers.mpios,'Municipio');
+  loadedCount+=layers.mpios.getLayers().length;
+}
+const mpios = await trySources(SRC.mpios,'Municipios (GeoJSON)');
 if (mpios) {
   // Convertir y filtrar a Tolima (COD_DPTO = 73 o NOM_DPTO = 'Tolima')
   const fcAll = asFC(mpios);
