@@ -146,7 +146,11 @@
     mpios: [
   // 1) DANE (Tolima por COD_DPTO=73, formato GeoJSON)
   "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=COD_DPTO,NOM_DPTO,COD_MPIO,NOM_MPIO&returnGeometry=true&outSR=4326&f=geojson",
-  // 2) Respaldo: GeoJSON nacional (si se usa, filtramos luego a Tolima)
+mpios: [
+  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=COD_DPTO,NOM_DPTO,COD_MPIO,NOM_MPIO&returnGeometry=true&outSR=4326&f=geojson",
+  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
+],
+      // 2) Respaldo: GeoJSON nacional (si se usa, filtramos luego a Tolima)
   "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
 ],
     ],
