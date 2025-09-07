@@ -159,6 +159,22 @@ censo: {
   [const mpioCenso = await loadCensoMpiosFlex(SRC.censo.mpios, 'Censo mpios');
 
     // 👉 OPCIONAL (CSV): publica tu hoja como CSV y pega el enlace "export?format=csv"
+  document.getElementById('dlPlantilla').addEventListener('click', downloadPlantillaMpios);
+
+function downloadPlantillaMpios(){
+  if(!layers.mpios){ alert("Primero deben cargar los Municipios."); return; }
+  const rows=[["COD_MPIO","NOM_MPIO","POB_2018"]];
+  layers.mpios.eachLayer(l=>{
+    const p=l.feature?.properties||{};
+    const code=(p.COD_MPIO ?? p.MPIO_CCDGO ?? p.cod_dane ?? p.DANE ?? p.CODIGO ?? "").toString().padStart(5,'0');
+    const name=(p.NOM_MPIO ?? p.NOMBRE_MPIO ?? p.MPIO_CNMBR ?? p.NOMBRE ?? "Municipio").toString();
+    rows.push([code,name,""]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='plantilla_censo_municipios_tolima.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
     // "https://docs.google.com/spreadsheets/d/TU_ID/export?format=csv",
     "https://fundacionreaching.github.io/data/tolima_censo.json",
     "https://fundacionreaching.github.io/municipios_censo.json",
