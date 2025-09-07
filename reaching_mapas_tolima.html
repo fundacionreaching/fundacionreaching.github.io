@@ -315,14 +315,27 @@ const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeou
       if(veredas){ const fc=onlyPolys(asFC(veredas)); layers.veredas=L.geoJSON(fc,{style:baseStyle('#b78cff')}).addTo(map); attachInteractive(layers.veredas,'Vereda'); loadedCount+=layers.veredas.getLayers().length; }
 
       // Municipios: intentar GitHub Raw; si no, DANE. Luego filtrar Tolima (73) si viniera todo el país.
-      const mpiosRaw=await trySources(SRC.mpios,'Municipios (GeoJSON)');
-      if(mpiosRaw){
-        const all=asFC(mpiosRaw);
-        const tolima={...all, features:(all.features||[]).filter(f=>{
-          const p=f?.properties||{};
-          const dptoCode=(p.COD_DPTO ?? p.DPTO_CCDGO ?? p.cod_dpto ?? p.CODIGO_DPTO ?? p.COD_DPTO_CCNCT ?? p.DPTO);
-          const dptoName=(p.NOM_DPTO ?? p.DEPTO ?? p.NOMBRE_DPT ?? p.NOMBRE_DEPT ?? p.dpto);
-          return String(dptoCode||'').replace(/^0+/,'')==='73' || String(dptoName||'').toLowerCase()==='tolima';
+     // Municipios: intentar DANE; si no, GitHub Raw. Si viene país completo, filtrar a Tolima (73).
+const mpiosRaw = await trySources(SRC.mpios, 'Municipios (GeoJSON)');
+if (mpiosRaw) {
+  const all = asFC(mpiosRaw);
+  const tolima = {
+    ...all,
+    features: (all.features || []).filter(f => {
+      const p = f?.properties || {};
+      const dptoCode = (p.COD_DPTO ?? p.DPTO_CCDGO ?? p.cod_dpto ?? p.CODIGO_DPTO ?? p.COD_DPTO_CCNCT ?? p.DPTO);
+      const dptoName = (p.NOM_DPTO ?? p.DEPTO ?? p.NOMBRE_DPT ?? p.NOMBRE_DEPT ?? p.dpto);
+      return String(dptoCode || '').replace(/^0+/, '') === '73' || String(dptoName || '').toLowerCase() === 'tolima';
+    })
+  };
+  const fc = onlyPolys(asFC(tolima));
+  layers.mpios = L.geoJSON(fc, { style: baseStyle('#43d17a') }).addTo(map);
+  attachInteractive(layers.mpios, 'Municipio');
+
+  Diag.log(`Municipios (Tolima): ${layers.mpios.getLayers().length} ✔`);
+  loadedCount += layers.mpios.getLayers().length;
+}
+
         })};
         const fc=onlyPolys(asFC(tolima));
         layers.mpios=L.geoJSON(fc,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,'Municipio');
