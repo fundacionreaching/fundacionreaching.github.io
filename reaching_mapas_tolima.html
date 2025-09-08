@@ -416,9 +416,17 @@ if(loader) loader.style.display='flex';
 if(loader) loader.style.display='none';
    clearTimeout(softClose);
 if(loader) loader.style.display='none';
-
-
   }
+ loadAll().then(()=>{
+  const sel = document.getElementById('estiloPob');
+  if(!sel.disabled){
+    sel.value='pob_mpios';
+    sel.dispatchEvent(new Event('change'));
+    const chk=document.getElementById('tgDrops');
+    chk.checked=true;
+  }
+});
+
 }
 
 
