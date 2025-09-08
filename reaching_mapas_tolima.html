@@ -333,7 +333,19 @@ censo: {
       const row={}; head.forEach((h,i)=> row[h]=cells[i]); return row;
     });
   }
-  async function loadCensoMpiosFlex(urls,label){
+  async function loadCensoMpiosFlex(urls,label){// después de obtener "data"
+if (data && Array.isArray(data.features)) {
+  const byCode = new Map(), byName = new Map();
+  data.features.forEach(f=>{
+    const p = f.attributes || f; // ArcGIS usa 'attributes'
+    const code = String(p.MPIO_CCDGO).padStart(5,'0');
+    const name = String(p.MPIO_CNMBR||'').toLowerCase();
+    const val  = Number(p.CL0_TT_PERSN);
+    if (Number.isFinite(val)) { byCode.set(code,val); byName.set(name,val); }
+  });
+  return { byCode, byName };
+}
+
     const byCode=new Map(), byName=new Map();
     // 0) Embebido
     try{
