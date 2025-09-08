@@ -177,15 +177,17 @@
     veredas:  ["./ibague_veredas.geojson","./data/ibague_veredas.geojson"],
    censo: {
 censo: {
-  mpios: [
-    "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
-  ],
-  // deja tus otras rutas (comunas/correg/veredas) como ya están
+ mpios: [
+  // DANE (Municipios; salida GeoJSON; filtrado Tolima=73 en la query)
+  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson",
+  // Respaldo nacional (si entra país completo, filtras Tolima=73 en el cliente)
+  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
+],
+
+  
 }
 
-   mpios: [
-  "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
-]
+ 
 
   // DANE · Municipios (Layer 9) · salida GeoJSON · filtramos Tolima=73 en la query
   "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson",
