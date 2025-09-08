@@ -164,8 +164,10 @@
     comunas:  ["./ibague_urbano.geojson","./data/ibague_urbano.geojson"],
     correg:   ["./ibague_corregimientos.geojson","./data/ibague_corregimientos.geojson"],
     veredas:  ["./ibague_veredas.geojson","./data/ibague_veredas.geojson"],
-    // Municipios: 1) DANE GeoJSON (Tolima=73)  2) GeoJSON nacional respaldo
     mpios: [
+  "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
+]
+
   // DANE · Municipios (Layer 9) · salida GeoJSON · filtramos Tolima=73 en la query
   "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson",
   // Respaldo nacional (si se usa, luego filtramos a Tolima=73 en el cliente)
