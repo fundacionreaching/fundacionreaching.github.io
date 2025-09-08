@@ -438,13 +438,19 @@ if(loader) loader.style.display='none';
    clearTimeout(softClose);
 if(loader) loader.style.display='none';
   }
- loadAll().then(()=>{
+ loadAll()const loader = document.getElementById('loader');
+const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000); // 14 s
+if(loader) loader.style.display='flex';
+.then(()=>{
   const sel = document.getElementById('estiloPob');
   if(!sel.disabled){
     sel.value='pob_mpios';
     sel.dispatchEvent(new Event('change'));
     const chk=document.getElementById('tgDrops');
     chk.checked=true;
+   clearTimeout(softClose);
+if(loader) loader.style.display='none';
+
   }
 });
 
