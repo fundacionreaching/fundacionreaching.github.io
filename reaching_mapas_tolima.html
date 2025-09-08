@@ -165,6 +165,12 @@
     veredas:  ["./ibague_veredas.geojson","./data/ibague_veredas.geojson"],
     // Municipios: 1) DANE GeoJSON (Tolima=73)  2) GeoJSON nacional respaldo
     mpios: [
+  // DANE · Municipios (Layer 9) · salida GeoJSON · filtramos Tolima=73 en la query
+  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson",
+  // Respaldo nacional (si se usa, luego filtramos a Tolima=73 en el cliente)
+  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
+],
+[
       "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson",
       "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
     ],
