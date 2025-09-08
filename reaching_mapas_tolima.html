@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Mapa Censo — Tolima / Ibagué (Gotas + Popups)</title>
+<title>Fundación Reaching — Censo Poblacional Tolima &amp; Ibagué (CNPV 2018) | Mapas Interactivos</title>
+ (Gotas + Popups)</title>
+  <meta name="title" content="Fundación Reaching — Censo Poblacional Tolima & Ibagué (CNPV 2018) | Mapas Interactivos">
+<meta name="description" content="Mapa interactivo con comunas, corregimientos, veredas y municipios del Tolima. Gotas con población (CNPV 2018), tabla y exportación CSV para propuestas comunitarias.">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -45,14 +49,15 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Mapa Censo — Tolima / Ibagué</h1>
+      <h1>Mapa Censo — Tolima / Ibagué</h1><h1>Fundación Reaching — Censo Poblacional Tolima & Ibagué</h1>
+
       <div class="sub">Comunas, Corregimientos, Veredas (Ibagué) · Municipios (Tolima) · CNPV 2018 · Gotas + popup</div>
     </div>
     <div class="rightbar">
       <button id="zoomTolima" class="btn ghost">Tolima</button>
       <button id="zoomIbague" class="btn ghost">Ibagué</button>
-      <button id="exportCsv" class="btn">Exportar CSV</button><button id="dlPlantilla" class="btn ghost">Plantilla Censo (CSV)</button>
-
+      <button id="exportCsv" class="btn">Exportar CSV</button>
+      <button id="dlPlantilla" class="btn ghost">Plantilla Censo (CSV)</button>
     </div>
   </header>
 
@@ -128,26 +133,20 @@
       <div id="map"></div>
       <div id="legend" class="legend" style="display:none"></div>
       <div id="loader">Cargando capas…</div>
-    </section><!-- Censo Municipal (embebido temporal) -->
-<script type="application/json" id="censo_mpios">
-[
-  {"COD_MPIO":"73001","NOM_MPIO":"Ibagué","POB_2018":492554},
-  {"COD_MPIO":"73024","NOM_MPIO":"Alpujarra","POB_2018":8473},
-  {"COD_MPIO":"73026","NOM_MPIO":"Alvarado","POB_2018":14581}
-  /* 👉 Añade aquí los 47 (o deja estos 3 para probar visual).
-     Cuando tengas tu archivo real:
-     - Sube a https://fundacionreaching.github.io/municipios_censo.json   (o)
-     - Sube a https://fundacionreaching.github.io/data/tolima_censo.json   (o)
-     - Publica un Google Sheets como CSV (export?format=csv)
-  */
-]
-</script>
-
+    </section>
   </div>
 </div>
 
+<!-- (OPCIONAL) Censo Municipal embebido temporal:
+     ⚠️ Debe ser JSON puro SIN comentarios. Puedes dejarlo vacío [] si no quieres usarlo.
+-->
+<script type="application/json" id="censo_mpios">[]</script>
+
 <script>
 (function(){
+  const HARD_TIMEOUT_MS = 45000;   // límite duro por solicitud
+  const SOFT_CLOSE_MS   = 14000;   // cierre forzado del loader aunque alguna fuente falle
+
   const Diag = { el:null, log(msg, ok=true){ const d=document.createElement('div'); d.textContent=(ok?"✅ ":"❌ ")+msg; this.el&&this.el.appendChild(d); } };
   window.onerror=(m,src,l,c)=>{ const el=document.getElementById('jsErr'); el.textContent="⚠️ Script: "+m+" ("+l+":"+c+")"; };
 
@@ -156,68 +155,25 @@
     comunas:  ["./ibague_urbano.geojson","./data/ibague_urbano.geojson"],
     correg:   ["./ibague_corregimientos.geojson","./data/ibague_corregimientos.geojson"],
     veredas:  ["./ibague_veredas.geojson","./data/ibague_veredas.geojson"],
-    // Municipios: 1) GitHub Raw (nacional)  2) DANE (Tolima)
+    // Municipios: 1) DANE GeoJSON (Tolima=73)  2) GeoJSON nacional respaldo
     mpios: [
-  // 1) DANE (Tolima por COD_DPTO=73, formato GeoJSON)
-  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=COD_DPTO,NOM_DPTO,COD_MPIO,NOM_MPIO&returnGeometry=true&outSR=4326&f=geojson",
-mpios: [
-  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=COD_DPTO,NOM_DPTO,COD_MPIO,NOM_MPIO&returnGeometry=true&outSR=4326&f=geojson",
-  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
-],
-      // 2) Respaldo: GeoJSON nacional (si se usa, filtramos luego a Tolima)
-  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
-],
+      "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson",
+      "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
     ],
-censo: {
-  comunas: ["./ibague_comunas_censo.json","./data/ibague_comunas_censo.json"],
-  correg:  ["./corregimientos_ibague.json","./ibague_correg_censo.json","./data/ibague_correg_censo.json"],
-  veredas: ["./ibague_veredas_censo.json","./data/ibague_veredas_censo.json"],
- mpios: [
-  // 1) DANE: Tolima por COD_DPTO=73 (GeoJSON)
-  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson",
-  // 2) Respaldo nacional (si se usa, luego filtramos Tolima=73 en el cliente)
-  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson"
-],
-
-],
-
-  // Municipios: acepta CSV (Google Sheets) o JSON local
-  
-  [const mpioCenso = await loadCensoMpiosFlex(SRC.censo.mpios, 'Censo mpios');
-
-    // 👉 OPCIONAL (CSV): publica tu hoja como CSV y pega el enlace "export?format=csv"
-  document.getElementById('dlPlantilla').addEventListener('click', downloadPlantillaMpios);
-
-function downloadPlantillaMpios(){
-  if(!layers.mpios){ alert("Primero deben cargar los Municipios."); return; }
-  const rows=[["COD_MPIO","NOM_MPIO","POB_2018"]];
-  layers.mpios.eachLayer(l=>{
-    const p=l.feature?.properties||{};
-    const code=(p.COD_MPIO ?? p.MPIO_CCDGO ?? p.cod_dane ?? p.DANE ?? p.CODIGO ?? "").toString().padStart(5,'0');
-    const name=(p.NOM_MPIO ?? p.NOMBRE_MPIO ?? p.MPIO_CNMBR ?? p.NOMBRE ?? "Municipio").toString();
-    rows.push([code,name,""]);
-  });
-  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='plantilla_censo_municipios_tolima.csv'; a.click(); URL.revokeObjectURL(a.href);
-}
-
-    // "https://docs.google.com/spreadsheets/d/TU_ID/export?format=csv",
-    "https://fundacionreaching.github.io/data/tolima_censo.json",
-    "https://fundacionreaching.github.io/municipios_censo.json",
-    "./data/tolima_censo.json",
-    "./municipios_censo.json"
-  ]
-}
-    
+    // Censos: puedes poner tu CSV/JSON publicados primero; dejamos rutas locales de respaldo
     censo: {
       comunas: ["./ibague_comunas_censo.json","./data/ibague_comunas_censo.json"],
       correg:  ["./corregimientos_ibague.json","./ibague_correg_censo.json","./data/ibague_correg_censo.json"],
       veredas: ["./ibague_veredas_censo.json","./data/ibague_veredas_censo.json"],
-      mpios:   ["./data/tolima_censo.json","./municipios_censo.json"]
+      mpios:   [
+        // 👉 Pega aquí (primero) tu Google Sheets publicado como CSV, si lo tienes:
+        // "https://docs.google.com/spreadsheets/d/TU_ID/export?format=csv",
+        "https://fundacionreaching.github.io/municipios_censo.json",
+        "https://fundacionreaching.github.io/data/tolima_censo.json",
+        "./municipios_censo.json",
+        "./data/tolima_censo.json"
+      ]
     }
- 
-
   };
 
   // === Claves/utilidades
@@ -232,57 +188,6 @@ function downloadPlantillaMpios(){
   const pickKey=(obj,arr)=>{ for(const k of arr) if(obj&&Object.hasOwn(obj,k)) return k; for(const k in obj||{}) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k; return null; };
   const norm=(s)=> s? String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim() : null;
   const fmt=(n)=> Number(n).toLocaleString('es-CO');
-
-  // === CSV parser simple (maneja comillas y comas)
-function parseCSV(text){
-  const lines = text.trim().split(/\r?\n/);
-  if(!lines.length) return [];
-  const head = [...lines.shift().matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)].map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"').trim());
-  return lines.map(l=>{
-    const cells = [...l.matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)].map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"'));
-    const row={}; head.forEach((h,i)=> row[h]=cells[i]); return row;
-  });
-}
-
-// === Cargador flexible: intenta CSV o JSON para Censo de Municipios
-async function loadCensoMpiosFlex(urls,label){
-  const byCode=new Map(), byName=new Map();
-  for(const u of urls){
-    try{
-      const r=await fetch(u,{cache:'no-store'});
-      if(!r.ok) throw new Error(r.status+" "+r.statusText);
-      const ct=(r.headers.get('content-type')||'').toLowerCase();
-      let rows=[];
-      if(ct.includes('text/csv') || u.toLowerCase().includes('.csv') || u.toLowerCase().includes('format=csv')){
-        const t=await r.text(); rows=parseCSV(t);
-      } else {
-        const data=await r.json();
-        rows = Array.isArray(data)? data : Object.values(data);
-      }
-      if(!rows || !rows.length) throw new Error("sin filas");
-      // Detecta columnas
-      const sample=rows[0]||{};
-      const codeKey = (Object.keys(sample).find(k=>["MPIO_CCDGO","COD_DANE","cod_dane","MPIO","CODIGO","codigo","DANE","mpio_cod","codmpio","COD_MPIO"].some(a=>k.toLowerCase().includes(a.toLowerCase()))) ) || "COD_MPIO";
-      const nameKey = (Object.keys(sample).find(k=>["NOM_MPIO","NOMBRE_MPIO","MPIO_CNMBR","NOMBRE","nombre"].some(a=>k.toLowerCase().includes(a.toLowerCase()))) ) || "NOM_MPIO";
-      const popKey  = (Object.keys(sample).find(k=>["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total"].some(a=>k.toLowerCase().includes(a.toLowerCase()))) ) || "POB_2018";
-      rows.forEach(row=>{
-        const code = row[codeKey]!=null ? String(row[codeKey]).padStart(5,'0') : null;
-        const name = row[nameKey]!=null ? String(row[nameKey]) : null;
-        const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
-        if(Number.isFinite(val)){
-          if(code) byCode.set(code,val);
-          if(name) byName.set(norm(name),val);
-        }
-      });
-      if(byCode.size || byName.size){ Diag.log(`${label}: ${u} ✔ (codes:${byCode.size} / names:${byName.size})`); return {byCode, byName}; }
-      else throw new Error("sin datos válidos");
-    }catch(e){
-      Diag.log(`${label}: ${u} — ${e.message}`, false);
-    }
-  }
-  return {byCode:null, byName:null};
-}
-
 
   // === Mapa
   const map=L.map(document.getElementById('map'),{preferCanvas:true});
@@ -301,9 +206,8 @@ async function loadCensoMpiosFlex(urls,label){
     for(let i=0;i<br.length-1;i++){ html+=`<div><span class="sw" style="background:${R[Math.min(i,R.length-1)]}"></span>${Math.round(br[i]).toLocaleString('es-CO')}–${Math.round(br[i+1]).toLocaleString('es-CO')}</div>`; }
     legendEl.innerHTML=html; legendEl.style.display='block'; };
 
-  // === Fetch robusto (con saneo)
-const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),45000);
- 
+  // === Fetch robusto + cierre forzado
+  const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),HARD_TIMEOUT_MS);
     try{
       const r=await fetch(u,{cache:'no-store',signal:ctrl.signal}); if(!r.ok) throw new Error(r.status+" "+r.statusText);
       const t=await r.text(); try{ return JSON.parse(t); }catch{ return JSON.parse(t.replace(/^﻿/,'')); }
@@ -384,8 +288,63 @@ const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeou
   function showDropsFor(mode, on){ hideAllDrops(); if(!on) return; const key=mode?.replace('pob_',''); if(key&&drops[key]) drops[key].addTo(map); }
   function hideAllDrops(){ ['mpios','comunas','correg','veredas'].forEach(k=>{ if(drops[k]) map.removeLayer(drops[k]); }); }
 
+  // === CSV + Censo flexible (CSV/JSON/embebido)
+  function parseCSV(text){
+    const lines = text.trim().split(/\r?\n/); if(!lines.length) return [];
+    const head = [...lines.shift().matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)].map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"').trim());
+    return lines.map(l=>{
+      const cells = [...l.matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)].map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"'));
+      const row={}; head.forEach((h,i)=> row[h]=cells[i]); return row;
+    });
+  }
+  async function loadCensoMpiosFlex(urls,label){
+    const byCode=new Map(), byName=new Map();
+    // 0) Embebido
+    try{
+      const emb=document.getElementById('censo_mpios');
+      if(emb && emb.textContent.trim()){
+        const arr=JSON.parse(emb.textContent);
+        arr.forEach(row=>{
+          const code = row.COD_MPIO ? String(row.COD_MPIO).padStart(5,'0') : null;
+          const name = row.NOM_MPIO || row.NOMBRE || null;
+          const val  = Number(String(row.POB_2018 ?? row.POB_TOTAL ?? row.poblacion ?? row.POB).replace(/[^0-9.]/g,''));
+          if(Number.isFinite(val)){ if(code) byCode.set(code,val); if(name) byName.set(norm(name),val); }
+        });
+        if(byCode.size || byName.size){ Diag.log(`${label} (embebido) ✔ (codes:${byCode.size} / names:${byName.size})`); return {byCode,byName}; }
+      }
+    }catch(e){ Diag.log(`${label} (embebido) — ${e.message}`, false); }
+
+    // 1) URLs remotas CSV/JSON
+    for(const u of urls){
+      try{
+        const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw new Error(r.status+" "+r.statusText);
+        const ct=(r.headers.get('content-type')||'').toLowerCase();
+        let rows=[];
+        if(ct.includes('text/csv') || u.toLowerCase().includes('.csv') || u.toLowerCase().includes('format=csv')){
+          const t=await r.text(); rows=parseCSV(t);
+        } else {
+          const data=await r.json(); rows = Array.isArray(data)? data : Object.values(data);
+        }
+        if(!rows.length) throw new Error("sin filas");
+        const sample=rows[0]||{};
+        const codeKey = Object.keys(sample).find(k=>/cod.*mpio|mpio|dane|codigo/i.test(k)) || "COD_MPIO";
+        const nameKey = Object.keys(sample).find(k=>/nom|nombre/i.test(k)) || "NOM_MPIO";
+        const popKey  = Object.keys(sample).find(k=>/pob|total|pobl/i.test(k)) || "POB_2018";
+        rows.forEach(row=>{
+          const code = row[codeKey]!=null ? String(row[codeKey]).padStart(5,'0') : null;
+          const name = row[nameKey]!=null ? String(row[nameKey]) : null;
+          const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+          if(Number.isFinite(val)){ if(code) byCode.set(code,val); if(name) byName.set(norm(name),val); }
+        });
+        if(byCode.size || byName.size){ Diag.log(`${label}: ${u} ✔ (codes:${byCode.size} / names:${byName.size})`); return {byCode, byName}; }
+        else throw new Error("sin datos válidos");
+      }catch(e){ Diag.log(`${label}: ${u} — ${e.message}`, false); }
+    }
+    return {byCode:null, byName:null};
+  }
+
   // === CARGA
-  const loader=document.getElementById('loader'); const countCaps=document.getElementById('countCaps'); const legendBox=document.getElementById('legend');
+  const loader=document.getElementById('loader'); const countCaps=document.getElementById('countCaps');
 
   async function loadCensoByName(urls,label,nameKeysArr){
     try{
@@ -396,26 +355,15 @@ const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeou
       Diag.log(`${label} ✔ (${M.size})`); return M.size?M:null;
     }catch(e){ Diag.log(`${label} — ${e.message}`, false); return null; }
   }
-  async function loadCensoByCode(urls,label){
-    try{
-      let data=null; for(const u of urls){ try{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; data=await r.json(); Diag.log(`${label}: ${u} ✔`); break; }catch(_){ Diag.log(`${label}: ${u} — 404`, false);} }
-      if(!data) return {byCode:null, byName:null};
-      const sample=Array.isArray(data)? data[0]: data;
-      const codeKey=(pickKey(sample,KEYS.code)||'codigo'); const nameKey=(pickKey(sample,KEYS.name)||'NOM_MPIO'); const popKey=(pickKey(sample,KEYS.pop)||KEYS.pop[0]);
-      const byCode=new Map(), byName=new Map();
-      (Array.isArray(data)? data : Object.values(data)).forEach(row=>{
-        const code = row[codeKey]!=null ? String(row[codeKey]).padStart(5,'0') : null;
-        const name = row[nameKey]!=null ? norm(row[nameKey]) : null;
-        const val  = Number(String(row[popKey]).replace(/[^0-9.]/g,''));
-        if(Number.isFinite(val)){ if(code) byCode.set(code,val); if(name) byName.set(name,val); }
-      });
-      Diag.log(`${label} ✔ (codes:${byCode.size} / names:${byName.size})`);
-      return {byCode: byCode.size?byCode:null, byName: byName.size?byName:null};
-    }catch(e){ Diag.log(`${label} — ${e.message}`, false); return {byCode:null, byName:null}; }
-  }
 
   async function loadAll(){
-    loader.style.display='flex'; diagClear(); let loadedCount=0;
+    loader.style.display='flex';
+    Diag.el=document.getElementById('diag');
+    Diag.log('JS listo ✔');
+    let loadedCount=0;
+    // Cierre forzado del loader aunque algo quede colgado
+    const softClose = setTimeout(()=>{ loader.style.display='none'; Diag.log('⏱ Cierre forzado del loader (verifica líneas en rojo)', false); }, SOFT_CLOSE_MS);
+
     try{
       const comunas=await trySources(SRC.comunas,'Comunas (GeoJSON)');
       if(comunas){ const fc=onlyPolys(asFC(comunas)); layers.comunas=L.geoJSON(fc,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,'Comuna'); loadedCount+=layers.comunas.getLayers().length; }
@@ -426,28 +374,15 @@ const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeou
       const veredas=await trySources(SRC.veredas,'Veredas (GeoJSON)');
       if(veredas){ const fc=onlyPolys(asFC(veredas)); layers.veredas=L.geoJSON(fc,{style:baseStyle('#b78cff')}).addTo(map); attachInteractive(layers.veredas,'Vereda'); loadedCount+=layers.veredas.getLayers().length; }
 
-      // Municipios: intentar GitHub Raw; si no, DANE. Luego filtrar Tolima (73) si viniera todo el país.
-     // Municipios: intentar DANE; si no, GitHub Raw. Si viene país completo, filtrar a Tolima (73).
-const mpiosRaw = await trySources(SRC.mpios, 'Municipios (GeoJSON)');
-if (mpiosRaw) {
-  const all = asFC(mpiosRaw);
-  const tolima = {
-    ...all,
-    features: (all.features || []).filter(f => {
-      const p = f?.properties || {};
-      const dptoCode = (p.COD_DPTO ?? p.DPTO_CCDGO ?? p.cod_dpto ?? p.CODIGO_DPTO ?? p.COD_DPTO_CCNCT ?? p.DPTO);
-      const dptoName = (p.NOM_DPTO ?? p.DEPTO ?? p.NOMBRE_DPT ?? p.NOMBRE_DEPT ?? p.dpto);
-      return String(dptoCode || '').replace(/^0+/, '') === '73' || String(dptoName || '').toLowerCase() === 'tolima';
-    })
-  };
-  const fc = onlyPolys(asFC(tolima));
-  layers.mpios = L.geoJSON(fc, { style: baseStyle('#43d17a') }).addTo(map);
-  attachInteractive(layers.mpios, 'Municipio');
-
-  Diag.log(`Municipios (Tolima): ${layers.mpios.getLayers().length} ✔`);
-  loadedCount += layers.mpios.getLayers().length;
-}
-
+      // Municipios: DANE -> respaldo; si viene país completo, filtra Tolima=73
+      const mpiosRaw=await trySources(SRC.mpios,'Municipios (GeoJSON)');
+      if(mpiosRaw){
+        const all=asFC(mpiosRaw);
+        const tolima={...all, features:(all.features||[]).filter(f=>{
+          const p=f?.properties||{};
+          const dptoCode=(p.COD_DPTO ?? p.DPTO_CCDGO ?? p.cod_dpto ?? p.CODIGO_DPTO ?? p.COD_DPTO_CCNCT ?? p.DPTO);
+          const dptoName=(p.NOM_DPTO ?? p.DEPTO ?? p.NOMBRE_DPT ?? p.NOMBRE_DEPT ?? p.dpto);
+          return String(dptoCode||'').replace(/^0+/,'')==='73' || String(dptoName||'').toLowerCase()==='tolima';
         })};
         const fc=onlyPolys(asFC(tolima));
         layers.mpios=L.geoJSON(fc,{style:baseStyle('#43d17a')}).addTo(map); attachInteractive(layers.mpios,'Municipio');
@@ -461,7 +396,7 @@ if (mpiosRaw) {
       caches.censusComunasByName = await loadCensoByName(SRC.censo.comunas,'Censo comunas', KEYS.comuna);
       caches.censusCorregByName  = await loadCensoByName(SRC.censo.correg, 'Censo correg.',  KEYS.correg);
       caches.censusVeredasByName = await loadCensoByName(SRC.censo.veredas,'Censo veredas', KEYS.vereda);
-      const mpioCenso = await loadCensoByCode (SRC.censo.mpios,  'Censo mpios');
+      const mpioCenso = await loadCensoMpiosFlex(SRC.censo.mpios, 'Censo mpios');
       caches.censusMpiosByCode = mpioCenso.byCode;
       caches.censusMpiosByName = mpioCenso.byName;
 
@@ -473,10 +408,10 @@ if (mpiosRaw) {
       window._idx=[]; [layers.comunas,layers.correg,layers.veredas,layers.mpios].forEach(g=>g&&g.eachLayer(l=>{ window._idx.push({name:getName(l.feature?.properties||{}), bounds:l.getBounds()}); }));
       Diag.log(`Índice de búsqueda: ${_idx.length} elementos ✔`);
     }catch(e){ Diag.log('Fallo de carga: '+e.message, false); }
-    finally{ loader.style.display='none'; }
+    finally{ clearTimeout(softClose); loader.style.display='none'; }
   }
 
-  // === Controles y estilo por población
+  // === Controles / KPIs / Tabla / CSV
   const legendBox=document.getElementById('legend');
   document.getElementById('estiloPob').addEventListener('change', (e)=> applyPopStyle(e.target.value));
   document.getElementById('tgDrops').addEventListener('change',(e)=>{ const v=document.getElementById('estiloPob').value; showDropsFor(v,e.target.checked); });
@@ -499,10 +434,10 @@ if (mpiosRaw) {
     const m=mode.replace('pob_',''); updateKPIs(m); renderTabla(m);
   }
 
-  // === Tabla / KPI / CSV
   document.getElementById('tabModo').addEventListener('change',(e)=>{ renderTabla(e.target.value); updateKPIs(e.target.value); });
   document.getElementById('btnCSVTabla').addEventListener('click',()=>downloadTablaCSV());
   document.getElementById('btnCopiarTabla').addEventListener('click',()=>copyTabla());
+  document.getElementById('dlPlantilla').addEventListener('click', downloadPlantillaMpios);
 
   function collectList(key){
     let data=[];
@@ -541,6 +476,19 @@ if (mpiosRaw) {
     const el=document.querySelector('#tabla table'); if(!el) return; const sel=window.getSelection(); const r=document.createRange(); r.selectNode(el); sel.removeAllRanges(); sel.addRange(r);
     try{ document.execCommand('copy'); }finally{ sel.removeAllRanges(); }
   }
+  function downloadPlantillaMpios(){
+    if(!layers.mpios){ alert("Primero deben cargar los Municipios."); return; }
+    const rows=[["COD_MPIO","NOM_MPIO","POB_2018"]];
+    layers.mpios.eachLayer(l=>{
+      const p=l.feature?.properties||{};
+      const code=(p.COD_MPIO ?? p.MPIO_CCDGO ?? p.cod_dane ?? p.DANE ?? p.CODIGO ?? "").toString().padStart(5,'0');
+      const name=(p.NOM_MPIO ?? p.NOMBRE_MPIO ?? p.MPIO_CNMBR ?? p.NOMBRE ?? "Municipio").toString();
+      rows.push([code,name,""]);
+    });
+    const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='plantilla_censo_municipios_tolima.csv'; a.click(); URL.revokeObjectURL(a.href);
+  }
 
   // === UX
   function toast(m,ms=2200){ const t=document.createElement('div'); t.textContent=m; t.style.cssText="position:fixed;right:12px;bottom:12px;background:#16204a;color:#fff;border:1px solid #ffffff33;border-radius:12px;padding:.55rem .75rem;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,.35)"; document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
@@ -563,20 +511,7 @@ if (mpiosRaw) {
   };
 
   // === Inicio
-  window.addEventListener('DOMContentLoaded',()=>{
-    Diag.el=document.getElementById('diag');
-    Diag.log('JS listo ✔');
-    loadAll().then(()=>{
-      const sel=document.getElementById('estiloPob');
-      if(!sel.disabled){
-        sel.value='pob_mpios';
-        sel.dispatchEvent(new Event('change'));
-        const chk=document.getElementById('tgDrops');
-        chk.checked=true;
-        showDropsFor('pob_mpios',true);
-      }
-    });
-  });
+  window.addEventListener('DOMContentLoaded',()=>{ loadAll(); });
 })();
 </script>
 </body>
