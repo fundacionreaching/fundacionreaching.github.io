@@ -141,9 +141,15 @@ const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14
       <div id="map"></div>
       <div id="legend" class="legend" style="display:none"></div>
       <div id="loader">Cargando capas…</div>
+
+     clearTimeout(softClose);
+if(loader) loader.style.display='none';
+
     </section>
   </div>
 </div>
+
+
 
 <!-- (OPCIONAL) Censo Municipal embebido temporal:
      ⚠️ Debe ser JSON puro SIN comentarios. Puedes dejarlo vacío [] si no quieres usarlo.
