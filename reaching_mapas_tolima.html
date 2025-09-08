@@ -164,7 +164,26 @@
 <script type="application/json" id="censo_mpios">[]</script>
 
 <script>
-(function(){
+(function(){function soloTolima(fc){
+  const out = { type:'FeatureCollection', features:[] };
+  (fc.features||[]).forEach(f=>{
+    const p = f?.properties || {};
+    const c = (p.COD_DPTO ?? p.DPTO_CCDGO ?? p.cod_dpto ?? p.CODIGO_DPTO ?? p.COD_DPTO_CCNCT ?? p.DPTO);
+    const n = (p.NOM_DPTO ?? p.DEPTO ?? p.NOMBRE_DPT ?? p.NOMBRE_DEPT ?? p.dpto);
+    if (String(c||'').replace(/^0+/,'')==='73' || String(n||'').toLowerCase()==='tolima') out.features.push(f);
+  });
+  return out;
+}
+// Uso:
+const mpiosRaw = await trySources(SRC.mpios, 'Municipios (GeoJSON)');
+if (mpiosRaw){
+  const fcAll = asFC(mpiosRaw);
+  const fcTol = soloTolima(fcAll);
+  layers.mpios = L.geoJSON(onlyPolys(fcTol), { style: baseStyle('#43d17a') }).addTo(map);
+  attachInteractive(layers.mpios, 'Municipio');
+  Diag.log(`Municipios (Tolima): ${layers.mpios.getLayers().length} ✔`);
+}
+
   const HARD_TIMEOUT_MS = 45000;   // límite duro por solicitud
   const SOFT_CLOSE_MS   = 14000;   // cierre forzado del loader aunque alguna fuente falle
 
