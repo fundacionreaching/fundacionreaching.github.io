@@ -389,13 +389,6 @@ async function loadAll(){
   }
 }
 
-  async function loadAll()
-    loader.style.display='flex';
-    Diag.el=document.getElementById('diag');
-    Diag.log('JS listo ✔');
-    let loadedCount=0;
-    // Cierre forzado del loader aunque algo quede colgado
-    const softClose = setTimeout(()=>{ loader.style.display='none'; Diag.log('⏱ Cierre forzado del loader (verifica líneas en rojo)', false); }, SOFT_CLOSE_MS);
 
     try{
       const comunas=await trySources(SRC.comunas,'Comunas (GeoJSON)');
