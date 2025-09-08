@@ -370,7 +370,7 @@
     }catch(e){ Diag.log(`${label} — ${e.message}`, false); return null; }
   }
 
-  async function loadAll(){
+  async function loadAll()
     loader.style.display='flex';
     Diag.el=document.getElementById('diag');
     Diag.log('JS listo ✔');
