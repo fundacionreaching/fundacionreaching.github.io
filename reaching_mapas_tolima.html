@@ -369,6 +369,25 @@
       Diag.log(`${label} ✔ (${M.size})`); return M.size?M:null;
     }catch(e){ Diag.log(`${label} — ${e.message}`, false); return null; }
   }
+async function loadAll(){
+  const loader = document.getElementById('loader');
+  // cierre forzado del loader a los 14s (aunque algo falle)
+  const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000);
+
+  try{
+    if(loader) loader.style.display='flex';
+    // TODO: aquí va tu carga real (comunas, correg, veredas, mpios, censos…)
+    // ej:
+    // const comunas = await trySources(SRC.comunas,'Comunas (GeoJSON)');
+    // if(comunas){ /* crear capa, attachInteractive, etc. */ }
+  }catch(e){
+    const el = document.getElementById('diag'); 
+    if(el) el.innerHTML += '❌ Fallo de carga: '+(e.message||e);
+  }finally{
+    clearTimeout(softClose);
+    if(loader) loader.style.display='none';
+  }
+}
 
   async function loadAll()
     loader.style.display='flex';
