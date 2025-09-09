@@ -481,6 +481,15 @@
     }finally{
       clearTimeout(softClose);
       if(loader) loader.style.display='none';
+      // Desactivar opciones de estilo donde NO hay censo:
+const optCom = document.querySelector('#estiloPob option[value="pob_comunas"]');
+const optCor = document.querySelector('#estiloPob option[value="pob_correg"]');
+const optVer = document.querySelector('#estiloPob option[value="pob_veredas"]');
+if(optCom) optCom.disabled = !caches.censusComunasByName;
+if(optCor) optCor.disabled = !caches.censusCorregByName;
+if(optVer) optVer.disabled = !caches.censusVeredasByName;
+
+      
     }
   }
 
