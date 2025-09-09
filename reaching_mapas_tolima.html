@@ -545,22 +545,40 @@ if (data && Array.isArray(data.features)) {
   document.getElementById('tgDrops').addEventListener('change',(e)=>{ const v=document.getElementById('estiloPob').value; showDropsFor(v,e.target.checked); });
   document.getElementById('tgEtiq').addEventListener('change',(e)=>{ const show=e.target.checked; document.querySelectorAll('.drop .lab').forEach(el=> el.style.display=show?'block':'none'); });
 
-  function applyPopStyle(mode){
-    if(!mode){ legendBox.style.display='none'; hideAllDrops(); return; }
-    if(mode==='pob_mpios' && (caches.censusMpiosByCode||caches.censusMpiosByName) && layers.mpios){
-      const get=(p)=> caches.censusMpiosByCode?.get(String(getCode(p)||'').padStart(5,'0')) ?? caches.censusMpiosByName?.get(norm(getName(p)));
-      const br=addDropsFor(layers.mpios,'mpios',get)?.br; if(br) legend('Población (Municipios)', br);
-    } else if(mode==='pob_comunas' && caches.censusComunasByName && layers.comunas){
-      const get=(p)=> caches.censusComunasByName.get(norm(getName(p))); const br=addDropsFor(layers.comunas,'comunas',get)?.br; if(br) legend('Población (Comunas)', br);
-    } else if(mode==='pob_correg' && caches.censusCorregByName && layers.correg){
-      const get=(p)=> caches.censusCorregByName.get(norm(getName(p))); const br=addDropsFor(layers.correg,'correg',get)?.br; if(br) legend('Población (Corregimientos)', br);
-    } else if(mode==='pob_veredas' && caches.censusVeredasByName && layers.veredas){
-      const get=(p)=> caches.censusVeredasByName.get(norm(getName(p))); const br=addDropsFor(layers.veredas,'veredas',get)?.br; if(br) legend('Población (Veredas)', br);
-    } else { legendBox.style.display='none'; }
-    document.getElementById('tgDrops').checked = true;
-    showDropsFor(mode,true);
-    const m=mode.replace('pob_',''); updateKPIs(m); renderTabla(m);
+ function applyPopStyle(mode){
+  const legendBox=document.getElementById('legend');
+  if(!mode){ legendBox.style.display='none'; hideAllDrops(); return; }
+
+  const NORM = s=> s? s.toLowerCase(): s;
+
+  if(mode==='pob_mpios' && (caches.censusMpiosByCode||caches.censusMpiosByName) && layers.mpios){
+    const get=(p)=>{
+      const code = (String((p.COD_MPIO ?? p.MPIO_CCDGO ?? p.DANE ?? p.CODIGO) || '')).padStart(5,'0');
+      const byCode=caches.censusMpiosByCode?.get(code);
+      if(Number.isFinite(byCode)) return byCode;
+      const name=(p.NOM_MPIO ?? p.NOMBRE_MPIO ?? p.MPIO_CNMBR ?? p.NOMBRE || '').toString();
+      return caches.censusMpiosByName?.get(NORM(name));
+    };
+    const br=addDropsFor(layers.mpios,'mpios',get)?.br; if(br) legend('Población (Municipios)', br);
+  } else if(mode==='pob_comunas' && caches.censusComunasByName && layers.comunas){
+    const get=(p)=> caches.censusComunasByName.get(NORM(getName(p)));
+    const br=addDropsFor(layers.comunas,'comunas',get)?.br; if(br) legend('Población (Comunas)', br);
+  } else if(mode==='pob_correg' && caches.censusCorregByName && layers.correg){
+    const get=(p)=> caches.censusCorregByName.get(NORM(getName(p)));
+    const br=addDropsFor(layers.correg,'correg',get)?.br; if(br) legend('Población (Corregimientos)', br);
+  } else if(mode==='pob_veredas' && caches.censusVeredasByName && layers.veredas){
+    const get=(p)=> caches.censusVeredasByName.get(NORM(getName(p)));
+    const br=addDropsFor(layers.veredas,'veredas',get)?.br; if(br) legend('Población (Veredas)', br);
+  } else {
+    legendBox.style.display='none';
+    toast('Censo no disponible para esta capa');
+    return;
   }
+  document.getElementById('tgDrops').checked = true;
+  showDropsFor(mode,true);
+  const m=mode.replace('pob_',''); updateKPIs(m); renderTabla(m);
+}
+
 
   document.getElementById('tabModo').addEventListener('change',(e)=>{ renderTabla(e.target.value); updateKPIs(e.target.value); });
   document.getElementById('btnCSVTabla').addEventListener('click',()=>downloadTablaCSV());
