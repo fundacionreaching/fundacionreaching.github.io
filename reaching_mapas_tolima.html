@@ -435,22 +435,10 @@ if (data && Array.isArray(data.features)) {
     }catch(e){ Diag.log(`${label} — ${e.message}`, false); return null; }
   }
 async function loadAll()const loader = document.getElementById('loader');
-const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000);
-if(loader) loader.style.display='flex';
-const loader = document.getElementById('loader');
 const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000); // 14 s
 if(loader) loader.style.display='flex';
-const loader = document.getElementById('loader');
-const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000); // 14 s
-if(loader) loader.style.display='flex';
-{const loader = document.getElementById('loader');
-const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000);
-if(loader) loader.style.display='flex';
-
-  const loader = document.getElementById('loader');
-  // cierre forzado del loader a los 14s (aunque algo falle)
-  const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000);
- 
+clearTimeout(softClose);
+if(loader) loader.style.display='none';
 
   try{
     if(loader) loader.style.display='flex';
