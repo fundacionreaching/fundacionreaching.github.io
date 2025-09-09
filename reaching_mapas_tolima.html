@@ -458,7 +458,20 @@ const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14
 if(loader) loader.style.display='flex';
 clearTimeout(softClose);
 if(loader) loader.style.display='none';
-
+  });
+  return { byCode, byName };
+}// --- Adaptador ArcGIS (DANE) para censo municipal ---
+if (data && Array.isArray(data.features)) {
+  const byCode = new Map(), byName = new Map();
+  data.features.forEach(f=>{
+    const p = f.attributes || f;
+    const code = String(p.MPIO_CCDGO).padStart(5,'0');
+    const name = String(p.MPIO_CNMBR||'').toLowerCase();
+    const val  = Number(p.CL0_TT_PERSN);
+    if (Number.isFinite(val)) { byCode.set(code,val); byName.set(name,val); }
+  });
+  return { byCode, byName };
+}
   try{
     if(loader) loader.style.display='flex';
     // TODO: aquí va tu carga real (comunas, correg, veredas, mpios, censos…)
