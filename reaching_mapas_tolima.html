@@ -138,21 +138,14 @@
       <div id="loader">Cargando capas…</div>
 
     </section>
-   <script type="application/json" id="censo_mpios">if (data?.features) {
-  const byCode = new Map(), byName = new Map();
-  data.features.forEach(f=>{
-    const p = f.attributes || f;
-    const code = String(p.MPIO_CCDGO).padStart(5,'0');
-    const name = String(p.MPIO_CNMBR||'').toLowerCase();
-    const val  = Number(p.CL0_TT_PERSN);
-    if (Number.isFinite(val)) { byCode.set(code,val); byName.set(name,val); }
-  });
-  return { byCode, byName };
-<script type="application/json" id="censo_mpios">
+   <script type="application/json" id="censo_mpios">if <script type="application/json" id="censo_mpios">
 [
   {"COD_MPIO":"73001","NOM_MPIO":"Ibagué","POB_2018":492554},
   {"COD_MPIO":"73024","NOM_MPIO":"Alpujarra","POB_2018":8473},
   {"COD_MPIO":"73026","NOM_MPIO":"Alvarado","POB_2018":14581}
+]
+</script>
+}
 ]
 </script>
 
