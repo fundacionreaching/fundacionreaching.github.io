@@ -271,6 +271,42 @@ const SRC = {
   }
 };
 
+
+  // === CENSO
+  censo: {
+    comunas: [
+      "./ibague_comunas_censo.json",
+      "./data/ibague_comunas_censo.json",
+      "https://fundacionreaching.github.io/ibague_comunas_censo.json",
+      "https://fundacionreaching.github.io/data/ibague_comunas_censo.json"
+    ],
+    correg: [
+      // pon primero el que sí exista en tu repo
+      "./corregimientos_ibague.json",
+      "./ibague_correg_censo.json",
+      "./data/ibague_correg_censo.json",
+      "https://fundacionreaching.github.io/corregimientos_ibague.json",
+      "https://fundacionreaching.github.io/ibague_correg_censo.json",
+      "https://fundacionreaching.github.io/data/ibague_correg_censo.json"
+    ],
+    veredas: [
+      "./ibague_veredas_censo.json",
+      "./data/ibague_veredas_censo.json",
+      "https://fundacionreaching.github.io/ibague_veredas_censo.json",
+      "https://fundacionreaching.github.io/data/ibague_veredas_censo.json"
+    ],
+    mpios: [
+      // DANE (Total personas CNPV 2018 por municipio de Tolima)
+      "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json",
+      // tus archivos locales (si los subes)
+      "./data/tolima_censo.json",
+      "./municipios_censo.json",
+      "https://fundacionreaching.github.io/data/tolima_censo.json",
+      "https://fundacionreaching.github.io/municipios_censo.json"
+    ]
+  }
+};
+
   // === Gotas
   function addDropsFor(group, key, getVal){
     if(drops[key]){ map.removeLayer(drops[key]); drops[key]=null; }
