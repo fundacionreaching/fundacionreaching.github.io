@@ -469,6 +469,21 @@ async function loadAll(){
   }finally{
     clearTimeout(softClose);
     if(loader) loader.style.display='none';
+
+   window.addEventListener('DOMContentLoaded', ()=>{
+  Diag.el = document.getElementById('diag');
+  Diag.log('JS listo ✔');
+  loadAll().then(()=>{
+    const sel=document.getElementById('estiloPob');
+    if(sel && !sel.disabled){
+      sel.value='pob_mpios';
+      sel.dispatchEvent(new Event('change'));
+      const chk=document.getElementById('tgDrops');
+      if(chk) chk.checked=true;
+    }
+  });
+});
+
   }
 }
 
