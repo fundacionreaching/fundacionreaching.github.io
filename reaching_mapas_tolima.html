@@ -477,9 +477,18 @@ if(loader) loader.style.display='none';
   }
 });
 
+}// --- Adaptador ArcGIS (DANE) para censo municipal ---
+if (data && Array.isArray(data.features)) {
+  const byCode = new Map(), byName = new Map();
+  data.features.forEach(f=>{
+    const p = f.attributes || f;   // ArcGIS usa 'attributes'
+    const code = String(p.MPIO_CCDGO).padStart(5,'0');
+    const name = String(p.MPIO_CNMBR||'').toLowerCase();
+    const val  = Number(p.CL0_TT_PERSN); // Total personas (CNPV 2018)
+    if (Number.isFinite(val)) { byCode.set(code,val); byName.set(name,val); }
+  });
+  return { byCode, byName };
 }
-
-
     try{
       const comunas=await trySources(SRC.comunas,'Comunas (GeoJSON)');
       if(comunas){ const fc=onlyPolys(asFC(comunas)); layers.comunas=L.geoJSON(fc,{style:baseStyle('#6bd1ff')}).addTo(map); attachInteractive(layers.comunas,'Comuna'); loadedCount+=layers.comunas.getLayers().length; }
