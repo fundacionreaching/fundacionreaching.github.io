@@ -385,34 +385,93 @@ if (data && Array.isArray(data.features)) {
   }
 
   // === CARGA
-// === CARGA FLEXIBLE CENSO MUNICIPAL (JSON/CSV/ArcGIS + embebido) ===
-function parseCSV(text){
-  const lines = text.trim().split(/\r?\n/);
-  if(!lines.length) return [];
-  const head = [...lines.shift().matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)]
-    .map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"').trim());
-  return lines.map(l=>{
-    const cells = [...l.matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)]
-      .map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"'));
-    const row={}; head.forEach((h,i)=> row[h]=cells[i]); return row;
-  });
+async function loadAll(){
+  const loader = document.getElementById('loader');
+  const DiagBox = document.getElementById('diag');
+  const log = (ok,msg)=>{ if(!DiagBox) return; const d=document.createElement('div'); d.textContent=(ok?'✅ ':'❌ ')+msg; DiagBox.appendChild(d); };
+
+  // 14s para cerrar loader aunque alguna URL falle
+  const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000);
+
+  try{
+    if(loader) loader.style.display='flex';
+
+    // 1) Comunas
+    const comunas = await trySources(SRC.comunas,'Comunas (GeoJSON)');
+    if (comunas){
+      const fc = onlyPolys(asFC(comunas));
+      layers.comunas = L.geoJSON(fc,{style: baseStyle('#6bd1ff')}).addTo(map);
+      attachInteractive(layers.comunas,'Comuna');
+      log(true, `Comunas: ${layers.comunas.getLayers().length} ✔`);
+    }
+
+    // 2) Corregimientos
+    const correg = await trySources(SRC.correg,'Corregimientos (GeoJSON)');
+    if (correg){
+      const fc = onlyPolys(asFC(correg));
+      layers.correg = L.geoJSON(fc,{style: baseStyle('#ffe08a')}).addTo(map);
+      attachInteractive(layers.correg,'Correg.');
+      log(true, `Correg.: ${layers.correg.getLayers().length} ✔`);
+    }
+
+    // 3) Veredas
+    const veredas = await trySources(SRC.veredas,'Veredas (GeoJSON)');
+    if (veredas){
+      const fc = onlyPolys(asFC(veredas));
+      layers.veredas = L.geoJSON(fc,{style: baseStyle('#b78cff')}).addTo(map);
+      attachInteractive(layers.veredas,'Vereda');
+      log(true, `Veredas: ${layers.veredas.getLayers().length} ✔`);
+    }
+
+    // 4) Municipios (GeoJSON) → DANE o respaldo nacional filtrado a Tolima=73
+    const mpiosRaw = await trySources(SRC.mpios,'Municipios (GeoJSON)');
+    if (mpiosRaw){
+      const all = asFC(mpiosRaw);
+      // filtra a Tolima (73) por código o por nombre de dpto:
+      const tolima = {
+        type:'FeatureCollection',
+        features: (all.features||[]).filter(f=>{
+          const p=f?.properties||{};
+          const cod = (p.COD_DPTO ?? p.DPTO_CCDGO ?? p.cod_dpto ?? p.CODIGO_DPTO ?? p.COD_DPTO_CCNCT ?? p.DPTO);
+          const dpt = (p.NOM_DPTO ?? p.DEPTO ?? p.NOMBRE_DPT ?? p.NOMBRE_DEPT ?? p.dpto);
+          return String(cod||'').replace(/^0+/,'')==='73' || String(dpt||'').toLowerCase()==='tolima';
+        })
+      };
+      const fc = onlyPolys(tolima);
+      layers.mpios = L.geoJSON(fc,{style: baseStyle('#43d17a')}).addTo(map);
+      attachInteractive(layers.mpios,'Municipio');
+      log(true, `Municipios (Tolima): ${layers.mpios.getLayers().length} ✔`);
+    }
+
+    // 5) Censos (usa tus loaders existentes; mpios con función flexible)
+    caches.censusComunasByName = await loadCensoByName(SRC.censo.comunas,'Censo comunas', KEYS.comuna);
+    caches.censusCorregByName  = await loadCensoByName(SRC.censo.correg, 'Censo correg.',  KEYS.correg);
+    caches.censusVeredasByName = await loadCensoByName(SRC.censo.veredas,'Censo veredas', KEYS.vereda);
+
+    // — Municipios: intenta URLs {JSON/CSV/ArcGIS} y si no, #censo_mpios embebido —
+    const mpioCenso = await loadCensoMpiosFlex(SRC.censo.mpios, 'Censo mpios');
+    caches.censusMpiosByCode = mpioCenso.byCode;
+    caches.censusMpiosByName = mpioCenso.byName;
+
+    // 6) Índice búsqueda y habilitar estilo
+    window._idx=[];
+    [layers.comunas,layers.correg,layers.veredas,layers.mpios].forEach(g=>g&&g.eachLayer(l=>{
+      window._idx.push({name:getName(l.feature?.properties||{}), bounds:l.getBounds()});
+    }));
+    Diag.log(`Índice de búsqueda: ${_idx.length} elementos ✔`);
+
+    const anyCenso = caches.censusComunasByName||caches.censusCorregByName||caches.censusVeredasByName||caches.censusMpiosByCode||caches.censusMpiosByName;
+    const combo=document.getElementById('estiloPob');
+    if(combo){ combo.disabled = !anyCenso; document.getElementById('statusCenso').textContent = anyCenso? 'Censo: listo':'Censo: no detectado'; }
+
+  }catch(e){
+    log(false, 'Fallo general: '+(e.message||e));
+  }finally{
+    clearTimeout(softClose);
+    if(loader) loader.style.display='none';
+  }
 }
 
-async function loadCensoMpiosFlex(urls,label){
-  const byCode=new Map(), byName=new Map();
-
-  // 0) Embebido temporal (#censo_mpios)
-  try{
-    const emb=document.getElementById('censo_mpios');
-    if(emb && emb.textContent.trim()){
-      const arr=JSON.parse(emb.textContent);
-      arr.forEach(r=>{
-        const code = r.COD_MPIO ? String(r.COD_MPIO).padStart(5,'0')
-                    : r.codigo   ? String(r.codigo).padStart(5,'0')
-                    : null;
-        const name = r.NOM_MPIO || r.municipio || null;
-        const val  = Number(String(r.POB_2018 ?? r.POB_TOTAL ?? r.poblacion ?? r.POB).replace(/[^0-9.]/g,''));
-        if(Number.isFinite(val)){ if(code) byCode.set(code,val); if(name) byName.set(name.toLowerCase(),val); }
       });
       if(byCode.size || byName.size){
         Diag.log(`${label} (embebido) ✔ (codes:${byCode.size} / names:${byName.size})`);
