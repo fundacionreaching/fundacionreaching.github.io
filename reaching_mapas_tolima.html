@@ -376,71 +376,106 @@ if (data && Array.isArray(data.features)) {
   }
 
   // === CARGA
- const loader = document.getElementById('loader');
-const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000); // 14 s
-if(loader) loader.style.display='flex';
-
-  const loader=document.getElementById('loader'); const countCaps=document.getElementById('countCaps');
-
-  async function loadCensoByName(urls,label,nameKeysArr){
-    try{
-      let data=null; for(const u of urls){ try{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; data=await r.json(); Diag.log(`${label}: ${u} ✔`); break; }catch(_){ Diag.log(`${label}: ${u} — 404`, false);} }
-      if(!data) return null;
-      const sample=Array.isArray(data)? data[0]: data; const nameKey=(pickKey(sample,nameKeysArr)||nameKeysArr[0]); const popKey=(pickKey(sample,KEYS.pop)||KEYS.pop[0]);
-      const M=new Map(); (Array.isArray(data)? data : Object.values(data)).forEach(row=>{ const nm=norm(row[nameKey]); const val=Number(String(row[popKey]).replace(/[^0-9.]/g,'')); if(nm && Number.isFinite(val)) M.set(nm,val); });
-      Diag.log(`${label} ✔ (${M.size})`); return M.size?M:null;
-    }catch(e){ Diag.log(`${label} — ${e.message}`, false); return null; }
-  }
-async function loadAll()const loader = document.getElementById('loader');
-const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000); // 14 s
-if(loader) loader.style.display='flex';
-clearTimeout(softClose);
-if(loader) loader.style.display='none';
+// === CARGA FLEXIBLE CENSO MUNICIPAL (JSON/CSV/ArcGIS + embebido) ===
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/);
+  if(!lines.length) return [];
+  const head = [...lines.shift().matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)]
+    .map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"').trim());
+  return lines.map(l=>{
+    const cells = [...l.matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)]
+      .map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"'));
+    const row={}; head.forEach((h,i)=> row[h]=cells[i]); return row;
   });
-  return { byCode, byName };
-}// --- Adaptador ArcGIS (DANE) para censo municipal ---
-if (data && Array.isArray(data.features)) {
-  const byCode = new Map(), byName = new Map();
-  data.features.forEach(f=>{
-    const p = f.attributes || f;
-    const code = String(p.MPIO_CCDGO).padStart(5,'0');
-    const name = String(p.MPIO_CNMBR||'').toLowerCase();
-    const val  = Number(p.CL0_TT_PERSN);
-    if (Number.isFinite(val)) { byCode.set(code,val); byName.set(name,val); }
-  });
-  return { byCode, byName };
 }
+
+async function loadCensoMpiosFlex(urls,label){
+  const byCode=new Map(), byName=new Map();
+
+  // 0) Embebido temporal (#censo_mpios)
   try{
-    if(loader) loader.style.display='flex';
-    // TODO: aquí va tu carga real (comunas, correg, veredas, mpios, censos…)
-    // ej:
-    // const comunas = await trySources(SRC.comunas,'Comunas (GeoJSON)');
-    // if(comunas){ /* crear capa, attachInteractive, etc. */ }
-  }catch(e){
-    const el = document.getElementById('diag'); 
-    if(el) el.innerHTML += '❌ Fallo de carga: '+(e.message||e);
-  }finally{
-    clearTimeout(softClose);
-    if(loader) loader.style.display='none';
-   clearTimeout(softClose);
-if(loader) loader.style.display='none';
-   clearTimeout(softClose);
-if(loader) loader.style.display='none';
+    const emb=document.getElementById('censo_mpios');
+    if(emb && emb.textContent.trim()){
+      const arr=JSON.parse(emb.textContent);
+      arr.forEach(r=>{
+        const code = r.COD_MPIO ? String(r.COD_MPIO).padStart(5,'0')
+                    : r.codigo   ? String(r.codigo).padStart(5,'0')
+                    : null;
+        const name = r.NOM_MPIO || r.municipio || null;
+        const val  = Number(String(r.POB_2018 ?? r.POB_TOTAL ?? r.poblacion ?? r.POB).replace(/[^0-9.]/g,''));
+        if(Number.isFinite(val)){ if(code) byCode.set(code,val); if(name) byName.set(name.toLowerCase(),val); }
+      });
+      if(byCode.size || byName.size){
+        Diag.log(`${label} (embebido) ✔ (codes:${byCode.size} / names:${byName.size})`);
+        return {byCode,byName};
+      }
+    }
+  }catch(e){ Diag.log(`${label} (embebido) — ${e.message}`, false); }
+
+  // 1) URLs (CSV / JSON / ArcGIS features)
+  for(const u of urls||[]){
+    try{
+      const r=await fetch(u,{cache:'no-store'});
+      if(!r.ok) throw new Error(r.status+' '+r.statusText);
+      const ct=(r.headers.get('content-type')||'').toLowerCase();
+
+      // 1a) CSV
+      if(ct.includes('text/csv') || u.toLowerCase().includes('.csv') || u.toLowerCase().includes('format=csv')){
+        const rows=parseCSV(await r.text());
+        if(!rows.length) throw new Error('CSV sin filas');
+        const sample=rows[0]||{};
+        const codeKey=Object.keys(sample).find(k=>/cod.*mpio|mpio|dane|codigo/i.test(k))||'COD_MPIO';
+        const nameKey=Object.keys(sample).find(k=>/nom|nombre/i.test(k))||'NOM_MPIO';
+        const popKey =Object.keys(sample).find(k=>/pob|total|pobl/i.test(k))||'POB_2018';
+        rows.forEach(row=>{
+          const code=row[codeKey]!=null? String(row[codeKey]).padStart(5,'0'):null;
+          const name=row[nameKey]!=null? String(row[nameKey]).trim():null;
+          const val =Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+          if(Number.isFinite(val)){ if(code) byCode.set(code,val); if(name) byName.set(name.toLowerCase(),val); }
+        });
+      } else {
+        // 1b) JSON (plano o ArcGIS)
+        const t=await r.text(); let data; try{ data=JSON.parse(t); }catch{ data=JSON.parse(t.replace(/^﻿/,'')); }
+
+        // --- Adaptador ArcGIS (DANE) ---
+        if(data && Array.isArray(data.features)){
+          data.features.forEach(f=>{
+            const p=f.attributes||f;
+            const code=String(p.MPIO_CCDGO).padStart(5,'0');
+            const name=String(p.MPIO_CNMBR||'').toLowerCase();
+            const val =Number(p.CL0_TT_PERSN);
+            if(Number.isFinite(val)){ byCode.set(code,val); byName.set(name,val); }
+          });
+        } else {
+          // 1c) JSON plano (array u objeto)
+          const rows=Array.isArray(data)? data : Object.values(data||{});
+          const sample=rows[0]||{};
+          const codeKey=Object.keys(sample).find(k=>/cod.*mpio|mpio|dane|codigo/i.test(k))||'COD_MPIO';
+          const nameKey=Object.keys(sample).find(k=>/nom|nombre/i.test(k))||'NOM_MPIO';
+          const popKey =Object.keys(sample).find(k=>/pob|total|pobl/i.test(k))||'POB_2018';
+          rows.forEach(row=>{
+            const code=row[codeKey]!=null? String(row[codeKey]).padStart(5,'0'):null;
+            const name=row[nameKey]!=null? String(row[nameKey]).trim():null;
+            const val =Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+            if(Number.isFinite(val)){ if(code) byCode.set(code,val); if(name) byName.set(name.toLowerCase(),val); }
+          });
+        }
+      }
+
+      if(byCode.size || byName.size){
+        Diag.log(`${label}: ${u} ✔ (codes:${byCode.size} / names:${byName.size})`);
+        return {byCode,byName};
+      } else {
+        throw new Error('sin datos válidos');
+      }
+    }catch(e){
+      Diag.log(`${label}: ${u} — ${e.message}`, false);
+    }
   }
- loadAll()const loader = document.getElementById('loader');
-const softClose = setTimeout(()=>{ if(loader) loader.style.display='none'; }, 14000); // 14 s
-if(loader) loader.style.display='flex';
-.then(()=>{
-  const sel = document.getElementById('estiloPob');
-  if(!sel.disabled){
-    sel.value='pob_mpios';
-    sel.dispatchEvent(new Event('change'));
-    const chk=document.getElementById('tgDrops');
-    chk.checked=true;
-   clearTimeout(softClose);
-if(loader) loader.style.display='none';
-   clearTimeout(softClose);
-if(loader) loader.style.display='none';
+
+  return {byCode:null, byName:null};
+}
+
 
   }
 });
