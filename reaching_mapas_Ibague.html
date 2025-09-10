@@ -171,7 +171,13 @@
   // Fallbacks CSS/JS si no cargan locales
   (function ensureLeafletAssets(){
     function add(css){ document.head.appendChild(css); }
-    function addJS(src){ const s=document.createElement('script'); s.src=src; document.body.appendChild(s); }
+    function addJS(src){ const s=document.createElement('script'); s.src=src; document.body.appendChild(s); }mpios: [
+  // 1º: respaldo que ya funcionó (rápido y estable)
+  "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson",
+  // 2º: DANE (si está disponible)
+  "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson"
+],
+
     const probe=document.createElement('div'); probe.className='leaflet-container'; probe.style.position='absolute'; probe.style.left='-9999px'; document.body.appendChild(probe);
     setTimeout(()=>{
       const cs=getComputedStyle(probe);
