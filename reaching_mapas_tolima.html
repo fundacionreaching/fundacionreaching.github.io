@@ -192,11 +192,8 @@
   const KEYS = {
     name: ["NOMBRE","NOM_MPIO","NOMBRE_MPIO","MPIO_CNMBR","COMUNA","NOM_COMUNA","CORREGIMIENTO","NOM_CORR","VEREDA","NOM_VEREDA","NOM_COM","NOMBREGEO","DESCRIPCION","nombre"],
     comuna: ["COMUNA","NOM_COMUNA","COMUNA_NOM","nombre_comuna","comuna"],
-    correg: [
-  "CORREGIMIENTO","NOM_CORR","CORREG",
-  "NOM_CORREGIMIENTO","NOMBRE_CORREGIMIENTO","NOMBRE_CORREG",
-  "CORREG_NOM","nombre_correg","corregimiento","corr_nom","nom_corr"
-], vereda: ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"],
+    correg: ["CORREGIMIENTO","NOM_CORR","CORREG","nombre_correg","corregimiento"],
+    vereda: ["VEREDA","NOM_VEREDA","NOMBRE","NOMBREGEO","DESCRIPCION","nombre"],
     code: ["MPIO_CCDGO","COD_DANE","cod_dane","MPIO","CODIGO","codigo","DANE","mpio_cod","codmpio","COD_MPIO"],
     pop : ["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total"]
   };
@@ -365,76 +362,15 @@
     return {byCode:null, byName:null};
   }
 
- async function loadCensoByName(urls,label,nameKeysArr){
-  const unwrap = (data)=>{
-    if (!data) return null;
-    if (Array.isArray(data)) return data;
-    // Intenta encontrar el arreglo real dentro de envolturas comunes
-    const cand = ["data","rows","registros","items","lista","values","list","features"];
-    for (const k of cand){
-      const v = data[k];
-      if (Array.isArray(v)) return v;
-      // ArcGIS features con attributes (por si alguien puso un censo así)
-      if (k==="features" && Array.isArray(v)) return v.map(f=> f.attributes || f);
-    }
-    // Si no hay contenedor, intenta con los valores del objeto
-    const vals = Object.values(data);
-    // Si los valores son arrays y el primero tiene objetos → úsalos
-    if (Array.isArray(vals[0]) && vals[0].length && typeof vals[0][0]==="object") return vals[0];
-    // Si los valores ya son objetos tipo fila
-    if (vals.length && typeof vals[0]==="object") return vals;
-    return null;
-  };
-
-  try{
-    let data=null;
-    for(const u of urls){
-      try{
-        const r=await fetch(u,{cache:'no-store'});
-        if(!r.ok) throw 0;
-        const t=await r.text(); try{ data=JSON.parse(t); }catch{ data=JSON.parse(t.replace(/^﻿/,'')); }
-        Diag.log(`${label}: ${u} ✔`);
-        break;
-      }catch(_){ Diag.log(`${label}: ${u} — 404`, false); }
-    }
-    if(!data) return null;
-
-    const rows = unwrap(data) || [];
-    if(!rows.length){ Diag.log(`${label} — sin filas detectadas`, false); return null; }
-
-    // Detecta llaves
-    const sample = rows[0] || {};
-    const pickKey=(obj,arr)=>{ for(const k of arr) if(obj&&Object.hasOwn(obj,k)) return k; for(const k in obj||{}) if(arr.some(a=>k.toLowerCase().includes(a.toLowerCase()))) return k; return null; };
-
-    const nameKey =
-      pickKey(sample,nameKeysArr) ||
-      Object.keys(sample).find(k=>/correg|comuna|vereda|nom|nombre/i.test(k)) ||
-      Object.keys(sample)[0];
-
-    const popCandidates = ["POB_TOTAL","poblacion","POBLACION","TOTAL","POB_2018","POB","total","hab","habitantes"];
-    const popKey =
-      pickKey(sample,popCandidates) ||
-      Object.keys(sample).find(k=>/pob|habit|total/i.test(k)) ||
-      popCandidates[0];
-
-    const norm=(s)=> s? String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim() : null;
-
-    const M=new Map();
-    rows.forEach(row=>{
-      const nm = norm(row[nameKey]);
-      // Tolerante a formatos "12.345", "12,345", "12 345"
-      const val= Number(String(row[popKey]).replace(/[^0-9]/g,''));
-      if(nm && Number.isFinite(val)) M.set(nm,val);
-    });
-
-    Diag.log(`${label} ✔ (${M.size})`);
-    return M.size? M : null;
-  }catch(e){
-    Diag.log(`${label} — ${e.message}`, false);
-    return null;
+  async function loadCensoByName(urls,label,nameKeysArr){
+    try{
+      let data=null; for(const u of urls){ try{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok) throw 0; data=await r.json(); Diag.log(`${label}: ${u} ✔`); break; }catch(_){ Diag.log(`${label}: ${u} — 404`, false);} }
+      if(!data) return null;
+      const sample=Array.isArray(data)? data[0]: data; const nameKey=(pickKey(sample,nameKeysArr)||nameKeysArr[0]); const popKey=(pickKey(sample,KEYS.pop)||KEYS.pop[0]);
+      const M=new Map(); (Array.isArray(data)? data : Object.values(data)).forEach(row=>{ const nm=norm(row[nameKey]); const val=Number(String(row[popKey]).replace(/[^0-9.]/g,'')); if(nm && Number.isFinite(val)) M.set(nm,val); });
+      Diag.log(`${label} ✔ (${M.size})`); return M.size?M:null;
+    }catch(e){ Diag.log(`${label} — ${e.message}`, false); return null; }
   }
-}
-
 
   // === Carga principal (antibloqueo)
   async function loadAll(){
@@ -481,15 +417,6 @@
     }finally{
       clearTimeout(softClose);
       if(loader) loader.style.display='none';
-      // Desactivar opciones de estilo donde NO hay censo:
-const optCom = document.querySelector('#estiloPob option[value="pob_comunas"]');
-const optCor = document.querySelector('#estiloPob option[value="pob_correg"]');
-const optVer = document.querySelector('#estiloPob option[value="pob_veredas"]');
-if(optCom) optCom.disabled = !caches.censusComunasByName;
-if(optCor) optCor.disabled = !caches.censusCorregByName;
-if(optVer) optVer.disabled = !caches.censusVeredasByName;
-
-      
     }
   }
 
