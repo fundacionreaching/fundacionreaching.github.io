@@ -180,19 +180,7 @@
         "https://fundacionreaching.github.io/ibague_veredas_censo.json",
         "https://fundacionreaching.github.io/data/ibague_veredas_censo.json"
       ],
-       mpios: [
-  // 1º: tu archivo que YA carga (47/47)
-  "./municipios_censo.json",
-  // 2º: (opcional) tu copia en /data si la subes
-  "./data/tolima_censo.json",
-  "https://fundacionreaching.github.io/municipios_censo.json",
-  "https://fundacionreaching.github.io/data/tolima_censo.json",
-  // 3º: DANE como último respaldo
-  "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
-],
-
-      ]
-    }
+     
   };
 
   // === Claves y utilidades
@@ -314,7 +302,17 @@
     const byCode=new Map(), byName=new Map();
     // Embebido
     try{
-      const emb=document.getElementById('censo_mpios');
+      const emb=document.getElementById('censo_mpios');mpios: [
+  // 1º: tu archivo que YA carga (47/47)
+  "./municipios_censo.json",
+  // 2º: (opcional) tu copia en /data si la subes
+  "./data/tolima_censo.json",
+  "https://fundacionreaching.github.io/municipios_censo.json",
+  "https://fundacionreaching.github.io/data/tolima_censo.json",
+  // 3º: DANE como último respaldo
+  "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
+],
+
       if(emb && emb.textContent.trim()){
         const arr=JSON.parse(emb.textContent);
         arr.forEach(r=>{
