@@ -141,6 +141,11 @@
   const Diag = { el:null, log(m,ok=true){ const d=document.createElement('div'); d.textContent=(ok?'✅ ':'❌ ')+m; this.el&&this.el.appendChild(d); } };
   window.onerror=(m,src,l,c)=>{ const el=document.getElementById('jsErr'); el.textContent="⚠️ Script: "+m+" ("+l+":"+c+")"; };
 
+  document.getElementById('btnAnuario')?.addEventListener('click', ()=>{
+  window.open('https://cimpp.ibague.gov.co/wp-content/uploads/2020/01/Anuario-Municipal-Ibague-Version-1.18.pdf','_blank');
+});
+
+
   // === RUTAS ROBUSTAS
   const SRC = {
     comunas: [
