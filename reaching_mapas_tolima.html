@@ -340,6 +340,17 @@
       const cells = [...l.matchAll(/("([^"]|"")*"|[^,]+)(?=,|$)/g)].map(m=>m[0].replace(/^"|"$/g,'').replace(/""/g,'"'));
       const row={}; head.forEach((h,i)=> row[h]=cells[i]); return row;
     });
+console.log('Comunas:', layers.comunas?.getLayers().length);
+console.log('Correg.:', layers.correg?.getLayers().length);
+console.log('Veredas:', layers.veredas?.getLayers().length);
+console.log('Mpios:', layers.mpios?.getLayers().length);
+console.log('Censo mpios (codes):', caches.censusMpiosByCode?.size);
+console.log('Censo comunas:', caches.censusComunasByName?.size);
+console.log('Censo correg.:', caches.censusCorregByName?.size);
+console.log('Censo veredas:', caches.censusVeredasByName?.size);
+
+
+    
   }
   async function loadCensoMpiosFlex(urls,label){
     const byCode=new Map(), byName=new Map();
