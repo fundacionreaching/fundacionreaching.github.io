@@ -55,8 +55,6 @@
     </div>
   </header>
   
-
-
   <div class="layout">
     <aside>
       <div class="group">
@@ -190,7 +188,17 @@
   "https://fundacionreaching.github.io/data/tolima_censo.json",
   // 3º: DANE al final como respaldo
   "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
-],
+],censo: {
+  // … comunas / correg / veredas …
+  mpios: [
+    "./municipios_censo.json",
+    "./data/tolima_censo.json",
+    "https://fundacionreaching.github.io/municipios_censo.json",
+    "https://fundacionreaching.github.io/data/tolima_censo.json",
+    "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
+  ]
+}
+
 
       ],
      
