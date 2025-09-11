@@ -197,9 +197,6 @@
     "https://fundacionreaching.github.io/data/tolima_censo.json",
     "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
   ]
-}
-
-
       ],
      
   };
@@ -240,9 +237,13 @@
     legendEl.innerHTML=html; legendEl.style.display='block'; };
 
   // === Fetch + helpers
-  const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),45000);
-    try{ const r=await fetch(u,{cache:'no-store',signal:ctrl.signal}); if(!r.ok) throw new Error(r.status+" "+r.statusText); const t=await r.text(); try{return JSON.parse(t)}catch{return JSON.parse(t.replace(/^﻿/,''))} }
-    finally{ clearTimeout(to); } };
+ const fetchJson = async (u) => {
+  const ctrl = new AbortController();
+  const to = setTimeout(()=>ctrl.abort(), 12000);
+  try {
+    const r = await fetch(u, { cache:'no-store', signal: ctrl.signal });
+    if (!r.ok) throw
+
 
   const trySources = async (list, label) => {
   let lastErr = null;
