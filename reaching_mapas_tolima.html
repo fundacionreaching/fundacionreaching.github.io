@@ -243,6 +243,7 @@
   const fetchJson=async(u)=>{ const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),45000);
     try{ const r=await fetch(u,{cache:'no-store',signal:ctrl.signal}); if(!r.ok) throw new Error(r.status+" "+r.statusText); const t=await r.text(); try{return JSON.parse(t)}catch{return JSON.parse(t.replace(/^﻿/,''))} }
     finally{ clearTimeout(to); } };
+
   const trySources = async (list, label) => {
   let lastErr = null;
   for (const u of list) {
@@ -252,7 +253,12 @@
       return d;
     } catch (e) {
       lastErr = `${u} — ${e.message}`;
-      // no registramos en rojo todavía; seguimos probando las siguientes
+      // seguimos probando, sin pintar en rojo aún
+    }
+  }
+  if (lastErr) Diag.log(`${label}: ${lastErr}`, false); // solo si TODAS fallan
+  return null;
+};
     }
   }
   if (lastErr) Diag.log(`${label}: ${lastErr}`, false);
