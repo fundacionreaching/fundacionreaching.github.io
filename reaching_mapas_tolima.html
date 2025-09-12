@@ -143,6 +143,29 @@
     const el=document.getElementById('jsErr');
     if(el) el.textContent = "⚠️ Promesa: " + (ev.reason?.message || String(ev.reason));
 
+    
+  });document.getElementById('btnCSVTodo')?.addEventListener('click', ()=> descargarTodoCSV());
+
+function descargarTodoCSV(){
+  const grupos = [
+    { key:'comunas',  titulo:'Comunas' },
+    { key:'correg',   titulo:'Corregimientos' },
+    { key:'veredas',  titulo:'Veredas' }
+  ];
+  grupos.forEach(g=>{
+    const list = collectList(g.key); // usa tu función existente
+    if(!list.length){ console.warn(`Sin datos para ${g.titulo}`); return; }
+    const total = list.reduce((s,x)=>s+x.pop,0) || 0;
+    const rows = [[g.titulo,'poblacion','porc']];
+    list.forEach(x=> rows.push([x.name, x.pop, (total? (100*x.pop/total):0).toFixed(2)+'%']));
+    rows.push(['TOTAL', total, '100%']);
+    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download = `desglose_${g.key}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
 
     document.getElementById('tgComunas').onclick = ()=>{
   safeToggle(layers.comunas,'Comunas');
