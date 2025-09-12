@@ -157,7 +157,21 @@
 }
 document.getElementById('dlJSONVer')?.addEventListener('click', ()=> 
   downloadJSONByLayer(layers.veredas,'Veredas','ibague_veredas_censo.json','VEREDA')
+);function downloadJSONByLayer(layer, label, filename, nameCol){
+  if(!layer){ alert(`Primero carguen ${label}.`); return; }
+  const rows=[];
+  layer.eachLayer(l=>{
+    const p=l.feature?.properties||{};
+    const nombre = Object.values(p)[0];
+    rows.push({ [nameCol]: String(nombre), "POB_2018": "" });
+  });
+  const blob=new Blob([JSON.stringify(rows, null, 2)],{type:'application/json;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+}
+document.getElementById('dlJSONVer')?.addEventListener('click', ()=> 
+  downloadJSONByLayer(layers.veredas,'Veredas','ibague_veredas_censo.json','VEREDA')
 );
+
 
 
   const Diag = { el:null, log(m,ok=true){ const d=document.createElement('div'); d.textContent=(ok?'✅ ':'❌ ')+m; this.el&&this.el.appendChild(d); } };
