@@ -143,6 +143,34 @@
     const el=document.getElementById('jsErr');
     if(el) el.textContent = "⚠️ Promesa: " + (ev.reason?.message || String(ev.reason));
 
+
+    document.getElementById('tgComunas').onclick = ()=>{
+  safeToggle(layers.comunas,'Comunas');
+  const sel=document.getElementById('estiloPob');
+  if(caches.censusComunasByName){ sel.value='pob_comunas'; sel.dispatchEvent(new Event('change')); }
+  else toast('Censo de Comunas no disponible');
+};
+document.getElementById('tgCorreg').onclick = ()=>{
+  safeToggle(layers.correg,'Corregimientos');
+  const sel=document.getElementById('estiloPob');
+  if(caches.censusCorregByName){ sel.value='pob_correg'; sel.dispatchEvent(new Event('change')); }
+  else toast('Censo de Corregimientos no disponible');
+};
+document.getElementById('tgVeredas').onclick = ()=>{
+  safeToggle(layers.veredas,'Veredas');
+  const sel=document.getElementById('estiloPob');
+  if(caches.censusVeredasByName){ sel.value='pob_veredas'; sel.dispatchEvent(new Event('change')); }
+  else toast('Censo de Veredas no disponible');
+};
+document.getElementById('tgMpios').onclick = ()=>{
+  safeToggle(layers.mpios,'Municipios');
+  const sel=document.getElementById('estiloPob');
+  if(caches.censusMpiosByCode || caches.censusMpiosByName){ sel.value='pob_mpios'; sel.dispatchEvent(new Event('change')); }
+  else toast('Censo de Municipios no disponible');
+};
+
+    
+
   });document.getElementById('btnCSVTodo')?.addEventListener('click', ()=> descargarTodoCSV());
 
 function descargarTodoCSV(){
