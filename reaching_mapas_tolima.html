@@ -374,7 +374,15 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
     return {br};
   }
   function showDropsFor(mode, on){ hideAllDrops(); if(!on) return; const key=mode?.replace('pob_',''); if(key&&drops[key]) drops[key].addTo(map); }
-  function hideAllDrops(){ ['mpios','comunas','correg','veredas'].forEach(k=>{ if(drops[k]) map.removeLayer(drops[k]); }); }
+  function hideAllDrops(){ ['mpios','comunas','correg','veredas'].forEach(k=>{ if(drops[k]) map.removeLayer(drops[k]); });
+                      
+} document.getElementById('tgDrops').checked = true;
+showDropsFor(mode,true);
+const key = mode.replace('pob_','');     // 'mpios' | 'comunas' | 'correg' | 'veredas'
+updateKPIs(key);
+renderTabla(key);
+document.getElementById('tabModo').value = key;
+
 
   // === CSV / Censo flexible
   function parseCSV(text){
