@@ -166,8 +166,7 @@ function descargarTodoCSV(){
     a.download = `desglose_${g.key}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
-
-    document.getElementById('tgComunas').onclick = ()=>{
+document.getElementById('tgComunas').onclick = ()=>{
   safeToggle(layers.comunas,'Comunas');
   const sel=document.getElementById('estiloPob');
   if(caches.censusComunasByName){ sel.value='pob_comunas'; sel.dispatchEvent(new Event('change')); }
@@ -190,6 +189,8 @@ document.getElementById('tgMpios').onclick = ()=>{
   const sel=document.getElementById('estiloPob');
   if(caches.censusMpiosByCode || caches.censusMpiosByName){ sel.value='pob_mpios'; sel.dispatchEvent(new Event('change')); }
   else toast('Censo de Municipios no disponible');
+};
+
 };
 
   });
