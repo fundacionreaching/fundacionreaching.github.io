@@ -1,4 +1,8 @@
 [
+  {"CORREGIMIENTO":"El Salado","POB_2018":12345},
+  {"CORREGIMIENTO":"San Bernardo","POB_2018":6789}
+]
+[
   { "id": 1, "nombre": "Dantas", "pob_2019": null },
   { "id": 2, "nombre": "Laureles", "pob_2019": null },
   { "id": 3, "nombre": "Coello – Cocora", "pob_2019": null },
