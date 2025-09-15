@@ -1,6 +1,7 @@
 [
-  {"VEREDA": "<Nombre de Vereda 1>", "POB_TOTAL": 0},
-  {"VEREDA": "<Nombre de Vereda 2>", "POB_TOTAL": 0}
+  {"VEREDA":"Vereda A","POB_2018":321},
+  {"VEREDA":"Vereda B","POB_2018":654}
+]
 ]
     "/veredas.geojson","./veredas.geojson",
     "./ibague_veredas.geojson","/ibague_veredas.geojson",
