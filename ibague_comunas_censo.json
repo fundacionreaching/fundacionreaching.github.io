@@ -1,4 +1,8 @@
 [
+  {"COMUNA":"Comuna 1","POB_2018":12345},
+  {"COMUNA":"Comuna 2","POB_2018":67890}
+]
+[
   {"COMUNA": "Comuna 1", "POB_TOTAL": 0},
   {"COMUNA": "Comuna 2", "POB_TOTAL": 0},
   {"COMUNA": "Comuna 3", "POB_TOTAL": 0},
