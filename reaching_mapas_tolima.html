@@ -408,6 +408,15 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
       const m=L.marker(c,{icon});
       m.bindPopup(`<div style="min-width:180px"><div style="font-weight:800">${name}</div><div>Población: <b>${fmt(v)}</b></div></div>`);
       markers.addLayer(m);if(!document.getElementById('tgEtiq').checked){
+      if(!document.getElementById('tgEtiq').checked){
+  m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
+}
+  m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
+}
+  
+  m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
+}
+
   m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
 }
 
@@ -575,17 +584,45 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
 
   // === Controles/UI
   const legendBox=document.getElementById('legend');
-  document.getElementById('estiloPob').addEventListener('change', (e)=> applyPopStyle(e.target.value));
-  document.getElementById('tgDrops').addEventListener('change',(e)=>{ const v=document.getElementById('estiloPob').value; showDropsFor(v,e.target.checked); });
-  document.getElementById('tgEtiq').addEventListener('change',(e)=>{ const show=e.target.checked; document.querySelectorAll('.drop .lab').forEach(el=> el.style.display=show?'block':'none'); });
+function applyPopStyle(mode){
+  if(!mode){ legendBox.style.display='none'; hideAllDrops(); return; }
 
-  document.getElementById('q').addEventListener('keydown',(ev)=>{ if(ev.key!=='Enter') return; const t=ev.target.value.trim().toLowerCase(); if(!t) return; const hit=(window._idx||[]).find(x=>x.name.toLowerCase().includes(t)); if(hit&&hit.bounds) map.fitBounds(hit.bounds.pad(0.4)); else toast('Sin resultados'); });
-  document.getElementById('tgComunas').onclick =()=>safeToggle(layers.comunas,'Comunas');
-  document.getElementById('tgCorreg').onclick  =()=>safeToggle(layers.correg,'Corregimientos');
-  document.getElementById('tgVeredas').onclick =()=>safeToggle(layers.veredas,'Veredas');
-  document.getElementById('tgMpios').onclick   =()=>safeToggle(layers.mpios,'Municipios');
-  document.getElementById('zoomTolima').onclick=()=>{ map.fitBounds([[3.2,-75.7],[5.7,-74.6]]); setTimeout(()=>map.invalidateSize(),60); };
-  document.getElementById('zoomIbague').onclick=()=>{
+  if(mode==='pob_mpios' && (caches.censusMpiosByCode||caches.censusMpiosByName) && layers.mpios){
+    const get=(p)=> caches.censusMpiosByCode?.get(String(getCode(p)||'').padStart(5,'0')) 
+                 ?? caches.censusMpiosByName?.get(norm(getName(p)));
+    const ret=addDropsFor(layers.mpios,'mpios',get);
+    if(ret?.br) legend('Población (Municipios)', ret.br);
+
+  } else if(mode==='pob_comunas' && caches.censusComunasByName && layers.comunas){
+    const get=(p)=> caches.censusComunasByName.get(norm(getName(p)));
+    const ret=addDropsFor(layers.comunas,'comunas',get);
+    if(ret?.br) legend('Población (Comunas)', ret.br);
+
+  } else if(mode==='pob_correg' && caches.censusCorregByName && layers.correg){
+    const get=(p)=> caches.censusCorregByName.get(norm(getName(p)));
+    const ret=addDropsFor(layers.correg,'correg',get);
+    if(ret?.br) legend('Población (Corregimientos)', ret.br);
+
+  } else if(mode==='pob_veredas' && caches.censusVeredasByName && layers.veredas){
+    const get=(p)=> caches.censusVeredasByName.get(norm(getName(p)));
+    const ret=addDropsFor(layers.veredas,'veredas',get);
+    if(ret?.br) legend('Población (Veredas)', ret.br);
+
+  } else {
+    legendBox.style.display='none';
+    toast('Censo no disponible para esta capa');
+    hideAllDrops();
+    return;
+  }
+
+  document.getElementById('tgDrops').checked = true;
+  showDropsFor(mode,true);
+  const key = mode.replace('pob_','');
+  updateKPIs(key);
+  renderTabla(key);
+  const tabSel=document.getElementById('tabModo'); if(tabSel) tabSel.value=key;
+}
+
     if(layers.comunas){ map.fitBounds(layers.comunas.getBounds().pad(0.2)); }
     else if(layers.mpios){
       let found=null; layers.mpios.eachLayer(l=>{ const n=getName(l.feature?.properties||{}).toLowerCase(); if(n.includes('bagué')||n.includes('ibague')) found=l; });
