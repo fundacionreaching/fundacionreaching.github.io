@@ -51,8 +51,7 @@
       <button id="zoomIbague" class="btn ghost">Ibagué</button>
       <button id="dlPlantilla" class="btn ghost">Plantilla Municipios</button>
       <button id="dlPlantillaVer" class="btn ghost">Plantilla Veredas</button>
-      <button id="btnCSVTodo" class="btn">Descargar TODO (3 CSV)</button>
-
+      <button id="dlJSONVer" class="btn ghost">JSON Veredas (plantilla)</button>
     </div>
   </header>
 
@@ -112,6 +111,7 @@
             <option value="veredas">Veredas</option>
           </select>
           <button id="btnCSVTabla" class="btn">Descargar CSV</button>
+          <button id="btnCSVTodo" class="btn">Descargar TODO (3 CSV)</button>
           <button id="btnCopiarTabla" class="btn ghost">Copiar</button>
         </div>
         <div id="tabla"></div>
@@ -142,94 +142,11 @@
   window.addEventListener('unhandledrejection', ev=>{
     const el=document.getElementById('jsErr');
     if(el) el.textContent = "⚠️ Promesa: " + (ev.reason?.message || String(ev.reason));
-
-    
-  });document.getElementById('btnCSVTodo')?.addEventListener('click', ()=> descargarTodoCSV());
-
-function descargarTodoCSV(){
-  const grupos = [
-    { key:'comunas',  titulo:'Comunas' },
-    { key:'correg',   titulo:'Corregimientos' },
-    { key:'veredas',  titulo:'Veredas' }
-  ];
-  grupos.forEach(g=>{
-    const list = collectList(g.key); // usa tu función existente
-    if(!list.length){ console.warn(`Sin datos para ${g.titulo}`); return; }
-    const total = list.reduce((s,x)=>s+x.pop,0) || 0;
-    const rows = [[g.titulo,'poblacion','porc']];
-    list.forEach(x=> rows.push([x.name, x.pop, (total? (100*x.pop/total):0).toFixed(2)+'%']));
-    rows.push(['TOTAL', total, '100%']);
-    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download = `desglose_${g.key}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-document.getElementById('tgComunas').onclick = ()=>{
-  safeToggle(layers.comunas,'Comunas');
-  const sel=document.getElementById('estiloPob');
-  if(caches.censusComunasByName){ sel.value='pob_comunas'; sel.dispatchEvent(new Event('change')); }
-  else toast('Censo de Comunas no disponible');
-};
-document.getElementById('tgCorreg').onclick = ()=>{
-  safeToggle(layers.correg,'Corregimientos');
-  const sel=document.getElementById('estiloPob');
-  if(caches.censusCorregByName){ sel.value='pob_correg'; sel.dispatchEvent(new Event('change')); }
-  else toast('Censo de Corregimientos no disponible');
-};
-document.getElementById('tgVeredas').onclick = ()=>{
-  safeToggle(layers.veredas,'Veredas');
-  const sel=document.getElementById('estiloPob');
-  if(caches.censusVeredasByName){ sel.value='pob_veredas'; sel.dispatchEvent(new Event('change')); }
-  else toast('Censo de Veredas no disponible');
-};
-document.getElementById('tgMpios').onclick = ()=>{
-  safeToggle(layers.mpios,'Municipios');
-  const sel=document.getElementById('estiloPob');
-  if(caches.censusMpiosByCode || caches.censusMpiosByName){ sel.value='pob_mpios'; sel.dispatchEvent(new Event('change')); }
-  else toast('Censo de Municipios no disponible');
-};
-
-};
-
   });
-}
-
   window.onerror = (m,src,l,c)=>{
     const el=document.getElementById('jsErr');
     if(el) el.textContent = "⚠️ Script: "+m+" ("+l+":"+c+")";
-  };function downloadJSONByLayer(layer, label, filename, nameCol){
-  if(!layer){ alert(`Primero carguen ${label}.`); return; }
-  const rows=[];
-  layer.eachLayer(l=>{
-    const p=l.feature?.properties||{};
-    const nombre = Object.values(p)[0];
-    rows.push({ [nameCol]: String(nombre), "POB_2018": "" });
-  });
-  const blob=new Blob([JSON.stringify(rows, null, 2)],{type:'application/json;charset=utf-8;'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
-}
-document.getElementById('dlJSONVer')?.addEventListener('click', ()=> 
-  downloadJSONByLayer(layers.veredas,'Veredas','ibague_veredas_censo.json','VEREDA')
-);function downloadJSONByLayer(layer, label, filename, nameCol){
-  if(!layer){ alert(`Primero carguen ${label}.`); return; }
-  const rows=[];
-  layer.eachLayer(l=>{
-    const p=l.feature?.properties||{};
-    const nombre = Object.values(p)[0];
-    rows.push({ [nameCol]: String(nombre), "POB_2018": "" });
-  });
-  const blob=new Blob([JSON.stringify(rows, null, 2)],{type:'application/json;charset=utf-8;'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
-}
-document.getElementById('dlJSONVer')?.addEventListener('click', ()=> 
-  downloadJSONByLayer(layers.veredas,'Veredas','ibague_veredas_censo.json','VEREDA')
-
-                                                       
-);
-
-
+  };
 
   const Diag = { el:null, log(m,ok=true){ const d=document.createElement('div'); d.textContent=(ok?'✅ ':'❌ ')+m; this.el&&this.el.appendChild(d); } };
 
@@ -250,18 +167,12 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
       "https://fundacionreaching.github.io/ibague_veredas.geojson",
       "https://fundacionreaching.github.io/data/ibague_veredas.geojson"
     ],
-    // Municipios (Tolima) — primero respaldo estable; DANE queda como backup
+    // Municipios (Tolima) — respaldo estable primero; DANE como backup
     mpios: [
       "https://raw.githubusercontent.com/caticoa3/colombia_mapa/master/co_2018_MGN_MPIO_POLITICO.geojson",
       "https://geoportal.dane.gov.co/mparcgis/rest/services/Divipola/Cache_DivipolaEntidadesTerritorialesCP/MapServer/9/query?where=COD_DPTO%3D%2773%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson"
     ],
     // Censo
-    censo: {
-  comunas: ["./ibague_comunas_censo.json","./data/ibague_comunas_censo.json"],
-  correg:  ["./corregimientos_ibague.json","./ibague_correg_censo.json","./data/ibague_correg_censo.json"],
-  veredas: ["./ibague_veredas_censo.json","./data/ibague_veredas_censo.json"]
-}
-
     censo: {
       comunas: [
         "./ibague_comunas_censo.json","./data/ibague_comunas_censo.json",
@@ -280,12 +191,10 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
         "https://fundacionreaching.github.io/data/ibague_veredas_censo.json"
       ],
       mpios: [
-        // primero tu archivo que YA funciona (47/47)
         "./municipios_censo.json",
         "./data/tolima_censo.json",
         "https://fundacionreaching.github.io/municipios_censo.json",
         "https://fundacionreaching.github.io/data/tolima_censo.json",
-        // DANE al final como respaldo
         "https://geoportal.dane.gov.co/mparcgis/rest/services/INDICADORES_DE_POBLACION/Serv_Mpios_DistribucionPoblacionTotalCen_2018/MapServer/4/query?where=DPTO_CCDGO%3D%2773%27&outFields=MPIO_CCDGO,MPIO_CNMBR,CL0_TT_PERSN&returnGeometry=false&f=json"
       ]
     }
@@ -372,19 +281,13 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
       else if(label.startsWith('Correg')) pob=caches.censusCorregByName?.get(norm(nm));
       else if(label.startsWith('Vereda')) pob=caches.censusVeredasByName?.get(norm(nm));
       else pob = caches.censusMpiosByCode?.get(String(getCode(props)||'').padStart(5,'0')) ?? caches.censusMpiosByName?.get(norm(nm));
-
       l.bindTooltip(`${label}: <b>${nm}</b>`);
       l.on("mouseover",()=>l.setStyle({weight:3,fillOpacity:.3}));
       l.on("mouseout", ()=>l.setStyle(baseStyle()));
       l.on("click",()=>{
         renderInfo(props,label);
-       
-       const html=`<div class="drop" style="--s:${s}px;--c:${col}">
-  <span class="lab">${fmt(v)}</span>
-</div>`;
-
-</div>`;
-
+        const html = Number.isFinite(pob)? `<div><b>${nm}</b><br>Población: <b>${fmt(pob)}</b></div>` : `<div><b>${nm}</b></div>`;
+        try{ l.bindPopup(html).openPopup(); }catch(_){}
       });
     });
   };
@@ -403,30 +306,24 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
       const p=l.feature?.properties||{}; const name=getName(p); const v=getVal(p); if(!Number.isFinite(v)) return;
       const c=l.getBounds? l.getBounds().getCenter() : (l.getLatLng? l.getLatLng() : null); if(!c) return;
       const s=sizeFor(v); const col=colorFor(v);
-      const html=`<div class="drop" style="--s:${s}px;--c:${col}"><span class="lab"></span></div>`;
+      const html=`<div class="drop" style="--s:${s}px;--c:${col}">
+        <span class="lab">${fmt(v)}</span>
+      </div>`;
       const icon=L.divIcon({html, className:'', iconSize:[s, s*1.3], iconAnchor:[s/2, s*1.05]});
       const m=L.marker(c,{icon});
       m.bindPopup(`<div style="min-width:180px"><div style="font-weight:800">${name}</div><div>Población: <b>${fmt(v)}</b></div></div>`);
-      markers.addLayer(m);if(!document.getElementById('tgEtiq').checked){
+      markers.addLayer(m);
+      // Respeta el toggle "Etiquetas"
       if(!document.getElementById('tgEtiq').checked){
-  m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
-}
-  m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
-}
-  
-  m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
-}
-
-  m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
-}
-
+        m.on('add', ()=> { const el = m.getElement()?.querySelector('.lab'); if(el) el.style.display='none'; });
+      }
     });
     drops[key]=markers.addTo(map);
     return {br};
   }
   function showDropsFor(mode, on){ hideAllDrops(); if(!on) return; const key=mode?.replace('pob_',''); if(key&&drops[key]) drops[key].addTo(map); }
-  function hideAllDrops(){ ['mpios','comunas','correg','veredas'].forEach(k=>{ if(drops[k]) map.removeLayer(drops[k]); });                     
-}
+  function hideAllDrops(){ ['mpios','comunas','correg','veredas'].forEach(k=>{ if(drops[k]) map.removeLayer(drops[k]); }); }
+
   // === CSV / Censo flexible
   function parseCSV(text){
     const lines = text.trim().split(/\r?\n/); if(!lines.length) return [];
@@ -471,14 +368,13 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
             rows.forEach(row=>{
               const code=row[codeKey]!=null? String(row[codeKey]).padStart(5,'0'):null;
               const name=row[nameKey]!=null? String(row[nameKey]).trim():null;
-              const val =Number(String(row[popKey]).replace(/[^0-9.]/g,''));
+              const val =Number(String(row[popKey]).replace(/[^0-9]/g,''));
               if(Number.isFinite(val)){ if(code) byCode.set(code,val); if(name) byName.set(norm(name),val); }
             });
           }
         }
         if(byCode.size||byName.size){ Diag.log(`${label}: ${u} ✔ (codes:${byCode.size} / names:${byName.size})`); return {byCode,byName}; }
-        else throw new Error('sin datos válidos');
-      }catch(e){ /* intentamos la siguiente */ }
+      }catch(e){ /* intenta siguiente */ }
     }
     Diag.log(`${label}: sin fuentes válidas`, false);
     return {byCode:null, byName:null};
@@ -572,8 +468,9 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
 
       const anyCenso = caches.censusComunasByName||caches.censusCorregByName||caches.censusVeredasByName||caches.censusMpiosByCode||caches.censusMpiosByName;
       const combo=document.getElementById('estiloPob'); if(combo){ combo.disabled=!anyCenso; document.getElementById('statusCenso').textContent= anyCenso? 'Censo: listo':'Censo: no detectado'; }
-      // Desactivar opciones sin censo
       document.querySelector('#estiloPob option[value="pob_veredas"]').disabled = !caches.censusVeredasByName;
+      document.querySelector('#estiloPob option[value="pob_comunas"]').disabled = !caches.censusComunasByName;
+      document.querySelector('#estiloPob option[value="pob_correg"]').disabled  = !caches.censusCorregByName;
     }catch(e){
       Diag.log('Fallo general: '+(e.message||e), false);
     }finally{
@@ -584,45 +481,80 @@ document.getElementById('dlJSONVer')?.addEventListener('click', ()=>
 
   // === Controles/UI
   const legendBox=document.getElementById('legend');
-function applyPopStyle(mode){
-  if(!mode){ legendBox.style.display='none'; hideAllDrops(); return; }
 
-  if(mode==='pob_mpios' && (caches.censusMpiosByCode||caches.censusMpiosByName) && layers.mpios){
-    const get=(p)=> caches.censusMpiosByCode?.get(String(getCode(p)||'').padStart(5,'0')) 
-                 ?? caches.censusMpiosByName?.get(norm(getName(p)));
-    const ret=addDropsFor(layers.mpios,'mpios',get);
-    if(ret?.br) legend('Población (Municipios)', ret.br);
+  function applyPopStyle(mode){
+    if(!mode){ legendBox.style.display='none'; hideAllDrops(); return; }
 
-  } else if(mode==='pob_comunas' && caches.censusComunasByName && layers.comunas){
-    const get=(p)=> caches.censusComunasByName.get(norm(getName(p)));
-    const ret=addDropsFor(layers.comunas,'comunas',get);
-    if(ret?.br) legend('Población (Comunas)', ret.br);
+    if(mode==='pob_mpios' && (caches.censusMpiosByCode||caches.censusMpiosByName) && layers.mpios){
+      const get=(p)=> caches.censusMpiosByCode?.get(String(getCode(p)||'').padStart(5,'0')) 
+                   ?? caches.censusMpiosByName?.get(norm(getName(p)));
+      const ret=addDropsFor(layers.mpios,'mpios',get);
+      if(ret?.br) legend('Población (Municipios)', ret.br);
 
-  } else if(mode==='pob_correg' && caches.censusCorregByName && layers.correg){
-    const get=(p)=> caches.censusCorregByName.get(norm(getName(p)));
-    const ret=addDropsFor(layers.correg,'correg',get);
-    if(ret?.br) legend('Población (Corregimientos)', ret.br);
+    } else if(mode==='pob_comunas' && caches.censusComunasByName && layers.comunas){
+      const get=(p)=> caches.censusComunasByName.get(norm(getName(p)));
+      const ret=addDropsFor(layers.comunas,'comunas',get);
+      if(ret?.br) legend('Población (Comunas)', ret.br);
 
-  } else if(mode==='pob_veredas' && caches.censusVeredasByName && layers.veredas){
-    const get=(p)=> caches.censusVeredasByName.get(norm(getName(p)));
-    const ret=addDropsFor(layers.veredas,'veredas',get);
-    if(ret?.br) legend('Población (Veredas)', ret.br);
+    } else if(mode==='pob_correg' && caches.censusCorregByName && layers.correg){
+      const get=(p)=> caches.censusCorregByName.get(norm(getName(p)));
+      const ret=addDropsFor(layers.correg,'correg',get);
+      if(ret?.br) legend('Población (Corregimientos)', ret.br);
 
-  } else {
-    legendBox.style.display='none';
-    toast('Censo no disponible para esta capa');
-    hideAllDrops();
-    return;
+    } else if(mode==='pob_veredas' && caches.censusVeredasByName && layers.veredas){
+      const get=(p)=> caches.censusVeredasByName.get(norm(getName(p)));
+      const ret=addDropsFor(layers.veredas,'veredas',get);
+      if(ret?.br) legend('Población (Veredas)', ret.br);
+
+    } else {
+      legendBox.style.display='none';
+      toast('Censo no disponible para esta capa');
+      hideAllDrops();
+      return;
+    }
+
+    document.getElementById('tgDrops').checked = true;
+    showDropsFor(mode,true);
+    const key = mode.replace('pob_','');
+    updateKPIs(key);
+    renderTabla(key);
+    const tabSel=document.getElementById('tabModo'); if(tabSel) tabSel.value=key;
   }
 
-  document.getElementById('tgDrops').checked = true;
-  showDropsFor(mode,true);
-  const key = mode.replace('pob_','');
-  updateKPIs(key);
-  renderTabla(key);
-  const tabSel=document.getElementById('tabModo'); if(tabSel) tabSel.value=key;
-}
+  document.getElementById('estiloPob').addEventListener('change', (e)=> applyPopStyle(e.target.value));
+  document.getElementById('tgDrops').addEventListener('change',(e)=>{ const v=document.getElementById('estiloPob').value; showDropsFor(v,e.target.checked); });
+  document.getElementById('tgEtiq').addEventListener('change',(e)=>{ const show=e.target.checked; document.querySelectorAll('.drop .lab').forEach(el=> el.style.display=show?'block':'none'); });
 
+  document.getElementById('q').addEventListener('keydown',(ev)=>{ if(ev.key!=='Enter') return; const t=ev.target.value.trim().toLowerCase(); if(!t) return; const hit=(window._idx||[]).find(x=>x.name.toLowerCase().includes(t)); if(hit&&hit.bounds) map.fitBounds(hit.bounds.pad(0.4)); else toast('Sin resultados'); });
+
+  // Botones de capas: fuerzan estilo por población si hay censo
+  document.getElementById('tgComunas').onclick = ()=>{
+    safeToggle(layers.comunas,'Comunas');
+    const sel=document.getElementById('estiloPob');
+    if(caches.censusComunasByName){ sel.value='pob_comunas'; sel.dispatchEvent(new Event('change')); }
+    else toast('Censo de Comunas no disponible');
+  };
+  document.getElementById('tgCorreg').onclick = ()=>{
+    safeToggle(layers.correg,'Corregimientos');
+    const sel=document.getElementById('estiloPob');
+    if(caches.censusCorregByName){ sel.value='pob_correg'; sel.dispatchEvent(new Event('change')); }
+    else toast('Censo de Corregimientos no disponible');
+  };
+  document.getElementById('tgVeredas').onclick = ()=>{
+    safeToggle(layers.veredas,'Veredas');
+    const sel=document.getElementById('estiloPob');
+    if(caches.censusVeredasByName){ sel.value='pob_veredas'; sel.dispatchEvent(new Event('change')); }
+    else toast('Censo de Veredas no disponible');
+  };
+  document.getElementById('tgMpios').onclick = ()=>{
+    safeToggle(layers.mpios,'Municipios');
+    const sel=document.getElementById('estiloPob');
+    if(caches.censusMpiosByCode || caches.censusMpiosByName){ sel.value='pob_mpios'; sel.dispatchEvent(new Event('change')); }
+    else toast('Censo de Municipios no disponible');
+  };
+
+  document.getElementById('zoomTolima').onclick=()=>{ map.fitBounds([[3.2,-75.7],[5.7,-74.6]]); setTimeout(()=>map.invalidateSize(),60); };
+  document.getElementById('zoomIbague').onclick=()=>{
     if(layers.comunas){ map.fitBounds(layers.comunas.getBounds().pad(0.2)); }
     else if(layers.mpios){
       let found=null; layers.mpios.eachLayer(l=>{ const n=getName(l.feature?.properties||{}).toLowerCase(); if(n.includes('bagué')||n.includes('ibague')) found=l; });
@@ -631,28 +563,14 @@ function applyPopStyle(mode){
     setTimeout(()=>map.invalidateSize(),60);
   };
 
+  // Tabla / KPI / CSV
   document.getElementById('tabModo').addEventListener('change',(e)=>{ renderTabla(e.target.value); updateKPIs(e.target.value); });
   document.getElementById('btnCSVTabla').addEventListener('click',()=>downloadTablaCSV());
+  document.getElementById('btnCSVTodo').addEventListener('click',()=>descargarTodoCSV());
   document.getElementById('btnCopiarTabla').addEventListener('click',()=>copyTabla());
   document.getElementById('dlPlantilla').addEventListener('click', downloadPlantillaMpios);
   document.getElementById('dlPlantillaVer').addEventListener('click', ()=> downloadPlantillaByLayer(layers.veredas,'Veredas','plantilla_censo_veredas.csv','VEREDA'));
-
-  function applyPopStyle(mode){
-    if(!mode){ legendBox.style.display='none'; hideAllDrops(); return; }
-    if(mode==='pob_mpios' && (caches.censusMpiosByCode||caches.censusMpiosByName) && layers.mpios){
-      const get=(p)=> caches.censusMpiosByCode?.get(String(getCode(p)||'').padStart(5,'0')) ?? caches.censusMpiosByName?.get(norm(getName(p)));
-      const br=addDropsFor(layers.mpios,'mpios',get)?.br; if(br) legend('Población (Municipios)', br);
-    } else if(mode==='pob_comunas' && caches.censusComunasByName && layers.comunas){
-      const get=(p)=> caches.censusComunasByName.get(norm(getName(p))); const br=addDropsFor(layers.comunas,'comunas',get)?.br; if(br) legend('Población (Comunas)', br);
-    } else if(mode==='pob_correg' && caches.censusCorregByName && layers.correg){
-      const get=(p)=> caches.censusCorregByName.get(norm(getName(p))); const br=addDropsFor(layers.correg,'correg',get)?.br; if(br) legend('Población (Corregimientos)', br);
-    } else if(mode==='pob_veredas' && caches.censusVeredasByName && layers.veredas){
-      const get=(p)=> caches.censusVeredasByName.get(norm(getName(p))); const br=addDropsFor(layers.veredas,'veredas',get)?.br; if(br) legend('Población (Veredas)', br);
-    } else { legendBox.style.display='none'; toast('Censo no disponible para esta capa'); return; }
-    document.getElementById('tgDrops').checked=true;
-    showDropsFor(mode,true);
-    const m=mode.replace('pob_',''); updateKPIs(m); renderTabla(m);
-  }
+  document.getElementById('dlJSONVer').addEventListener('click', ()=> downloadJSONByLayer(layers.veredas,'Veredas','ibague_veredas_censo.json','VEREDA'));
 
   function collectList(key){
     let data=[];
@@ -687,6 +605,28 @@ function applyPopStyle(mode){
     const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`desglose_${key}.csv`; a.click(); URL.revokeObjectURL(a.href);
   }
+  function descargarTodoCSV(){
+    const grupos = [
+      { key:'comunas',  titulo:'Comunas' },
+      { key:'correg',   titulo:'Corregimientos' },
+      { key:'veredas',  titulo:'Veredas' }
+    ];
+    grupos.forEach(g=>{
+      const list = collectList(g.key);
+      if(!list.length){ console.warn(`Sin datos para ${g.titulo}`); return; }
+      const total = list.reduce((s,x)=>s+x.pop,0) || 0;
+      const rows = [[g.titulo,'poblacion','porc']];
+      list.forEach(x=> rows.push([x.name, x.pop, (total? (100*x.pop/total):0).toFixed(2)+'%']));
+      rows.push(['TOTAL', total, '100%']);
+      const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download = `desglose_${g.key}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  }
   function copyTabla(){
     const el=document.querySelector('#tabla table'); if(!el) return; const sel=window.getSelection(); const r=document.createRange(); r.selectNode(el); sel.removeAllRanges(); sel.addRange(r);
     try{ document.execCommand('copy'); }finally{ sel.removeAllRanges(); }
@@ -712,6 +652,17 @@ function applyPopStyle(mode){
     });
     const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+  }
+  function downloadJSONByLayer(layer, label, filename, nameCol){
+    if(!layer){ alert(`Primero carguen ${label}.`); return; }
+    const rows=[];
+    layer.eachLayer(l=>{
+      const p=l.feature?.properties||{};
+      const nombre = Object.values(p)[0];
+      rows.push({ [nameCol]: String(nombre), "POB_2018": "" });
+    });
+    const blob=new Blob([JSON.stringify(rows, null, 2)],{type:'application/json;charset=utf-8;'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
   }
 
